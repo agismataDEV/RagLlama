@@ -1,0 +1,57 @@
+=========1st Change ========
+
+* ParnacIterStepMain
+ - No Interpolation but with Frequency Tapering 0.1 from Fnyq
+ - 2 times normal FFT multiplies with dFFT**2 
+ 
+* ParnacContrastFunction
+ - No Interpolation but with Frequency Tapering 0.1 from Fnyq
+ - 2 times normal FFT multiplies with dFFT**2 
+ 
+ =========2nd Change ========
+ 
+* ParnacIterStepMain
+ - Tapering of 2 cycles in start and end
+ 
+ Improved the resolution by reducing the magnitude of interferences
+ 
+ =========3rd Change ========
+ 
+ * ParnacIterStepMain
+ - Increase the range of Frequency tapering to 0.5 [4.0 - 4.5]
+ No difference
+ REMOVE IT
+ =========4th Change ========
+
+ * ParnacIterStepMain
+ - 2 times ,1 normal , 1 sml FFT multiplies with dFFT**2 
+ 
+* ParnacContrastFunction
+ - 2 times ,1 normal , 1 sml FFT multiplies with dFFT**2 
+ 
+ Improved the resolution only for third and 4th harmonic!
+ 
+ =========5th Change ========
+ * ParnacIterStepMain
+ - Multiply 2nd FFT with Frequency Tapering Factor
+ REMOVE IT
+ 
+ =========5th Change ========
+ * ParnacIterStepMain
+ - Tapering with 3 cycles or with 1 cycle
+ Not important improvements
+ REMOVE IT
+ 
+  =========6th Change ========
+ * ParnacIterStepMain
+ - Multiply Each transformation with 1 dFFTFactor instead of dFFTFactor**2 only in the second transformation
+ REMOVE IT
+ 
+=========6th Change ========
+ * ParnacIterStepMain
+ - Change to sml Transform
+ 
+ =========7th Change ========
+ * ParnacIterStepMain
+ - Change to 1 sml Transform with dFFTFactor **2
+ 

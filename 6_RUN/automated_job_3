@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+INPUT_FILE3=${1?Error: No input file given}
+OUTPUT_FOLDER3=${2?Error: No output folder given}
+export INPUT_FILE3
+export OUTPUT_FOLDER3
+
+export OUTPUT_FILE=../7_Results/$OUTPUT_FOLDER3/INCS_3.out
+echo $OUTPUT_FILE
+export ERR_FILE=../7_Results/$OUTPUT_FOLDER3/INCS_3.err
+echo $ERR_FILE
+
+cd ../2_Source_Code/
+make
+mdkir ../3_Compiled_Files_3
+make move-clean-3
+make copy-3
+
+cd ../7_Results/$OUTPUT_FOLDER3/
+find . -name '*GlobalLoc*' | xargs rm -f
+mkdir 2_Source_Code
+
+cd ../../2_Source_Code/
+
+rm ../7_Results/$OUTPUT_FOLDER3/*
+rm ../7_Results/$OUTPUT_FOLDER3/Bubbles/*
+cp *.f90 ../7_Results/$OUTPUT_FOLDER3/2_Source_Code/
+cp ../5_Input_Files/$INPUT_FILE3 ../7_Results/$OUTPUT_FOLDER3/
+
+cd ../6_RUN/
+### HERE WE CREATE THE BASH FILE
+echo "#!/bin/bash" > job_INCS_3
+echo " " >> job_INCS_3
+echo "#SBATCH --job-name=2_MONO_2NODES" >> job_INCS_3
+echo "#SBATCH --partition=general" >> job_INCS_3
+echo "#SBATCH --qos=long" >> job_INCS_3
+echo "#SBATCH --nodes=1" >> job_INCS_3
+echo "#SBATCH --ntasks-per-node=56" >> job_INCS_3
+echo "#SBATCH --cpus-per-task=1" >> job_INCS_3
+echo "#SBATCH --mem=500G" >> job_INCS_3
+echo "#SBATCH --time=10:00:00" >> job_INCS_3
+echo "##SBATCH --exclusive" >> job_INCS_3
+echo "#SBATCH -o $OUTPUT_FILE" >> job_INCS_3
+echo "#SBATCH -e $ERR_FILE" >> job_INCS_3
+echo " " >> job_INCS_3
+echo "module use /opt/insy/modulefiles" >> job_INCS_3
+echo "module load intel" >> job_INCS_3
+echo " " >> job_INCS_3
+echo "ulimit -s unlimited" >> job_INCS_3
+echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64" >> job_INCS_3
+echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh" >> job_INCS_3
+echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64" >> job_INCS_3
+echo " " >> job_INCS_3
+echo "# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so" >> job_INCS_3
+echo "export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so" >> job_INCS_3
+echo "export OMP_NUM_THREADS=1" >> job_INCS_3
+echo "export MKL_NUM_THREADS=1" >> job_INCS_3
+echo "#export MKL_THREADING_LAYER=intel" >> job_INCS_3
+echo "#export MKL_DYNAMIC="FALSE"" >> job_INCS_3
+echo "#export MKL_VERBOSE=1" >> job_INCS_3
+echo "srun ../3_Compiled_Files_3/INCS_Agis $INPUT_FILE3 TESTNeumann ../5_Input_Files ../7_Results/$OUTPUT_FOLDER3" >> job_INCS_3
+
+sbatch ../6_RUN/job_INCS_3 &
+
+sleep 5
+squeue -u agismatalliota
