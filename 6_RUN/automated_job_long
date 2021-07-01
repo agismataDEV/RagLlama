@@ -4,32 +4,32 @@ OUTPUT_FOLDER=${2?Error: No output folder given}
 export INPUT_FILE
 export OUTPUT_FOLDER
 
-export OUT_FILE=../7_Results/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.out
-export ERR_FILE=../7_Results/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.err
+export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.out
+export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.err
 echo $OUT_FILE
 echo $ERR_FILE
 
-cd ../2_Source_Code/
-##rm ../3_Compiled_Files/INCS_Agis*
+cd ../2_SOURCE_CODE/
+##rm ../3_COMPILED_FILES/INCS_Agis*
 make 
 make move-clean $OUTPUT_FOLDER 
 make copy $OUTPUT_FOLDER
 
 
-#if [ -d ../7_Results/$OUTPUT_FOLDER]; then
-mkdir ../7_Results/$OUTPUT_FOLDER
+#if [ -d ../7_RESULTS/$OUTPUT_FOLDER]; then
+mkdir ../7_RESULTS/$OUTPUT_FOLDER
 #	echo "Directory is created ..."
 #fi
 
-cd ../7_Results/$OUTPUT_FOLDER/
+cd ../7_RESULTS/$OUTPUT_FOLDER/
 find . -name '*GlobalLoc*' | xargs rm -f
-mkdir 2_Source_Code
+mkdir 2_SOURCE_CODE
 
-cd ../../2_Source_Code/
-rm ../7_Results/$OUTPUT_FOLDER/*
-rm ../7_Results/$OUTPUT_FOLDER/Bubbles/*
-cp *.f90 ../7_Results/$OUTPUT_FOLDER/2_Source_Code/
-cp ../5_Input_Files/$INPUT_FILE ../7_Results/$OUTPUT_FOLDER/
+cd ../../2_SOURCE_CODE/
+rm ../7_RESULTS/$OUTPUT_FOLDER/*
+rm ../7_RESULTS/$OUTPUT_FOLDER/Bubbles/*
+cp *.f90 ../7_RESULTS/$OUTPUT_FOLDER/2_SOURCE_CODE/
+cp ../5_INPUT_FILES/$INPUT_FILE ../7_RESULTS/$OUTPUT_FOLDER/
 
 cd ../6_RUN/
 ### HERE WE CREATE THE BASH FILE
@@ -63,7 +63,7 @@ echo "export MKL_NUM_THREADS=1" >> job_INCS_long
 echo "#export MKL_THREADING_LAYER=intel" >> job_INCS_long
 echo "#export MKL_DYNAMIC="FALSE"" >> job_INCS_long
 echo "#export MKL_VERBOSE=1" >> job_INCS_long
-echo "srun ../3_Compiled_Files/INCS_Agis_${OUTPUT_FOLDER} $INPUT_FILE TESTNeumann ../5_Input_Files ../7_Results/$OUTPUT_FOLDER" >> job_INCS_long
+echo "srun ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER" >> job_INCS_long
 
 sbatch ../6_RUN/job_INCS_long &
 

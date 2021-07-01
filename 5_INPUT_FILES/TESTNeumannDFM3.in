@@ -1,0 +1,123 @@
+*** Parnac Input File ***
+*************************
+1.01			 *** Version number
+***************************
+***  medium parameters  ***
+***************************
+1.0600000E+003		*** rho0   = Ambient density rho0 [kg/m^3]
+1.482000E+003		*** c0     = Small signal sound velocity [m/s]
+5.000000E+006		*** fc0    = Frequency at which sound velocity is given [Hz]
+0.000000E+000		*** beta   = Nonlinearity parameter
+0.000000E+000		*** a_att  = Frequency-dependent attenuation parameter [Np/cm MHz^b]
+2.000000E+000		*** b_att  = Power in frequency power attenuation law
+*************************************************
+***   domain and discretization parameters    ***
+*************************************************
+1.000000E+001		*** Lx in [mm]
+1.000000E+001		*** Ly in [mm]
+1.500000E+001		*** Lt in [cycles]
+0.000000E+000		*** Sz in [mm]	(Start of the field)
+3.00000E+001		*** Lz in [mm]	(length of the field in z)
+1.570796E+000		*** Thetax [rad]
+1.570796E+000		*** Thetay [rad]
+7.853982E-001		*** Thetat [rad]
+1.000000E+006		*** freq0  = Fundamental frequency [Hz]
+2.500000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+************************************
+***    other model parameters    ***
+************************************
+*** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave"
+fsource
+*** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
+nonlin
+30		*** Order of the Temporal Finite Difference schemes
+30		*** Order of the Spatial  Finite Difference schemes
+4		*** Debug message level 0-5 gives the level of detail of the messages
+1		*** Switch: Use Anti-Aliasing in contrast source evaluation
+1		*** Switch: Use Support Tapering in contrast source evaluation	
+1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
+1		*** Number of beams in which the total field is split
+10		*** Number of iterations of the first beam
+*** Save slices, choices: "firstandlast", "last", "all"
+all
+1		*** Number of slices to be stored
+y 0.000000E+000
+***************************
+***  source parameters  ***
+***************************
+***   source inputfilename    *** Use "standard" for [inputfilename]_src.mat, use "none" for parametric source definition (below)
+none
+*** Source signature, choices: "gaussian", "blackman" or filename
+gaussian
+2.0000000E+006		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
+*** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
+*** Blackman specific : Tdelay (in 1/freq0)
+3.000000E+000		*** Twidth = Width of gaussian window
+6.000000E+000		*** Tdelay = Delay of gaussian window
+2		*** Power  = Power of gaussian window	
+*** Source shape, choices: "cylindricalflat", "rectangularflat", "triangularflat", "pointsource", "phasedarray"
+phasedarray
+*** cylindricalflat specific: Radius (in mm), Radfocus (in mm)
+*** rectangularflat specific: Width(x, in mm), Height(y, in mm)
+*** triangularflat specific: Edge size (in mm), Position of the center in the x-dimension (in mm) (top corner of the triangle lies on the positive x-axis)
+*** pointsource specific: No parameters
+*** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), PhaseApodFilename
+20		      *** Number of elements
+0.45000000		*** Element width
+10.00             *** Element height
+0.05000000		*** Kerf
+000.0000000		*** Focus x
+35.0000000	*** Focus z
+35.0000000	*** Elevation focus
+***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
+none
+***************************
+***  Switches  		***
+***************************
+0	*** Enable (1) the nonlinear contrast in kappa
+0	*** Enable (1) the linearized contrast source method
+0	*** Enable (1) the Bi-CGSTAB implementation
+0	*** Enable (1) the Steepest Descent implementation
+0	*** Enable (1) the linearzied Steepest Descent version
+3	*** Enable and select the Dual Frequency Modality
+5	*** Shift in relation to the DFM (the spatial shift is defined with resptect to the x coordiante and the spatial sampling c0/2*Fnyq*f0)
+***************************
+*** Parameters-Inhomo   ***
+***************************
+0.0016	*** alpha1 	= Frequency-dependent attenuation parameter [Np/cm MHz^b]
+1.21	*** b1 		= Power in frequency power attenuation law
+1584	*** SOS1 	= Small signal sound velocity [m/s]
+4E-10	*** KAPPA1	= Compressibility
+4	*** BETA1	= Nonlinear parameter
+***************************
+0.0016	*** alpha2 	= Frequency-dependent attenuation parameter [Np/cm MHz^b]
+1.21	*** b2 		= Power in frequency power attenuation law
+1482	*** SOS2 	= Small signal sound velocity [m/s]
+4.5E-10	*** KAPPA2	= Compressibility
+4	*** BETA2	= Nonlinear parameter
+***************************
+0	*** alpha3 	= Frequency-dependent attenuation parameter [Np/cm MHz^b]
+1.21	*** b3 		=Power in frequency power attenuation law
+1482	*** SOS3 	= Small signal sound velocity [m/s]
+4.5e-10	*** KAPPA3	= Compressibility
+4	*** BETA3	= Nonlinear parameter
+***************************
+0	*** alpha4 	= Frequency-dependent attenuation parameter [Np/cm MHz^b]
+1.21	*** b4 		= Power in frequency power attenuation law
+1482	*** SOS4	= Small signal sound velocity [m/s]
+4.5E-10	*** KAPPA4	= Compressibility
+4	*** BETA4	= Nonlinear parameter
+***************************
+0	*** alpha5 	= Frequency-dependent attenuation parameter [Np/cm MHz^b]
+1.21	*** b5 		= Power in frequency power attenuation law
+1482	*** SOS5 	= Small signal sound velocity [m/s]
+4.5E-10	*** KAPPA5	= Compressibility 
+4	*** BETA5	= Nonlinear parameter
+***************************
+*** Residuals Directory ***
+***************************
+\\srv256\NASSHARE\ldemi\DATA\TESTSourceCode\SourceCodeExamples *** IMPORTANT!!! No spaces!
+
+
+
