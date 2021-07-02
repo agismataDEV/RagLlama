@@ -526,10 +526,10 @@ CONTAINS
 		  ! if (ANY(iBubble==INT(BubbleEnhancedP)) .AND. .NOT. exists_loc) RealPressure= 1E4*RealPressure
 		  
           ! You can use INTERP1DFREQ (frequency interpolation) instead, but this is more accurate and efficient
-          ! call INTERP1D( RealTime, RealPressure, RealTimePad, RealPressurePad)  
-          call INTERP1DFREQ(RealPressure,RealPressurePad, cSpace,0)
+          call INTERP1D( RealTime, RealPressure, RealTimePad, RealPressurePad)  
+          ! call INTERP1DFREQ(RealPressure,RealPressurePad, cSpace,0)
 		  
-		  RealPressurePad= RealPressurePad * dTaperSupportWindowN
+		  ! RealPressurePad= RealPressurePad * dTaperSupportWindowN
           ! open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
           ! !!Open File
           ! write(7,*) iBubble
@@ -546,11 +546,11 @@ CONTAINS
           V_dd_pad = 4.0D0*pi*R_Pad(:,1)*(R_Pad(:,1)*R_Pad(:,3)+2.0D0*R_Pad(:,2)**2)
 
           ! Return to the initial dimensions!
-          call INTERP1DFREQ(V_dd_Pad, V_dd_norm, cSpace,0)
-          ! call INTERP1D( RealTimePadOut, V_dd_Pad, RealTime, V_dd_norm)
+          ! call INTERP1DFREQ(V_dd_Pad, V_dd_norm, cSpace,0)
+          call INTERP1D( RealTimePadOut, V_dd_Pad, RealTime, V_dd_norm)
 
-          ! V_dd_norm = 0;
-          ! BubbleParams%R0(iBubble) = 1D-4
+          V_dd_norm = 0.0D0;
+          BubbleParams%R0(iBubble) = 1D-4
 
           ! Normalize by freq based on the order of the spectral derivative
           call LinScatterer(RealPressure , RealPressure, cSpace, 4.0/3.0*pi*BubbleParams%R0(iBubble)**3/cMediumParams%c0**2*cModelParams%freq0**2, 2 )

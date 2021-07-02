@@ -57,9 +57,9 @@ domain.offsets              = [0 0 0 0];
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1E7_MBs_9FNYQ';
-file.dirname             = '../test_5';
+file.dirname             = '../test_3';
 file.contrast_name       = 'ContrastSrc';
-file.scatterer           = 'active';         % 'active','passive_lin', 'passive_nonlin'
+file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 
 file.plot_contrast       = 'yes';            % 'yes' or 'no'
 file.plot_attenslices    = 'no';

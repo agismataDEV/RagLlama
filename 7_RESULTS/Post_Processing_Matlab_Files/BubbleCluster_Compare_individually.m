@@ -105,7 +105,7 @@ if (Bubble.N <=10 && Bubble.N>0)
             %======== Driving Frequency ======================
             freq        = medium.freq0;
             w_driving   = 2*pi*freq;
-            Inc_Press   = 5E4*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq)).*(1+sign(domain.tpar))/2;
+            Inc_Press   = 1E4*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq)).*(1+sign(domain.tpar))/2;
             omega       = 2*pi/(domain.tdimpar*domain.dtpar)*((0:domain.tdimpar-1)-ceil((domain.tdimpar-1)/2));
             
             % Make denser the matrix to increase accuracy
