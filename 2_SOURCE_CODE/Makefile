@@ -127,28 +127,13 @@ $(OBJDIR)/ParnacMain.o :ParnacMain.f90
 	mpiifort -c ParnacMain.f90 $(CFLAGS) $(LIBS_FFTW3) -o $(OBJDIR)/ParnacMain.o -module $(OBJDIR)
 $(OBJDIR)/ParnacMain_Compact.o :ParnacMain_Compact.f90
 	mpiifort -c ParnacMain_Compact.f90 $(CFLAGS) -o $(OBJDIR)/ParnacMain_Compact.o -module $(OBJDIR)
-
-move : 
-	mv *.o ../3_COMPILED_FILES/
-	mv *.mod ../3_COMPILED_FILES/
-	mv INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER}
-	
-move-clean:
-	rm ../3_COMPILED_FILES/*.o 
-	rm ../3_COMPILED_FILES/*.mod 
-	rm ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER}
 		
 clean:
 	rm $(OBJDIR)/*.o
 	rm $(OBJDIR)/*.mod
 	
 distclean:
-	rm INCS_Agis
-	
-copy : 
-	cp *.o ../3_COMPILED_FILES/
-	cp *.mod ../3_COMPILED_FILES/
-	cp INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER}
+	rm $(OBJDIR)/INCS_Agis
 	
 	
 

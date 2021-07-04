@@ -1,0 +1,149 @@
+Get documentation on a command:
+	man <command>
+
+Try the following commands:
+	man sbatchman squeue
+	man scancel
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Submitting jobs
+
+Submitting jobs :
+	#!/bin/bash#
+	#SBATCH -p general # partition (queue)
+	#SBATCH -N 1 # number of nodes
+	#SBATCH -n 1 # number of cores
+	#SBATCH --mem 100 # memory pool for all cores
+	#SBATCH -t 0-2:00 # time (D-HH:MM)
+	#SBATCH -o slurm.%N.%j.out # STDOUT
+	#SBATCH -e slurm.%N.%j.err # STDERR
+	for i in {1..100000}; do
+	echo $RANDOM >> SomeRandomNumbers.txt
+	donesort SomeRandomNumbers.txt
+
+Now you can submit your job with the command:
+	sbatch myscript.sh
+ 
+If you want to test your job and find out when your job is estimated to run use (note this does not actually submit the job):
+	sbatch --test-only myscript.sh
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Information on jobs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+List all current jobs for a user:
+	squeue -u <username>
+
+List all running jobs for a user:
+	squeue -u <username> -t RUNNING
+
+List all pending jobs for a user:
+	squeue -u <username> -t PENDING
+
+List priority order of jobs for the current user (you) in a given partition:
+	showq-slurm -o -u -q <partition>
+
+List all current jobs in the shared partition for a user:
+	squeue -u <username> -p shared
+
+List detailed information for a job (useful for troubleshooting):
+	scontrol show jobid -dd <jobid>
+
+List status info for a currently running job:
+	sstat --format=AveCPU,AvePages,AveRSS,AveVMSize,JobID -j <jobid> --allsteps
+
+Once your job has completed, you can get additional information that was not available during the run. This includes run time, memory used, etc.
+
+To get a summary of a completed job by JobID;
+	seff <jobid>
+
+To get statistics on completed jobs by jobID:
+	sacct -j <jobid> --format=JobID,JobName,MaxRSS,Elapsed
+
+To view the same information for all jobs of a user:
+	sacct -u <username> --format=JobID,JobName,MaxRSS,Elapsed
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Controlling jobs
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+To cancel one job:
+	scancel <jobid>
+
+To cancel all the jobs for a user:
+	scancel -u <username>
+
+To cancel all the pending jobs for a user:
+	scancel -t PENDING -u <username>
+
+To cancel one or more jobs by name:
+	scancel --name myJobName
+
+To hold a particular job from being scheduled:
+	scontrol hold <jobid>
+
+To release a particular job to be scheduled:
+	scontrol release <jobid>
+
+To requeue (cancel and rerun) a particular job:
+	scontrol requeue <jobid>
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Job arrays and useful commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+As shown in the commands above, its easy to refer to one job by its Job ID, or to all your jobs via your username. What if you want to refer to a subset of your jobs? The answer is to submit your job set as a job array. Then you can use the job array ID to refer to the set when running SLURM commands. See the following excellent resources for further information:
+
+Running Jobs: Job Arrays
+SLURM job arrays
+
+To cancel an indexed job in a job array:
+scancel <jobid>_<index>
+
+e.g.
+scancel 1234_4
+ 
+To find the original submit time for your job array
+ 
+sacct -j 32532756 -o submit -X --noheader | uniq
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+Advanced (but useful!) commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+The following commands work for individual jobs and for job arrays, and allow easy manipulation of large numbers of jobs. You can combine these commands with the parameters shown above to provide great flexibility and precision in job control. (Note that all of these commands are entered on one line)
+
+Suspend all running jobs for a user (takes into account job arrays):
+squeue -ho %A -t R | xargs -n 1 scontrol suspend
+
+Resume all suspended jobs for a user:
+squeue -o "%.18A %.18t" -u <username> | awk '{if ($2 =="S"){print $1}}' | xargs -n 1 scontrol resume
+
+After resuming, check if any are still suspended:
+squeue -ho %A -u $USER -t S | wc -l
+
+The following is useful if your group has its own queue and you want to quickly see utilization.
+lsload |grep 'Hostname\|<partition>'
+
+Example for the smith partition:
+lsload |grep 'Hostname|smith'
+Hostname Cores InUse Ratio Load Mem Alloc State
+smith01 64 60 100.0 12.01 262 261 ALLOCATED
+smith02 64 64 100.0 12.00 262 240 ALLOCATED
+smith03 64 40 100.0 12.00 262 261 ALLOCATED
+
+    Note that while node 03 has free cores, all its memory in use. So those cores are necessarily idle.
+    Node 02 has a little free memory but all the cores are in use.
+    The scheduler will shoot for 100% utilization, but jobs are generally stochastic; beginning and ending at different times with unpredictable amounts of CPU and RAM released/requested.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Custom Commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+We and users on the FASRC cluster have developed custom commands that also are deployed on the cluster for use.  If you have a command you want to contribute please contact us.  Below are the custom commands we have added.
+
+showq which shows cluster state: https://github.com/fasrc/slurm_showq
+
+scalc which does various Slurm calculations such as projected fairshare usage: https://github.com/fasrc/scalc
+
+find-best-partition which shows which partition will schedule your job the quickest: https://github.com/mmshad/BestSlurmPartition
