@@ -178,7 +178,7 @@ CONTAINS
     real(dp),allocatable		::		temploc(:), tempcon(:), temp_globloc(:), LocPres(:,:)
 
     ! Parameters for Rayleigh - Plesset Solver
-    integer(i8b),parameter		::  	n_pad = 16, OverSampling_Grid = 1
+    integer(i8b),parameter		::  	n_pad = 8, OverSampling_Grid = 1
 
     real(dp)		 			::  	RealPressure(cSpace%iDimT)				, RealTime(cSpace%iDimT)			,  R(cSpace%iDimT,3) 			
     real(dp)             		::  	RealPressurePad(cSpace%iDimT *n_pad)  	, RealTimePad(cSpace%iDimT *n_pad)	,  R_Pad(cSpace%iDimT *n_pad,3)
@@ -529,7 +529,7 @@ CONTAINS
           call INTERP1D( RealTime, RealPressure, RealTimePad, RealPressurePad)  
           ! call INTERP1DFREQ(RealPressure,RealPressurePad, cSpace,0)
 		  
-		  ! RealPressurePad= RealPressurePad * dTaperSupportWindowN
+		  RealPressurePad= RealPressurePad * dTaperSupportWindowN
           ! open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
           ! !!Open File
           ! write(7,*) iBubble
@@ -539,8 +539,9 @@ CONTAINS
           ! Marmottant solver ( ODE Solver) , Result is R_Pad with R(:,1) is the radius , R(:,2) is the velocity (R_dot) 
           ! and R(:,3) is the acceleration (R_dotdot)
           call RP_SOLVER(RealPressurePad, RealTimePad,RealTimePad(1), RealTimePad(size(RealTimePad,1)), iDimT*n_pad,iBubble, R_Pad,RealTimePadOut)
-	      RealTimePadOut(1) = RealTimePad(1) ; RealTimePadOut(size(RealTimePad,1))=RealTimePad(size(RealTimePad,1));
-          ! Find volume acceleration d^2V/dt^2 [m^3/s^2] 
+	      ! RealTimePadOut(1) = RealTimePad(1) ; RealTimePadOut(size(RealTimePad,1))=RealTimePad(size(RealTimePad,1));
+          
+		  ! Find volume acceleration d^2V/dt^2 [m^3/s^2] 
           ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
 
           V_dd_pad = 4.0D0*pi*R_Pad(:,1)*(R_Pad(:,1)*R_Pad(:,3)+2.0D0*R_Pad(:,2)**2)
@@ -549,8 +550,8 @@ CONTAINS
           ! call INTERP1DFREQ(V_dd_Pad, V_dd_norm, cSpace,0)
           call INTERP1D( RealTimePadOut, V_dd_Pad, RealTime, V_dd_norm)
 
-          V_dd_norm = 0.0D0;
-          BubbleParams%R0(iBubble) = 1D-4
+          ! V_dd_norm = 0.0D0;
+          ! BubbleParams%R0(iBubble) = 1D-4
 
           ! Normalize by freq based on the order of the spectral derivative
           call LinScatterer(RealPressure , RealPressure, cSpace, 4.0/3.0*pi*BubbleParams%R0(iBubble)**3/cMediumParams%c0**2*cModelParams%freq0**2, 2 )
@@ -592,7 +593,7 @@ CONTAINS
        if (Bubble_count(i)>0)	then
           Bubble_disps(i) 		= sum(Bubble_count(1:i))		-	Bubble_count(i)			! Displacement variable in order to gather the value from every process
           Bubble_locdisps(i) 	= sum(3*Bubble_count(1:i))		-	3*Bubble_count(i)		! The same for location , now the variable is multiplied by 3 (x,y,z)
-          Bubble_condisps(i) 	= sum(iDimT*Bubble_count(1:i))	-	iDimT*Bubble_count(i)	! The same for contrast source term , multiplied by length of T
+          Bubble_condisps(i) 	= sum(ibDimT*Bubble_count(1:i))	-	ibDimT*Bubble_count(i)	! The same for contrast source term , multiplied by length of T
        endif
     enddo
 
@@ -606,12 +607,12 @@ CONTAINS
     dBubbleLocationN = dBubbleLocationN( BubbleID,:)	
     BubbleParams%R0 = BubbleParams%R0( BubbleID)
 
-    ALLOCATE(dBubbleContrast(INT(iDimT)*BubbleParams%BubbleN))
+    ALLOCATE(dBubbleContrast(ibDimT*BubbleParams%BubbleN))
     iMemAllocated=iMemAllocated + PRODUCT(SHAPE(dBubbleContrast)) * dpS
 
     ! Same idea with previous. This is done in order each processor to know the contrast and location of all the scatterers
     dBubbleContrast=1D-30 ! Change below to MPI_DOUBLE_PRECISION if error
-    call MPI_Allgatherv(tempcon,INT(iDimT)*(i_loc-1),MPI_DOUBLE_PRECISION,dBubbleContrast,INT(iDimT)*Bubble_count,Bubble_condisps,MPI_DOUBLE_PRECISION,MPI_COMM_WORLD,iErr)	
+    call MPI_Allgatherv(tempcon,ibDimT*(i_loc-1),MPI_DOUBLE_PRECISION,dBubbleContrast,ibDimT*Bubble_count,Bubble_condisps,MPI_DOUBLE_PRECISION,MPI_COMM_WORLD,iErr)	
     call MPI_BARRIER(MPI_COMM_WORLD, iErr); ! Wait for all the processors that the bubbles are located in to store the values
 
     !Wait until each processor has checked in , in order to finalize the number of bubbles in each processor and the proceed to next step
@@ -632,7 +633,7 @@ CONTAINS
     call CalculateCloudPressure(cSpace,i_neighbgp, NeighbGPIndex, dBubbleLocationN, dBubbleContrast)
 	
     !*************************************************** END OF CALCULATE PRESSURE FIELD *******************************************    
-    if (cSpace%cGrid%iProcID <=1) then
+    ! if (cSpace%cGrid%iProcID <=1) then
 
        ! Save each Bubble's Position 
        open (11, file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//'Bubble_Location'//int2str(cSpace%cGrid%iProcID)), status='REPLACE')
@@ -652,7 +653,7 @@ CONTAINS
           write(8,*) BubbleParams%R0
           close(8)
        endif
-    endif
+    ! endif
     ! This is for reducing memory
     open (8,  file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//'Bubble_iloc'//int2str(cSpace%cGrid%iProcID)), status='REPLACE')
     write(8,*) i_loc-1

@@ -52,7 +52,7 @@ MODULE ParnacContrastFunctions
   USE ParnacDataSpaceInit, ONLY : &
   InitSpace, InitGrid, SpaceInfo, DestructSpace, &
   GridDistr0CreateEmpty, GridDistr0Deallocate, &
-  GridDistr2CreateEmpty, iBeamOffsetX, iBeamOffsetY, &
+  GridDistr1CreateEmpty,GridDistr2CreateEmpty, iBeamOffsetX, iBeamOffsetY, &
   InitSaveSlices
   USE ParnacDerivative, ONLY : &
   iFDMinOrder, DerivLookup, &
@@ -3661,7 +3661,7 @@ MODULE ParnacContrastFunctions
     do iIndex = 0, cSpace.cGrid.iD1LocN-1
        
        pcGrid%pacD1(iStart+1:iStart+iDimW) = &
-       pcGrid%pacD1(iStart+1:iStart+iDimW) * dMultFactor;		
+       pcGrid%pacD1(iStart+1:iStart+iDimW) * dMultFactor* dCorrection ;		
        
        acBuffer(iStart+1:iStart+iDimW)=acBuffer(iStart+1:iStart+iDimW)* 2 * dMultFactor*real(pcGrid%iD0TL,dp)**2;
        !pcGrid%pacD1(iStart+1:iStart+iDimW)= pcGrid%pacD1(iStart+1:iStart+iDimW) * dCorrection    ! Delete (1) this for previous version
@@ -3791,8 +3791,6 @@ MODULE ParnacContrastFunctions
     !call PrintToLog("AttenuationEval4", 2);
     call TransformTInv_sml(pcGrid) 
     call ReorderDistr1ToDistr0(pcGrid)
-    pcGrid%parD0= pcGrid%parD0 * dCorrection    ! Delete (1) this for previous version
-    
   END SUBROUTINE NonlinContrastOperator_Ali
   
   !----------------
@@ -11017,4 +11015,840 @@ MODULE ParnacContrastFunctions
   END SUBROUTINE NonlinearKappaOperatorLinDZALi
   !-Added 
   
+  SUBROUTINE LagrangianDensity_Ali(cSpace)
+  
+    !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_plan_dft_1d_"        :: dfftw_plan_dft_1d
+    !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_execute_"            :: dfftw_execute   
+    !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_destroy_plan_"       :: dfftw_destroy_plan
+    
+    ! =============================================================================
+    !
+    !   Programmer: Libertario Demi
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   1.0     16022012  Original code (LD)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine NonlinContrastOperator computes the nonlinearity contrast
+    !   source S^nlkappa(p) = dx(dx(kappa)p^2) for the given space. The 
+    !   data in cSpace should be in Distribution 0. The spatial 
+    !   derivative is implemented in kx space.
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   cSpace   io   type(space)  space for which the contrast source
+    !                              is determined
+    !
+    type(Space), target, intent(inout)::	cSpace
+    
+    ! *****************************************************************************
+    ! 
+    !   LOCAL PARAMETERS      
+    !
+    !   (x,y,z,t)index      i8b   loop counter over the positions in the space(time)
+    !   iLen                i8b   length of a space(x,y,z) trace
+    !   iStart              i8b   start of each space trace
+    !   iindex              i8b   loop counter
+    !   cDerivLookup  type(DerivLookup)  structure that contains the weights of the
+    !                       Finite Difference stencil
+    !   arBuffer1           dp    Temporary buffer containing a spatial(x,y,z) trace
+    !   arBuffer2           dp    Temporary buffer containing a spatial(x,y,z) trace
+    !
+	type(Grid), pointer                          :: pcGrid
+	type(Space), target 						 ::	phi
+	
+    INTEGER(8)                                   :: plan1D
+    integer(i4b)                                 :: iErr;
+    character(len=1024)                          :: acTemp;
+	
+    integer(i8b)                                 :: iDimW, iDimT, iDimX, iDimY, iDimZ
+	integer(i8b)								 :: iIndex, tindex, xindex, yindex, zindex, i, iStart, iStart2, Timestart, iIndex2
+	
+	complex(dpc),allocatable					 :: arBuffer(:)
+	
+    complex(dpc), dimension(cSpace.iDimX)        :: arBuffer1x, arBuffer1xC, arBuffer2xC
+    complex(dpc), dimension(cSpace.iDimY)        :: arBuffer1y, arBuffer1yC,arBuffer2yC
+    complex(dpc), dimension(cSpace.iDimZ)        :: arBuffer1z, arBuffer1zC,arBuffer2zC
+	
+	complex(dpc)							     :: dKvectorX(cSpace.iDimX)     , dKvectorY(cSpace.iDimY)     , dKvectorZ(cSpace.iDimZ) 
+	real(dp)									 :: dKvectorRealX(cSpace.iDimX) , dKvectorRealY(cSpace.iDimY) , dKvectorRealZ(cSpace.iDimZ) 
+	
+	real(dp), dimension(cSpace.iDimT)            :: arBuffer1square,arBuffer2square,arBufferIn1square,arBufferIn2square
+    
+    real(dp), allocatable                        :: dTaperSupportWindow(:),dTaperMaxFreqWindow(:),dMultFactor(:)
+    real(dp)                                     :: dLeftBand, dRightBand, dFFTFactor, dDOmega
+    
+    
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   log file entries
+    !   
+    ! *****************************************************************************
+    !
+    !   SUBROUTINES/FUNCTIONS CALLED
+    !
+    !   PrintToLog
+    !   DerivLookupInit
+    !   DerivativeReal
+    !   DerivLookupDestroy  
+    ! *****************************************************************************
+    
+    
+    call PrintToLog("Compute the Lagrangian Density",1)
+    
+    pcGrid=>cSpace%cGrid
+	
+	call InitSpace(phi, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
+					cSpace%iDimT,cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
+					cSpace%iStartT,cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ, &
+					0_i8b,0_i8b,0_i8b, &
+					cSpace%dFnyq, cSpace%dTanX, cSpace%dTanY, cSpace%dTanT)
+	call InitGrid(phi, pcGrid%iProcN, pcGrid%iProcID, (/ .false., .false., .false., .false./));
+    call GridDistr1CreateEmpty(phi%cGrid);
+
+    iStart	= 0;
+    iDimT   = cSpace%iDimT   !time dimensions
+    iDimZ   = cSpace%iDimZ   !z dimensions
+    iDimX   = cSpace%iDimX   !x dimensions
+    iDimY   = cSpace%iDimY   !y dimensions
+    iDimW   = iDimT/2 + 1
+	
+    call PrintToLog("Compute the K vector",2)
+    ! Create the K vector in Kx space
+    do xindex=1,iDimX-1
+       if (xindex.le.(iDimX/2) +1) then
+          dKvectorRealX(xindex)=(xindex-1)*two_pi*2.0_dp*cSpace%dFnyq/(real(cSpace%iDimX,dp)*cMediumParams.c0)
+       else
+          dKvectorRealX(xindex)=(xindex-iDimX)*two_pi*2.0_dp*cSpace%dFnyq/(real(cSpace%iDimX,dp)*cMediumParams.c0)
+       end if
+    end do
+    dKvectorX = im * dKvectorRealX;
+	
+    ! Create the K vector in Ky space
+    do yindex=1,iDimY-1
+       if (yindex.le.(iDimY/2) +1) then
+          dKvectorRealY(yindex)=(yindex-1)*two_pi*2.0_dp*cSpace%dFnyq/(real(cSpace%iDimY,dp)*cMediumParams.c0)
+       else
+          dKvectorRealY(yindex)=(yindex-iDimY)*two_pi*2.0_dp*cSpace%dFnyq/(real(cSpace%iDimY,dp)*cMediumParams.c0)
+       end if
+    end do
+    dKvectorY = im * dKvectorRealY;
+	
+    ! Create the K vector in Kz space
+    do zindex=1,iDimZ-1
+       if (zindex.le.(iDimZ/2) +1) then
+          dKvectorRealZ(zindex)=(zindex-1)*two_pi*2.0_dp*cSpace%dFnyq/(real(cSpace%iDimZ,dp)*cMediumParams.c0)
+       else
+          dKvectorRealZ(zindex)=(zindex-iDimZ)*two_pi*2.0_dp*cSpace%dFnyq/(real(cSpace%iDimZ,dp)*cMediumParams.c0)
+       end if
+    end do
+    dKvectorZ = im * dKvectorRealZ;
+    ! Calculating p^2
+    !-----------------------------------------------------------------------------------------
+    allocate(dTaperSupportWindow(iDimT), dTaperMaxFreqWindow(iDimW),dMultFactor(iDimW))
+	
+	write(*,*) "Pressure,",MAXVAL(REAL(pcGrid%parD0)),  cSpace%cGrid%iProcID
+    if (cModelParams.UseSupportTapering .EQV. .true.) then
+       !use tapering of the field at start and end to prevent wraparound leakage
+       
+       !build tapering window, the first two periods and the last two periods are tapered
+       !in the contrast source
+       dLeftBand = 2.0_dp
+       dRightBand = 2.0_dp
+       dTaperSupportWindow=dTaperingWindow(iDimT,cSpace%dDt,dLeftBand,dRightBand)
+       
+       !multiply the field with it
+       iStart = 0
+       do iIndex=0,pcGrid%iD0LocN-1
+          pcGrid%parD0(iStart+1:iStart+iDimT) = &
+          pcGrid%parD0(iStart+1:iStart+iDimT) * dTaperSupportWindow
+          
+          iStart=iStart+pcGrid%iD0IS
+       end do
+       
+    end if
+    ! --------------------------
+    !First, transform to W-domain (use small transform, no wraparound regions)
+    call ReorderDistr0ToDistr1(pcGrid)  
+	phi%cGrid%pacD1 = pcGrid%pacD1  
+	
+    call TransformT_sml(phi%cGrid)  
+	
+	!============================================================================================================================================
+    call PrintToLog("Compute the velocity potential",2)
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       !Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       !build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow=dTaperingWindow(iDimW,1.0_dp/(iDimT*cSpace%dDt),dLeftBand,dRightBand)
+	
+	   dFFTFactor = 1.0_dp/real(pcGrid%iD0TL,dp)
+	   dDOmega = two_pi * 2.0_dp * cSpace%dFnyq / real(iDimT,dp)
+	   dMultFactor = (/ (i,i=0,iDimW -1 ) /) * dDOmega 
+       dMultFactor(1)=1E-10*dDOmega
+	   
+       !multiply the field with it, normalization with respect to the forward tranformation is performed
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          
+           phi%cGrid%pacD1(iStart+1:iStart+iDimW) = &
+           phi%cGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow * dFFTFactor/(dMultFactor * cMediumParams%rho0) * im
+		   ! Question here , division by 0, division by omega
+		   
+          iStart=iStart+pcGrid%iD1IS
+          
+       end do
+       
+    end if
+    
+    !--------------------------------
+    !Now, transform back to T-domain as though it was a grid with wraparound regions
+    !however, the wraparound regions are now used as anti-aliasing regions...
+    
+	  
+    call TransformTInv(phi%cGrid)    
+    call ReorderDistr1ToDistr2(phi%cGrid)
+
+	!============================================================================================================================================
+    call PrintToLog("Multiply the velocity potential with the kx",2)
+	! This way of computing is correct
+	
+	iMemAllocated=iMemAllocated + pcGrid%iD2LocSize*dpcS
+	ALLOCATE(arBuffer(phi%cGrid%iD2LocSize))
+	
+	arBuffer = phi%cGrid%pacD2;
+    !here we perform the fft transform, multply with Kx and go back to time domain. 
+	!Normalization has to be performed with respect to the forward fft
+    iStart=0
+	phi%cGrid%pacD2 = 0.0D0
+	! Remember that pacD2 has the form of [XYZ1T1 XYZ2T1 XYZ3T1 ... XYZNT1 XYZ1T2 ... XYZNT2 ... XYZ1TN XYZ2TN ... XYZNTN]
+	! And you can find XYZ by = x + y * iDimX + z * iDimX * iDimY
+    do iIndex=0,(pcGrid%iD2LocSize/pcGrid%iD2XL-1)
+       
+       arBuffer1x=arBuffer(iStart+1:iStart+iDimX)
+       
+       ! fft
+       call dfftw_plan_dft_1d(plan1d,iDimX,arBuffer1x,arBuffer2xC,fftw_forward,fftw_estimate+fftw_unaligned)
+       call dfftw_execute(plan1d)
+       call dfftw_destroy_plan(plan1d)
+       
+       arBuffer2xC=arBuffer2xC * dKvectorX
+       
+       ! ifft
+       call dfftw_plan_dft_1d(plan1d,iDimX,arBuffer2xC,arBuffer1xC,fftw_backward,fftw_estimate+fftw_unaligned)
+       call dfftw_execute(plan1d)
+       call dfftw_destroy_plan(plan1d)
+       
+       phi%cGrid%pacD2(iStart+1:iStart+iDimX)= arBuffer1xC * 1.0D0/iDimX;  ! Here we divide with the length of FFT
+       iStart=iStart+iDimX
+    end do
+    
+    ! we we back transform and go back to distribution 0
+    call ReorderDistr2ToDistr1(phi%cGrid)
+	
+	iStart=0
+    do iIndex = 0, cSpace.cGrid.iD1LocN-1
+	   
+       arBufferIn1square=real(phi%cGrid%pacD1(iStart+1:iStart+iDimT),dp);
+	   arBufferIn2square=dimag(phi%cGrid%pacD1(iStart+1:iStart+iDimT));
+       
+       arBuffer1square=real(pcGrid%pacD1(iStart+1:iStart+iDimT),dp);
+       arBuffer2square=dimag(pcGrid%pacD1(iStart+1:iStart+iDimT));
+	   
+       pcGrid%pacD1(iStart+1:iStart+iDimT) = (arBufferIn1square**2+im*arBufferIn2square**2) &
+       -(arBuffer1square**2 + im * arBuffer2square**2)/(cMediumParams%rho0*cMediumParams%c0)**2;		
+       
+       iStart		= iStart + cSpace.cGrid.iD1IS;
+       
+    end do
+	
+	write(*,*) "x,phi",MAXVAL(REAL(phi%cGrid%pacD1)), cSpace%cGrid%iProcID
+	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	write(*,*) "x,pc",MAXVAL(REAL(pcGrid%pacD1)), cSpace%cGrid%iProcID
+	
+    call ReorderDistr1ToDistr2(phi%cGrid)
+	
+	! phi%cGrid%pacD2=0.0D0
+	phi%cGrid%pacD2 = arBuffer
+	
+	!============================================================================================================================================
+    call PrintToLog("Multiply the velocity potential with the ky",2)
+	! This way of computing is correct
+    iStart=0
+    iStart2=0
+    Timestart=0
+	
+    do tindex=0, phi%cGrid%iD2LocN-1 ! This is the loop for time instants stored locally
+	
+       ! This is the index that takes into account for the different starting point corresponding to a given time index
+       Timestart  = 0 + (iDimX*iDimY*iDimZ)*tindex 
+	   
+       do xindex=0, iDimX-1 ! This is the loop for x points
+          
+          iStart  = 0 + xindex + Timestart  ! This is the index
+          iStart2 = 0 + xindex + Timestart  ! This is the index 2
+          
+          ! Now we calculate dxk p^2 so that afterwards we can apply the derivative to this term
+          
+          do iIndex=0,iDimZ-1 ! This is the loop for z points
+             
+             do iIndex2=0,iDimY-1 ! This is the loop for y points
+                
+                arBuffer1y(iIndex2+1) = phi%cGrid%pacD2(iStart+1)	
+				iStart		 = iStart + iDimX 
+                
+                
+             end do
+			 ! arBuffer1y   = arBuffer( iStart + 1 : iStart + iDimX * iDimY : iDimX)
+             ! iStart		= iStart + iDimX * iDimY
+             
+			 ! fft
+             call dfftw_plan_dft_1d(plan1d,iDimY,arBuffer1y,arBuffer2yC,fftw_forward,fftw_estimate+fftw_unaligned)
+             call dfftw_execute(plan1d)
+             call dfftw_destroy_plan(plan1d)
+             
+             arBuffer2yC=arBuffer2yC * dKvectorY ! Here the transformed vector is multiplied with the k vector   
+             
+             ! ifft
+             call dfftw_plan_dft_1d(plan1d,iDimY,arBuffer2yC,arBuffer1yC,fftw_backward,fftw_estimate+fftw_unaligned)
+             call dfftw_execute(plan1d)
+             call dfftw_destroy_plan(plan1d)
+             
+             
+             do iIndex2=0,iDimY-1 ! This is the loop for y points to put the outcome into the pcGrid
+                
+                phi%cGrid%pacD2(iStart2+1)=arBuffer1yC(iIndex2+1)*(1.0_dp/iDimY) 
+                
+                iStart2=iStart2+iDimX
+                
+             end do
+             ! phi%cGrid%pacD2(iStart2+1 : iStart2 + iDimX * iDimY : iDimX) = arBuffer1yC * 1.0D0/iDimY
+             ! iStart2	=	iStart2	+	iDimX * iDimY 
+             
+          end do
+          
+          
+       end do
+	enddo
+	
+	! we we back transform and go back to distribution 0
+    call ReorderDistr2ToDistr1(phi%cGrid)
+	
+	iStart=0
+    do iIndex = 0, cSpace.cGrid.iD1LocN-1
+       
+       arBufferIn1square=real(phi%cGrid%pacD1(iStart+1:iStart+iDimT),dp);
+	   arBufferIn2square=dimag(phi%cGrid%pacD1(iStart+1:iStart+iDimT));
+	   
+       pcGrid%pacD1(iStart+1:iStart+iDimT) = pcGrid%pacD1(iStart+1:iStart+iDimT) + (arBufferIn1square**2+im*arBufferIn2square**2) ;
+	   
+       iStart		= iStart + cSpace.cGrid.iD1IS;
+       
+    end do
+	
+	write(*,*) "y,phi",MAXVAL(REAL(phi%cGrid%pacD1)), cSpace%cGrid%iProcID
+	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	write(*,*) "y,pc,",MAXVAL(REAL(pcGrid%pacD1)), cSpace%cGrid%iProcID
+	
+    call ReorderDistr1ToDistr2(phi%cGrid)
+	
+	phi%cGrid%pacD2=arBuffer
+	!============================================================================================================================================
+    call PrintToLog("Multiply the velocity potential with the kz",2)
+	! This way of computing is correct
+    iStart=0
+    iStart2=0
+    Timestart=0
+	
+	do tindex=0, phi%cGrid%iD2LocN-1 ! This is the loop for time instants stored locally
+       
+	   ! This is the index that takes into account for the different starting point corresponding to a ginve time index   
+	   Timestart=0+(iDimX * iDimY * iDimZ)*tindex 
+	   do xindex=0, (iDimX * iDimY)-1
+          
+          iStart  =0 + xindex + Timestart  ! This is the index
+          iStart2 =0 + xindex + Timestart ! This is the index 2
+          
+          do iIndex2=0,iDimZ-1 ! This is the loop for z points
+             
+             arBuffer1z(iIndex2+1) = phi%cGrid%pacD2(iStart+1)	
+             
+             iStart=iStart+iDimX * iDimY
+             
+          end do
+		  ! arBuffer1z = phi%cGrid%pacD2( iStart + 1 : iStart + iDimX * iDimY * iDimZ : iDimX * iDimY)
+		  ! iStart = iStart + iDimX * iDimY * iDimZ
+		  
+          ! fft
+          call dfftw_plan_dft_1d(plan1d,iDimZ,arBuffer1z,arBuffer2zC,fftw_forward,fftw_estimate+fftw_unaligned)
+          call dfftw_execute(plan1d)
+          call dfftw_destroy_plan(plan1d)
+          
+          arBuffer2zC=arBuffer2zC * dKvectorZ ! Here the transformed vector is multiplied with the k vector   
+          
+          ! ifft
+          call dfftw_plan_dft_1d(plan1d,iDimZ,arBuffer2zC,arBuffer1zC,fftw_backward,fftw_estimate+fftw_unaligned)
+          call dfftw_execute(plan1d)
+          call dfftw_destroy_plan(plan1d)
+          
+          
+          do iIndex2=0,iDimZ-1 ! This is the loop for z points to put the outcome into the pcGrid
+             
+             phi%cGrid%pacD2(iStart2+1)=arBuffer1zC(iIndex2+1)*(1.0_dp/iDimZ)              
+             iStart2=iStart2+iDimX*iDimY
+             
+          end do
+          ! phi%cGrid%pacD2( iStart2 + 1 : iStart2 + iDimX * iDimY * iDimZ : iDimX * iDimY)=arBuffer1zC * 1.0D0 /iDimZ  
+		  ! iStart2 = iStart2 + iDimX * iDimY * iDimZ
+          
+    end do   
+	enddo 
+	
+	
+	DEALLOCATE(arBuffer)
+	iMemAllocated=iMemAllocated - pcGrid%iD2LocSize*dpcS
+	! we we back transform and go back to distribution 0
+    call ReorderDistr2ToDistr1(phi%cGrid)
+	iStart=0
+    do iIndex = 0, cSpace.cGrid.iD1LocN-1
+       
+       arBufferIn1square=real(phi%cGrid%pacD1(iStart+1:iStart+iDimT),dp);
+	   arBufferIn2square=dimag(phi%cGrid%pacD1(iStart+1:iStart+iDimT));
+	   
+       pcGrid%pacD1(iStart+1:iStart+iDimT) = pcGrid%pacD1(iStart+1:iStart+iDimT) + (arBufferIn1square**2+im*arBufferIn2square**2) ;
+	   
+       iStart		= iStart + cSpace.cGrid.iD1IS;
+       
+    end do
+	
+    call TransformT(pcGrid) 
+	
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       !Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       !build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow=dTaperingWindow(iDimW,1.0_dp/(iDimT*cSpace%dDt),dLeftBand,dRightBand)
+       
+       !multiply the field with it, normalization with respect to the forward tranformation is performed
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          
+           pcGrid%pacD1(iStart+1:iStart+iDimW) = &
+           pcGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow *1.0_dp/(2.0_dp*real(pcGrid%iD0TL,dp))
+		   
+          iStart=iStart+pcGrid%iD1IS
+          
+       end do
+       
+    end if
+    call TransformTInv_sml(pcGrid) 
+	
+	write(*,*) "z,phi",MAXVAL(REAL(phi%cGrid%pacD1)), cSpace%cGrid%iProcID
+	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	write(*,*) "Lagrangian,",MAXVAL(REAL(pcGrid%pacD1)),  cSpace%cGrid%iProcID
+	!============================================================================================================================================
+	phi%cGrid%pacD1 = pcGrid%pacD1 ! This is the Lagrangian Density
+
+    call PrintToLog("Compute the Laplacian Operator of Lagrangian Density",2)
+	 
+	call ReorderDistr1ToDistr2(phi%cGrid)
+	call TransformXYZ(phi%cGrid,.true.)
+	dFFTFactor	= 1.0D0/(iDimX * iDimY * iDimZ);
+	phi%cGrid%pacD2 = -(two_pi*2.0_dp*cSpace%dFnyq/cMediumParams.c0)**2 * phi%cGrid%pacD2 * dFFTFactor
+	call TransformXYZInv(phi%cGrid,.true.)
+	call ReorderDistr2ToDistr1(phi%cGrid) 
+    call ReorderDistr1ToDistr0(phi%cGrid)
+	
+    call PrintToLog("Compute the time derivative of Lagrangian Density",2)
+    call TransformT(pcGrid)    
+	
+	dDOmega = two_pi * 2.0_dp * cSpace%dFnyq / real(iDimT,dp)
+	dMultFactor = -( (/ (i,i=0,iDimW-1) /) * dDOmega )**2
+    dFFTFactor = 1.0_dp/(2.0_dp*real(cSpace%cGrid%iD0TL,dp)**3)
+	
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       !Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       !build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow=dTaperingWindow(iDimW,1.0_dp/(iDimT*cSpace%dDt),dLeftBand,dRightBand)
+       
+       !multiply the field with it, normalization with respect to the forward tranformation is performed
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          
+           pcGrid%pacD1(iStart+1:iStart+iDimW) = &
+           pcGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow *dMultFactor *1.0_dp/(2.0D0 * pcGrid%iD0TL )
+		   
+          iStart=iStart+pcGrid%iD1IS
+          
+       end do
+       
+    end if
+    
+    !--------------------------------
+    !Now, transform back to T-domain as though it was a grid with wraparound regions
+    !however, the wraparound regions are now used as anti-aliasing regions...
+    
+    call TransformTInv(pcGrid) 
+    call ReorderDistr1ToDistr0(pcGrid)
+	write(*,*) "time, end",MAXVAL(pcGrid%parD0)
+	write(*,*) "space, end",MAXVAL(phi%cGrid%parD0)
+	pcGrid%parD0 = (pcGrid%parD0/cMediumParams%c0**2+phi%cGrid%parD0)*cMediumParams%rho0/2 
+	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	write(*,*) "pc, end",MAXVAL(pcGrid%parD0), cSpace%cGrid%iProcID
+	!============================================================================================================================================
+	call DestructSpace(phi)
+    DEALLOCATE(dTaperSupportWindow,dTaperMaxFreqWindow,dMultFactor)
+    
+    
+  END SUBROUTINE LagrangianDensity_Ali
+  
+  
+  SUBROUTINE LagrangianDensity_Simpl_Ali(cSpace)
+  
+    !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_plan_dft_1d_"        :: dfftw_plan_dft_1d
+    !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_execute_"            :: dfftw_execute   
+    !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_destroy_plan_"       :: dfftw_destroy_plan
+    
+    ! =============================================================================
+    !
+    !   Programmer: Libertario Demi
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   1.0     16022012  Original code (LD)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine NonlinContrastOperator computes the nonlinearity contrast
+    !   source S^nlkappa(p) = dx(dx(kappa)p^2) for the given space. The 
+    !   data in cSpace should be in Distribution 0. The spatial 
+    !   derivative is implemented in kx space.
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   cSpace   io   type(space)  space for which the contrast source
+    !                              is determined
+    !
+    type(Space), target, intent(inout)::	cSpace
+    
+    ! *****************************************************************************
+    ! 
+    !   LOCAL PARAMETERS      
+    !
+    !   (x,y,z,t)index      i8b   loop counter over the positions in the space(time)
+    !   iLen                i8b   length of a space(x,y,z) trace
+    !   iStart              i8b   start of each space trace
+    !   iindex              i8b   loop counter
+    !   cDerivLookup  type(DerivLookup)  structure that contains the weights of the
+    !                       Finite Difference stencil
+    !   arBuffer1           dp    Temporary buffer containing a spatial(x,y,z) trace
+    !   arBuffer2           dp    Temporary buffer containing a spatial(x,y,z) trace
+    !
+	type(Grid), pointer                          :: pcGrid
+	type(Space), target 						 ::	phi
+	
+    INTEGER(8)                                   :: plan1D
+    integer(i4b)                                 :: iErr;
+    character(len=1024)                          :: acTemp;
+	
+    integer(i8b)                                 :: iDimW, iDimT, iDimX, iDimY, iDimZ
+	integer(i8b)								 :: iIndex, tindex, xindex, yindex, zindex, i, iStart, iStart2, Timestart, iIndex2
+	
+	complex(dpc),allocatable					 :: arBuffer(:)
+	
+    complex(dpc), dimension(cSpace.iDimX)        :: arBuffer1x, arBuffer1xC, arBuffer2xC
+    complex(dpc), dimension(cSpace.iDimY)        :: arBuffer1y, arBuffer1yC,arBuffer2yC
+    complex(dpc), dimension(cSpace.iDimZ)        :: arBuffer1z, arBuffer1zC,arBuffer2zC
+	
+	real(dp), dimension(cSpace.iDimT)            :: arBuffer1square,arBuffer2square,arBufferIn1square,arBufferIn2square
+    
+    real(dp), allocatable                        :: dTaperSupportWindow(:),dTaperMaxFreqWindow(:),dMultFactor(:)
+    real(dp)                                     :: dLeftBand, dRightBand, dFFTFactor, dDOmega
+    
+    
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   log file entries
+    !   
+    ! *****************************************************************************
+    !
+    !   SUBROUTINES/FUNCTIONS CALLED
+    !
+    !   PrintToLog
+    !   DerivLookupInit
+    !   DerivativeReal
+    !   DerivLookupDestroy  
+    ! *****************************************************************************
+    
+    
+    call PrintToLog("Compute the Lagrangian Density",1)
+    
+    pcGrid=>cSpace%cGrid
+	
+	call InitSpace(phi, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
+					cSpace%iDimT,cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
+					cSpace%iStartT,cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ, &
+					0_i8b,0_i8b,0_i8b, &
+					cSpace%dFnyq, cSpace%dTanX, cSpace%dTanY, cSpace%dTanT)
+	call InitGrid(phi, pcGrid%iProcN, pcGrid%iProcID, (/ .false., .false., .false., .false./));
+    call GridDistr1CreateEmpty(phi%cGrid);
+
+    iStart	= 0;
+    iDimT   = cSpace%iDimT   !time dimensions
+    iDimZ   = cSpace%iDimZ   !z dimensions
+    iDimX   = cSpace%iDimX   !x dimensions
+    iDimY   = cSpace%iDimY   !y dimensions
+    iDimW   = iDimT/2 + 1
+	
+    ! Calculating p^2
+    !-----------------------------------------------------------------------------------------
+    allocate(dTaperSupportWindow(iDimT), dTaperMaxFreqWindow(iDimW),dMultFactor(iDimW))
+	
+	write(*,*) "Pressure,",MAXVAL(REAL(pcGrid%parD0)),  cSpace%cGrid%iProcID
+    if (cModelParams.UseSupportTapering .EQV. .true.) then
+       !use tapering of the field at start and end to prevent wraparound leakage
+       
+       !build tapering window, the first two periods and the last two periods are tapered
+       !in the contrast source
+       dLeftBand = 2.0_dp
+       dRightBand = 2.0_dp
+       dTaperSupportWindow=dTaperingWindow(iDimT,cSpace%dDt,dLeftBand,dRightBand)
+       
+       !multiply the field with it
+       iStart = 0
+       do iIndex=0,pcGrid%iD0LocN-1
+          pcGrid%parD0(iStart+1:iStart+iDimT) = &
+          pcGrid%parD0(iStart+1:iStart+iDimT) * dTaperSupportWindow
+          
+          iStart=iStart+pcGrid%iD0IS
+       end do
+       
+    end if
+    ! --------------------------
+    !First, transform to W-domain (use small transform, no wraparound regions)
+    call ReorderDistr0ToDistr1(pcGrid)  
+	phi%cGrid%pacD1 = pcGrid%pacD1  
+	
+    call TransformT_sml(phi%cGrid)  
+	
+	!============================================================================================================================================
+    call PrintToLog("Compute the velocity potential",2)
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       !Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       !build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow=dTaperingWindow(iDimW,1.0_dp/(iDimT*cSpace%dDt),dLeftBand,dRightBand)
+	
+	   dFFTFactor = 1.0_dp/real(pcGrid%iD0TL,dp)
+	   dDOmega = two_pi * 2.0_dp * cSpace%dFnyq / real(iDimT,dp)
+	   dMultFactor = (/ (i,i=0,iDimW -1 ) /) * dDOmega 
+       dMultFactor(1)=1E-10*dDOmega
+	   
+       !multiply the field with it, normalization with respect to the forward tranformation is performed
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          
+           phi%cGrid%pacD1(iStart+1:iStart+iDimW) = &
+           phi%cGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow * dFFTFactor/(dMultFactor * cMediumParams%rho0) * im
+		   ! Question here , division by 0, division by omega
+		   
+          iStart=iStart+pcGrid%iD1IS
+          
+       end do
+       
+    end if
+    
+    !--------------------------------
+    !Now, transform back to T-domain as though it was a grid with wraparound regions
+    !however, the wraparound regions are now used as anti-aliasing regions...
+	  
+    call TransformTInv(phi%cGrid)    
+	
+	iStart=0
+    do iIndex = 0, cSpace.cGrid.iD1LocN-1
+       
+       arBufferIn1square=real(phi%cGrid%pacD1(iStart+1:iStart+iDimT),dp);
+	   arBufferIn2square=dimag(phi%cGrid%pacD1(iStart+1:iStart+iDimT));
+	   
+       phi%cGrid%pacD1(iStart+1:iStart+iDimT) = (arBufferIn1square**2+im*arBufferIn2square**2) ;
+	   
+       iStart		= iStart + cSpace.cGrid.iD1IS;
+       
+    end do
+	
+    call TransformT(phi%cGrid) 
+	
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       !Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       !build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow=dTaperingWindow(iDimW,1.0_dp/(iDimT*cSpace%dDt),dLeftBand,dRightBand)
+       
+       !multiply the field with it, normalization with respect to the forward tranformation is performed
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          
+           phi%cGrid%pacD1(iStart+1:iStart+iDimW) = &
+           phi%cGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow *1.0_dp/(2.0_dp*real(phi%cGrid%iD0TL,dp))
+		   
+          iStart=iStart+pcGrid%iD1IS
+          
+       end do
+       
+    end if
+    call TransformTInv_sml(phi%cGrid) 
+	! Now  phi%cGrid% contains the phi^2
+
+	pcGrid%pacD1 = phi%cGrid%pacD1 ! This is the Lagrangian Density
+	call PrintToLog("Compute the Laplacian Operator of Lagrangian Density",2)
+	 
+	call ReorderDistr1ToDistr2(phi%cGrid)
+	call TransformXYZ(phi%cGrid,.true.)
+	dFFTFactor	= 1.0D0/(iDimX * iDimY * iDimZ);
+	phi%cGrid%pacD2 = -(two_pi*2.0_dp*cSpace%dFnyq/cMediumParams.c0)**2 * phi%cGrid%pacD2 * dFFTFactor
+	call TransformXYZInv(phi%cGrid,.true.)
+	call ReorderDistr2ToDistr1(phi%cGrid) 
+	
+    call PrintToLog("Compute the time derivative of Lagrangian Density",2)
+    call TransformT(pcGrid)    
+	
+	dDOmega = two_pi * 2.0_dp * cSpace%dFnyq / real(iDimT,dp)
+	dMultFactor = -( (/ (i,i=0,iDimW-1) /) * dDOmega )**2
+	
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       !Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       !build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow=dTaperingWindow(iDimW,1.0_dp/(iDimT*cSpace%dDt),dLeftBand,dRightBand)
+       
+       !multiply the field with it, normalization with respect to the forward tranformation is performed
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          
+           pcGrid%pacD1(iStart+1:iStart+iDimW) = &
+           pcGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow *dMultFactor *1.0_dp/(2.0D0 * pcGrid%iD0TL )
+		   
+          iStart=iStart+pcGrid%iD1IS
+          
+       end do
+       
+    end if
+    call TransformTInv(pcGrid)    
+	
+	iStart=0
+    do iIndex = 0, cSpace.cGrid.iD1LocN-1
+	   
+       pcGrid%pacD1(iStart+1:iStart+iDimT) = phi%cGrid%pacD1(iStart+1:iStart+iDimT) - pcGrid%pacD1(iStart+1:iStart+iDimT)/cMediumParams%c0**2
+	   
+       iStart		= iStart + cSpace.cGrid.iD1IS;
+       
+    end do
+	pcGrid%pacD1 = pcGrid%pacD1*cMediumParams%rho0/4
+	! pc now contains the Lagrangian
+	write(*,*) "Lagrangian,",MAXVAL(REAL(pcGrid%pacD1)),  cSpace%cGrid%iProcID
+	!============================================================================================================================================
+	phi%cGrid%pacD1 = pcGrid%pacD1 ! This is the Lagrangian Density
+
+    call PrintToLog("Compute the Laplacian Operator of Lagrangian Density",2)
+	 
+	call ReorderDistr1ToDistr2(phi%cGrid)
+	call TransformXYZ(phi%cGrid,.true.)
+	dFFTFactor	= 1.0D0/(iDimX * iDimY * iDimZ);
+	phi%cGrid%pacD2 = -(two_pi*2.0_dp*cSpace%dFnyq/cMediumParams.c0)**2 * phi%cGrid%pacD2 * dFFTFactor
+	call TransformXYZInv(phi%cGrid,.true.)
+	call ReorderDistr2ToDistr1(phi%cGrid) 
+    call ReorderDistr1ToDistr0(phi%cGrid)
+	
+    call PrintToLog("Compute the time derivative of Lagrangian Density",2)
+	
+    call TransformT(pcGrid)    
+	
+	dDOmega = two_pi * 2.0_dp * cSpace%dFnyq / real(iDimT,dp)
+	dMultFactor = -( (/ (i,i=0,iDimW-1) /) * dDOmega )**2
+    dFFTFactor = 1.0_dp/(2.0_dp*real(cSpace%cGrid%iD0TL,dp)**3)
+	
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       !Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       !build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow=dTaperingWindow(iDimW,1.0_dp/(iDimT*cSpace%dDt),dLeftBand,dRightBand)
+       
+       !multiply the field with it, normalization with respect to the forward tranformation is performed
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          
+           pcGrid%pacD1(iStart+1:iStart+iDimW) = &
+           pcGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow *dMultFactor *1.0_dp/(2.0D0 * pcGrid%iD0TL )
+		   
+          iStart=iStart+pcGrid%iD1IS
+          
+       end do
+       
+    end if
+    
+    !--------------------------------
+    !Now, transform back to T-domain as though it was a grid with wraparound regions
+    !however, the wraparound regions are now used as anti-aliasing regions...
+    
+    call TransformTInv(pcGrid) 
+    call ReorderDistr1ToDistr0(pcGrid)
+	
+	write(*,*) "time, end",MAXVAL(pcGrid%parD0)
+	write(*,*) "space, end",MAXVAL(phi%cGrid%parD0)
+	pcGrid%parD0 = pcGrid%parD0/cMediumParams%c0**2+phi%cGrid%parD0
+	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	write(*,*) "pc, end",MAXVAL(pcGrid%parD0), cSpace%cGrid%iProcID
+	!============================================================================================================================================
+	call DestructSpace(phi)
+    deallocate(dTaperSupportWindow, dTaperMaxFreqWindow,dMultFactor)
+    
+    
+  END SUBROUTINE LagrangianDensity_Simpl_Ali
   END MODULE ParnacContrastFunctions

@@ -1,1 +1,26 @@
+==============================================================================================================
+04/07/2021 
+=============================================================================================================
+
+A first git implementation.
+The source code for INCS is implemented for a parallellization in the spatial domain for calculation of 
+the scattered pressure of a point source cloud. This point source cloud is in a 3D domain and it consists of 
+either polydisperse or monodisperse scatterers. They can be linear, nonlinear or microbubbles.
+Moreover in this version, there is the option of computing the pressure in the whole computational domain or 
+in a volume around each scatterer in order to enhance efficiency.
+
+MPI is used for the communication between the processors. (CPU parallelization)
+
+==============================================================================================================
+13/07/2021 
+=============================================================================================================
+ParnacContrastFunctions.f90 : Lagrangian density is added in two ways in order to understand how to implement
+							  it in a correct way. They are not finished yet because I am not getting the 
+							  expected result.
+
+ParnacBubbleContrast.f90    : No significant changes, it works nice. Maybe a temporal filtering should be added
+							  in the Dirac function in order to have a smaller error  
+							  
+Makefile					: Now it is created in order to generate the objects in a different folder, so the 
+							  source files are in a separate folder
 

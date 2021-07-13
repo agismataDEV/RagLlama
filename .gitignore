@@ -1,21 +1,15 @@
-7_RESULTS/test*
-7_RESULTS/1E2_MBS_9FNYQ/
-7_RESULTS/1E2_MB_Validation/
-7_RESULTS/1E3_1_to_20_microns_poly_9FNYQ/
-7_RESULTS/1E3_1_to_50_microns_poly_9FNYQ/
-7_RESULTS/1E3_2_microns_mono_9FNYQ/
-7_RESULTS/1E3_5_5_microns_mono_9FNYQ/
-7_RESULTS/1E3_5_micron_MBs_9FNYQ/
-7_RESULTS/1E3_MBS_9FNYQ/
-7_RESULTS/1E3_Poly_32micro/
-7_RESULTS/1E4_MBS_9FNYQ/
-7_RESULTS/1E4_MB_Validation/
-7_RESULTS/1E4_MB_Validation_2/
-7_RESULTS/1E5_MBS_9FNYQ/
-7_RESULTS/1E6_2microns_MBS_9FNYQ_6GP/
-7_RESULTS/1E7_MBs_9FNYQ/
-7_RESULTS/1E7_MBs_9FNYQ_2/
-7_RESULTS/Images/
-7_RESULTS/Poly_1E3_1_to_5/
-1_LIBS_INCL_BINS/
 
+###############################
+# Un-ignore the affected subdirectory
+!7_RESULTS/
+
+# Ignore subdirectory and all including directories and files to match pattern as valid for the next pattern
+/7_RESULTS/**
+# This pattern only works with the two previous patterns
+# (i remember it was working alone on older git versions)
+!7_RESULTS/Post_Processing_Matlab_Files
+###############################
+
+!3_COMPILED_FILES/
+# 3_COMPILED_FILES/INCS_Agis_*
+1_LIBS_INCL_BINS/

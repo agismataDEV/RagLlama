@@ -52,7 +52,7 @@ for i = 1:i_end
         eval(['pnl.harm' num2str(i) '= nan(dims);']);
     end
     
-    order = 8;
+    order = 4z;
     % There is not significant change if I use the 1st block of code for a cluster of bubbles,
     % But the opposite cannot happen ,because the 2nd block of code can not accurately visualize
     % the behaviour of one bubble , due to the spectral leakage in the lower harmonics

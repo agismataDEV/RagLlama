@@ -60,7 +60,6 @@ MODULE ParnacDataRedist
 IMPLICIT NONE
 
   	include 'fftw3-mpi.f03'
-  	!include 'fftw3-mpi.h'
 ! *****************************************************************************
 !
 !   CONTAINED SUBROUTINES AND FUNCTIONS
@@ -140,6 +139,7 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 	integer(i8b) ::				iSrcInd, iDestInd
 	integer(i4b) ::				iErr
 	character(LEN = 2048) ::		acTemp;
+  	type(C_PTR) :: plan
 !	integer(i4b)::			aiStatus(MPI_STATUS_SIZE) 
 !	integer(i4b)::			aiReqSent(cGrid.iProcN), aiReqRecv(cGrid.iProcN);
 	
@@ -210,6 +210,7 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 !	     Previous Implementation
 !	     We continue by packing the data into the second buffer
 
+		! PacD1 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1TN, XYZ2T1 XYZ2T2 .... XYZ2TN ...
 		do iProcl = 0, TotalProc-1
 		     do iT2l = 0, Local2T-1
 			    
@@ -219,12 +220,13 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 
 		    end do
 	    end do
-	    
+		! PacD1 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS), XYZ2T1 XYZ2T2 .... XYZ2T(N/CPUS), XYZNT1 XYZNT2 .... XYZNT(N/CPUS),
+		! XYZ1T(N/CPUS+1) XYZ1T(N/CPUS+2) XYZ1T(N/CPUS+3) ..... XYZ1T(N/CPUS+ N/CPUS), ...
+ 	    
 !	     Now we have allocated the buffer space and have packed the data, it is time to start with 
 !	     the distributing itself. We have to send one block of data from each processor, to each other processor. 
 !         This is done by the MPI_Alltoall primitive.
 	    write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
-
         call MPI_Alltoall(cGrid.pacD2,              &
                           int(Local1XYZ*Local2T),   &
                           MPI_DOUBLE_COMPLEX,       &
@@ -233,6 +235,9 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
                           MPI_DOUBLE_COMPLEX,       &
                           MPI_COMM_WORLD,           &
                           iErr)
+						  
+		! with MPI_ALLTOALL each processor gets an array for the first N/CPUS time from all the process so
+		! pacD1 has the form XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS),XYZ2T1 XYZ2T2 XYZ2T3 ..... XYZ2T(N/CPUS),XYZNT1 XYZNT2 XYZNT3 ..... XYZNT(N/CPUS)
 
 ! MPI_Alltoall is an out-of-place command, which means that the redistribution 
 ! of the data needs two buffers to be allocated simultaneously. This makes it 
@@ -269,6 +274,7 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 !		    call MPI_Wait(aiReqSent(iProcl+1), aiStatus, iErr);
 !	    end do
 
+		! pacD1 has the form XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS),XYZ2T1 XYZ2T2 XYZ2T3 ..... XYZ2T(N/CPUS),XYZNT1 XYZNT2 XYZNT3 ..... XYZNT(N/CPUS)
 	    write (acTemp, '(" Unpack")');	call PrintToLog(acTemp, 4);
 	    ! Now we have distributed all the data, it will still be a mess, it is not yet in distribution 2. At this
 	    !  moment the data is still distributed such that the stride in T-Direction is 1. So, to finish this job,
@@ -284,7 +290,7 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 		enddo
 	    ! We finish by deallocating the space that was used by distribution 1
 	    call GridDistr1DeAllocate(cGrid);
-	
+		! pacD2 now has the form XYZ1T1 XYZ2T1 XYZ3T1 XYZ4T1 ... XYZNT1, XYZ1T2 XYZ2T2 ... XYZNT2, ... , XYZ1TN XYZ2TN ... XYZNTN
 		
     end if
 	! And finally, we can set the flag to 2!
@@ -408,7 +414,7 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 	    ! this operation is not in-place. This command is not inplace either, but we could fiddle around with it for a bit,
 	    ! such that it might BECOME inplace. Therefore, to keep options open we use this method.
 	    write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
-		
+
         call MPI_Alltoall(cGrid.pacD1,              &
                           int(Local1XYZ*Local2T),   &
                           MPI_DOUBLE_COMPLEX,       &
@@ -467,6 +473,7 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 
 		    end do
 	    end do
+
 	    ! We finish by deallocating the space that was used by distribution 2
 	    call GridDistr2DeAllocate(cGrid);
 	
@@ -477,445 +484,6 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 	call SWStop(cswBlock);	call SWStop(cswBlockRedist2_1)
 END SUBROUTINE ReorderDistr2ToDistr1
 
-SUBROUTINE ReorderDistr0ToDistr2(cGrid)
-	
-! =============================================================================
-!
-!   Programmer: Jasper de Koning / Koos Huijssen
-!
-!   Language: Fortran 90
-!
-!   Version Date    Comment
-!   ------- -----   -------
-!   1.0     090505  Original code (KH)
-!
-! *****************************************************************************
-!
-!   DESCRIPTION
-!
-!   The subroutine ReorderDistr1ToDistr2 reorders the data in a grid from 
-!   distribution 1 to distr. 2, i.e. from a T-local distribution to an XYZ-
-!   local distribution. This involves a communication of the data between all
-!   processors.
-!
-!
-!   Memory usage: Currently this implementation uses quite a lot of memory, as
-!   it involves a buffer which has the size of the original grid. If possible,
-!   improving this will remove a bottleneck in the memory usage. The only
-!   way to do this would be to use asymmetrical data transfer and complex inter-
-!   processor communication.
-!
-! *****************************************************************************
-!
-!   INPUT/OUTPUT PARAMETERS
-!
-!   cGrid   io   type(Grid)   The grid that contains the data array which needs
-!                             to be redistributed.
-!
-	type(Grid), INTENT(inout) ::		cGrid;
-
-! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
-!
-!   TotalProc   i8b   Total number of processors
-!   Local1T     i8b   Total T-positions on each processor in Distr. 1
-!   Local2T     i8b   Total T-positions on each processor in Distr. 2
-!   Local1XYZ   i8b   Total XYZ-positions on each processor in Distr. 1
-!   Local2XYZ   i8b   Total XYZ-positions on each processor in Distr. 2
-!   iProcL      i4b   Loop counter over the processors
-!   iT2L        i8b   Loop counter over the T-positions in Distr. 2
-!   iXYZ1L      i8b   Loop counter over the XYZ-positions in Distr. 1
-!   iSrcInd     i8b   Index in the source data array
-!   iDestInd    i8b   Index in the destination data array
-!   iErr        i4b   Error number
-!   acTemp      char  Temporary char array for output log messages
-!
-	integer(i8b) ::				TotalProc, Local1T, Local2T, Local1XYZ, Local2XYZ
-	integer(i8b) ::				iProcL, iT2L, iXYZ1L, iLI
-	integer(i8b) ::				iSrcInd, iDestInd
-	integer(i4b) ::				iErr
-	character(LEN = 2048) ::		acTemp;
-  	type(C_PTR) :: plan
-!	integer(i4b)::			aiStatus(MPI_STATUS_SIZE) 
-!	integer(i4b)::			aiReqSent(cGrid.iProcN), aiReqRecv(cGrid.iProcN);
-	
-! *****************************************************************************
-!
-!   I/O
-!
-!   Log file entries 
-!   
-! *****************************************************************************
-!
-!   SUBROUTINES/FUNCTIONS CALLED
-!
-!   SWstart
-!   SWstartandcount
-!   SWstop
-!   MPI_Barrier
-!   MPI_Alltoall
-!   GridDistr2Allocate
-!   GridDistr1Deallocate
-!   PrintToLog
-!   
-! *****************************************************************************
-!
-!   PSEUDOCODE
-!
-!   Allocate the Distr. 2 array as a buffer
-!   Pack the data in Distr. 1 such that we have data blocks of size 
-!     local2T*local1XYZ, to facilitate the redistribution of contiguous blocks.
-!     the stride in T is still 1...
-!   Redistribute the data across all processors to change from the T-local
-!     distribution 1 to the XYZ-local distribution 2
-!   Unpack the data in Distr. 2 such that the stride in XYZ becomes 1
-!   Deallocate the Distr. 1 array
-!   
-! =============================================================================
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist0_1)
-	write (acTemp, '("ReorderDistr0ToDistr1")');	call PrintToLog(acTemp, 3);
-	! First we will check whether we are in distribution 0
-	if (cGrid.iDistr /= 0) then
-		write (acTemp, '("ReorderDistr0ToDistr1: the grid provided as input is not in distribution 0, but in distribution ", I3, "")') cGrid%iDistr;
-		call PrintToLog(acTemp,0)
-		stop
-	end if
-	
-	! Allocate the data for distribution 1
-	call GridDistr1CreateEmpty(cGrid)
-	do iLI = 0, cGrid.iD0LocN-1
-			cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL-1)*cGrid.iD1TS : cGrid.iD1TS) =&
-					cGrid.parD0(1 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS : cGrid.iD0TS)
-	end do
-    call GridDistr0DeAllocate(cGrid);
-    
-	! Set the flag to 1
-	cGrid.iDistr		= 1;
-	write (acTemp, '("ReorderDistr1ToDistr2")');	call PrintToLog(acTemp, 3);
-
-	call SWStart(cswDBG1);
-	call SWStop(cswDBG1);
-
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist1_2)
-	
-	! If it is not in the correct distribution, we can do nothing and return an error
-	if (cGrid.iDistr /= 1) then
-			write (acTemp, '("ReorderDistr1ToDistr2: the grid provided as input is not in distribution 1, but in distribution ", I3, "")') cGrid%iDistr;
-			call PrintToLog(acTemp, -1);
-		stop
-	end if
-
-    ! If iProcN = 1, then the grid is in T-local as well as XYZ-local distribution,
-    ! no need to redistribute
-    if (cGrid.iProcN>1) then
-
-	    write (acTemp, '("Allocate mem for redistribution")');	call PrintToLog(acTemp, 4);
-	    ! First we allocate cGrid.pacD2, we use this as a buffer
-	    call GridDistr2Allocate(cGrid);
-
-	    !Initialize redistribution variables (for an easier understanding of the redistribution process)
-	    TotalProc = cGrid.iProcN
-	    Local1T   = cGrid.iD2GlobN	! = cGrid.iD1TL = cSpace%iDimT+1
-	    Local2XYZ = cGrid.iD1GlobN	! = cGrid.iD1GlobN = cSpace%iDimX * cSpace%iDimY * cSpace%iDimZ
-	    Local1XYZ = cGrid.iD1LocN	! = Local2XYZ/cGrid.iProcN
-	    Local2T   = cGrid.iD2LocN	! = Local1T/cGrid.iProcN
-	
-	    write (acTemp, '(" Pack")');	call PrintToLog(acTemp, 4);
-!	     Previous Implementation
-!	     We continue by packing the data into the second buffer
-
-		do iProcl = 0, TotalProc-1
-		     do iT2l = 0, Local2T-1
-			    
-			    iSrcInd = 1 + iT2l + iProcl*Local2T
-			    iDestInd = 1+iT2l+iProcl*Local2T*Local1XYZ
-			    cGrid.pacD2(iDestInd:(iProcL+1)*Local2T*LocaL1XYZ:Local2T) = cGrid.pacD1(iSrcInd : Local1T*Local1XYZ : Local1T)
-
-		    end do
-	    end do
-	    
-!	     Now we have allocated the buffer space and have packed the data, it is time to start with 
-!	     the distributing itself. We have to send one block of data from each processor, to each other processor. 
-!         This is done by the MPI_Alltoall primitive.
-	    write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
-        call MPI_Alltoall(cGrid.pacD2,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          cGrid.pacD1,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          MPI_COMM_WORLD,           &
-                          iErr)
-
-! MPI_Alltoall is an out-of-place command, which means that the redistribution 
-! of the data needs two buffers to be allocated simultaneously. This makes it 
-! expensive in terms of memory usage. To improve this, in the future we may 
-! adopt an alternative implementation; maybe the implementation using non-
-! blocking Sends and Receives that is included below (and that is also out-
-! of-place) aids in the implementation.
-!
-!	    do iProcl = 0, TotalProc-1
-!		    call MPI_ISend(cGrid.pacD2(1 + iProcl * Local1XYZ*Local2T),  &
-!				    int(Local1XYZ*Local2T), &
-!				    MPI_DOUBLE_COMPLEX, &
-!				    int(iProcl),	&
-!				    int(cGrid.iProcID),	&
-!				    MPI_COMM_WORLD, &
-!				    aiReqSent(iProcl+1), &
-!				    iErr);
-!           end do
-!            do iProcl = 0, TotalProc-1
-!		    call MPI_IRecv(cGrid.pacD1(1 + iProcl * Local1XYZ*Local2T), &
-!				    int(Local1XYZ*Local2T), &
-!				    MPI_DOUBLE_COMPLEX, &
-!				    int(iProcl), &
-!				    int(iProcl), &
-!				    MPI_COMM_WORLD, &
-!				    aiReqRecv(iProcl+1), &
-!				    iErr);
-!	    end do
-!	    
-!	    write (acTemp, '(" Synchronize")');	call PrintToLog(acTemp, 4);
-!	    ! We wait untill we have obtained and sent all the blocks
-!	    do iProcl = 0, TotalProc-1
-!		    call MPI_Wait(aiReqRecv(iProcl+1), aiStatus, iErr);
-!		    call MPI_Wait(aiReqSent(iProcl+1), aiStatus, iErr);
-!	    end do
-
-	    write (acTemp, '(" Unpack")');	call PrintToLog(acTemp, 4);
-	    ! Now we have distributed all the data, it will still be a mess, it is not yet in distribution 2. At this
-	    !  moment the data is still distributed such that the stride in T-Direction is 1. So, to finish this job,
-	    !  we have to redistribute this data again, but now locally.
-	    !
-	    ! The index of the destination can be written as:
-	    !  A(x, y, z, i) = Av(x + y * Sy + z * Sz + i * Si), the data as we get it is not in a nice order
-	    !  , we can find the value of i easily (this is T), it is hard however to obtain the 
-	    !  x, y, z values. However, we can find x + y * Sy + z * Sz = iBl + iPl * cGrid.iD0LocN,
-	    !  because the t-blocks were block distributed over the processes in distribution 0,1.
-	    do iT2l = 0, Local2T-1
-			cGrid.pacD2( 1 +iT2l*Local2XYZ : Local2XYZ*(iT2l+1)) = cGrid.pacD1(1 +iT2l: Local2T*Local2XYZ : Local2T)
-		enddo
-	    ! We finish by deallocating the space that was used by distribution 1
-	    call GridDistr1DeAllocate(cGrid);
-	
-		
-    end if
-	! And finally, we can set the flag to 2!
-	cGrid.iDistr		= 2;
-
-	call SWStop(cswBlock);	call SWStop(cswBlockRedist1_2)
-END SUBROUTINE ReorderDistr0ToDistr2
-
-SUBROUTINE ReorderDistr2ToDistr0(cGrid)
-	
-! =============================================================================
-!
-!   Programmer: Jasper de Koning / Koos Huijssen
-!
-!   Language: Fortran 90
-!
-!   Version Date    Comment
-!   ------- -----   -------
-!   1.0     090505  Original code (KH)
-!
-! *****************************************************************************
-!
-!   DESCRIPTION
-!
-!   The subroutine ReorderDistr2ToDistr1 performs the inverse operation of 
-!   ReorderDistr1ToDistr2. See its header for more info.
-!
-! *****************************************************************************
-!
-!   INPUT/OUTPUT PARAMETERS
-!
-!   cGrid   io   type(Grid)   The grid that contains the data array which needs
-!                             to be redistributed.
-!
-	type(Grid), INTENT(inout) ::		cGrid;
-
-! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
-!
-!   TotalProc   i8b   Total number of processors
-!   Local1T     i8b   Total T-positions on each processor in Distr. 1
-!   Local2T     i8b   Total T-positions on each processor in Distr. 2
-!   Local1XYZ   i8b   Total XYZ-positions on each processor in Distr. 1
-!   Local2XYZ   i8b   Total XYZ-positions on each processor in Distr. 2
-!   iProcL      i4b   Loop counter over the processors
-!   iT2L        i8b   Loop counter over the T-positions in Distr. 2
-!   iXYZ1L      i8b   Loop counter over the XYZ-positions in Distr. 1
-!   iSrcInd     i8b   Index in the source data array
-!   iDestInd    i8b   Index in the destination data array
-!   iErr        i4b   Error number
-!   acTemp      char  Temporary char array for output log messages
-!
-	integer(i8b) ::				TotalProc, Local1T, Local2T, Local1XYZ, Local2XYZ
-	integer(i8b) ::				iProcl,    iT2l, iXYZ1L, iLI
-	integer(i8b) ::				iSrcInd, iDestInd
-	integer(i4b) ::				iErr;
-	character(LEN = 2048) ::		acTemp;
-!	integer(i4b)::			aiStatus(MPI_STATUS_SIZE) 
-!	integer(i4b)::			aiReqSent(cGrid.iProcN), aiReqRecv(cGrid.iProcN);
-	
-! *****************************************************************************
-!
-!   I/O
-!
-!   Log file entries 
-!   
-! *****************************************************************************
-!
-!   SUBROUTINES/FUNCTIONS CALLED
-!
-!   SWstart
-!   SWstartandcount
-!   SWstop
-!   MPI_Barrier
-!   MPI_Alltoall
-!   GridDistr2Allocate
-!   GridDistr1Deallocate
-!   PrintToLog
-!   
-! =============================================================================
-	
-	write (acTemp, '("ReorderDistr2ToDistr1")');	call PrintToLog(acTemp, 3);
-
-	call SWStart(cswDBG1);
-	call SWStop(cswDBG1);
-
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist2_1)
-
-	! If it is not in the correct distribution, we can do nothing and return an error
-	if (cGrid.iDistr /= 2) then
-			write (acTemp, '("ReorderDistr2ToDistr1: the grid provided as input is not in distribution 2, but in distribution ", I3, "")') cGrid%iDistr;
-			call PrintToLog(acTemp, -1);
-		stop
-	end if
-
-    ! If iProcN = 1, then the grid is in T-local as well as XYZ-local distribution,
-    ! no need to redistribute
-    if (cGrid.iProcN>1) then
-
-	    ! First we allocate cGrid.acD1, we use this as a buffer
-	    write (acTemp, '("Allocate mem for redistribution")');	call PrintToLog(acTemp, 4);
-	    call GridDistr1Allocate(cGrid);
-
-	    !Initialize redistribution variables (for better understanding of the redistribution)
-	    TotalProc = cGrid.iProcN
-	    Local1T   = cGrid.iD1TL						! = cGrid.iD2GlobN
-	    Local2T   = cGrid.iD1TL/cGrid.iProcN		! = cGrid.iD2LocN
-	    Local1XYZ = cGrid.iD1GlobN/cGrid.iProcN		! = cGrid.iD1LocN
-	    Local2XYZ = cGrid.iD1GlobN
-
-	    ! We continue by packing the data into the second buffer
-	    write (acTemp, '(" Pack")');	call PrintToLog(acTemp, 4);
-	    do iT2l = 0, Local2T-1
-			cGrid.pacD1(1 +iT2l: Local2T*Local2XYZ : Local2T) = cGrid.pacD2( 1 +iT2l*Local2XYZ : Local2XYZ*(iT2l+1));
-		enddo
-
-	    ! Now we have allocated the buffer space and have packed the data, it is time to start with 
-	    ! the distributing itself. We have to send one block of data from each processor, to each other processor. 
-	    ! We will do this using synchronous sends (ISend). We did not opt for the usage of MPI_Alltoall, because
-	    ! this operation is not in-place. This command is not inplace either, but we could fiddle around with it for a bit,
-	    ! such that it might BECOME inplace. Therefore, to keep options open we use this method.
-	    write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
-
-        call MPI_Alltoall(cGrid.pacD1,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          cGrid.pacD2,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          MPI_COMM_WORLD,           &
-                          iErr)
-
-    !	if (cGrid.iProcN > 1) then
-    !		call SWStart(cswDBG1);
-    !!KH Is this one necessary since the MPI_WAIT is also included???
-    !        call MPI_Barrier(MPI_COMM_WORLD, iErr);
-    !		call SWStop(cswDBG1);
-    !	end if
-    !	do iProcl = 0, TotalProc-1
-    !		call MPI_ISend(cGrid.pacD1(1 + iProcl * Local1XYZ*Local2T),  &
-    !				int(Local1XYZ*Local2T), &
-    !				MPI_DOUBLE_COMPLEX, &
-    !				int(iProcl),	&
-    !				int(cGrid.iProcID),	&
-    !				MPI_COMM_WORLD, &
-    !				aiReqSent(iProcl+1), &
-    !				iErr);
-    !		call MPI_IRecv(cGrid.pacD2(1 + iProcl * Local1XYZ*Local2T), &
-    !				int(Local1XYZ*Local2T), &
-    !				MPI_DOUBLE_COMPLEX, &
-    !				int(iProcl), &
-    !				int(iProcl), &
-    !				MPI_COMM_WORLD, &
-    !				aiReqRecv(iProcl+1), &
-    !				iErr);
-    !	end do
-    !	
-    !	! We wait untill we have obtained and sent all the blocks
-    !	write (acTemp, '(" Synchronize")');	call PrintToLog(acTemp, 4);
-    !	do iProcl = 0, TotalProc-1
-    !		call MPI_Wait(aiReqRecv(iProcl+1), aiStatus, iErr);
-    !		call MPI_Wait(aiReqSent(iProcl+1), aiStatus, iErr);
-    !	end do
-	    
-	    ! Now we have distributed all the data, it will still be a mess, it is not yet in distribution 1. At this
-	    !  moment the data is still distributed such that the stride in T-Direction is big. So, to finish this job
-	    !  we have to redistribute this data again, but now locally.
-	    !
-	    ! The index of the destination can be written as: A(t, i) = Av(t + i * Si), the data as we get it is not 
-	    !  in a nice order. It is stored as: A_org(t, i) = A_org(p*cGrid.iD1TL/cGrid.iProcN + t, i), with p
-	    !  the ID of the processor that sent the data. So, we get:	!
-	    write (acTemp, '(" Unpack")');	call PrintToLog(acTemp, 4);
-		do iProcl = 0, TotalProc-1
-		     do iT2l = 0, Local2T-1
-			    
-			    iSrcInd = 1+iT2l+iProcl*Local2T*Local1XYZ
-			    iDestInd = 1 + iT2l + iProcl*Local2T
-			    cGrid.pacD1(iDestInd : Local1T*Local1XYZ : Local1T) = cGrid.pacD2(iSrcInd:(iProcL+1)*Local2T*LocaL1XYZ:Local2T);
-
-		    end do
-	    end do
-
-	    ! We finish by deallocating the space that was used by distribution 2
-	    call GridDistr2DeAllocate(cGrid);
-	
-    end if
-
-	! And finally, we can set the flag to 1!
-	cGrid.iDistr		= 1;
-	call SWStop(cswBlock);	call SWStop(cswBlockRedist2_1)
-	
-	write (acTemp, '("ReorderDistr1ToDistr0")');	call PrintToLog(acTemp, 3);
-	
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist1_0)
-	! First we will check whehter we are in distribution 1
-	if (cGrid.iDistr /= 1) then
-		write (acTemp, '("ReorderDistr1ToDistr0: the grid provided as input is not in distribution 1, but in distribution ", I3, "")') cGrid%iDistr;
-		call PrintToLog(acTemp,0)
-		stop
-	end if
-
-	! Allocate the data for distribution 0
-	call GridDistr0CreateEmpty(cGrid)			
-	
-	do iLI = 0, cGrid.iD0LocN-1
-			cGrid.parD0(1 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS : cGrid.iD0TS)=&
-			cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL-1)*cGrid.iD1TS : cGrid.iD1TS) 
-	end do
-
-    call GridDistr1DeAllocate(cGrid);
-
-	! Set the flag to 0
-	cGrid.iDistr		= 0;
-
-	call SWStop(cswBlock);	call SWStop(cswBlockRedist1_0)
-END SUBROUTINE ReorderDistr2ToDistr0
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! %
 ! % 		ReorderDistr0ToDistr1
@@ -1114,6 +682,7 @@ SUBROUTINE ReorderDistr1ToDistr0(cGrid)
 			dimag(cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2-1)*cGrid.iD1TS : cGrid.iD1TS))
 		end do
 	end if	
+	
     call GridDistr1DeAllocate(cGrid);
 
 	! Set the flag to 0

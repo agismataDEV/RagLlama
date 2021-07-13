@@ -74,9 +74,9 @@ phasedarray
 0.45000000	*** Element width
 10.00      	*** Element height
 0.05000000	*** Kerf
-0.0000000	*** Focus x
+0.00000000	*** Focus x
 35.0000000	*** Focus z
-35.00000000	*** Elevation focus
+35.0000000	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
 none
 ***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
@@ -132,13 +132,13 @@ none
 1.07000000E+0   *** kappa	= Gas polytropic exponent
 0.40000000E+0	*** chi		= Shell elasticity  
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
-time_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
+none			*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-1E+5	  	*** No. of Bubbles consisting the cluster
+1E+4	  	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
-polydisperse	
-1E-6 30E-6 	*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
+monodisperse	
+5.5E-6	 	*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
 0.3 0.7  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
 0.3 0.7 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
 0.45 0.95	*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
