@@ -60,16 +60,22 @@ for i = 1:i_end
 
     if Bubble.N>0
         
-        for iz=1:dims(2)
-            plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,domain.PPW_t,.7*medium.freq0,1.3*medium.freq0,order));
-            for i = 1: harmonics
-                eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,domain.PPW_t,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
-            end
-                        pnl.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,domain.PPW_t,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
-                        plin.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,domain.PPW_t,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
-                        pnl.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,domain.PPW_t,.7*medium.freq0,1.3*medium.freq0,order);
-                        plin.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,domain.PPW_t,.7*medium.freq0,1.3*medium.freq0,order);
+        % for iz=1:dims(2)
+            % plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
+            % for i = 1: harmonics
+                % eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+            % end
+                        % pnl.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
+                        % plin.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
+                        % pnl.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+                        % plin.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
             
+        % end
+		plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:)=maxhilbert_vec(plin.data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+		plin.nd((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:)  =maxhilbert_vec(plin.data,domain.dtpar,1.7*medium.freq0,2.3*medium.freq0,order);
+		pnl.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:) =maxhilbert_vec( pnl.xwave_data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+		for i = 1: harmonics
+            eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:)=20*log10(maxhilbert_vec(pharm,domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
         end
         
     end
