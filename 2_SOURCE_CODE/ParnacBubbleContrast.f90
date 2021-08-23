@@ -39,13 +39,12 @@ MODULE ParnacBubbleContrast
   USE Types
   USE Constants
   USE ParnacGeneral
-  USE ParnacDataDef
+  USE ParnacDataDef    
   USE ParnacParamDef
   USE ParnacIdentifierDef  
   USE ParnacDataRedist, ONLY : &
        ReorderDistr0ToDistr1,ReorderDistr1ToDistr0, &
-	   ReorderDistr1ToDistr2,ReorderDistr2ToDistr1, &
-	   ReorderDistr0ToDistr2,ReorderDistr2ToDistr0
+	   ReorderDistr1ToDistr2,ReorderDistr2ToDistr1
   USE ParnacDataSpaceInit, ONLY : &
        iBeamOffsetX, iBeamOffsetY, InitSaveSlices
   USE ParnacTransformFilter, ONLY : &
@@ -450,7 +449,7 @@ CONTAINS
        iBeamIndex(3) = nint(dBubbleLocationN(iBubble,3)/cSpace%dDx)
        iBeamIndex(1) = nint(dBubbleLocationN(iBubble,1)/cSpace%dDx) - iBeamOffsetX(cSpace,iBeamIndex(3))
        iBeamIndex(2) = nint(dBubbleLocationN(iBubble,2)/cSpace%dDx) - iBeamOffsetY(cSpace,iBeamIndex(3))
-
+		
        ! Find the Index in the arBufferXYZ of the BubbleLocation
        XYZIndex = iBeamIndex(3)*iDimY*iDimX+iBeamIndex(2)*iDimX+iBeamIndex(1)-cSpace%cGrid%iProcID * cSpace%cGrid%iD0LocN
        ! Check if the cpu domain contains this scatterer
@@ -498,7 +497,7 @@ CONTAINS
 
                 RealPressure_Own(i,:) = 1.0D-30;
                 diff(i,:) = dBubbleLocationN(iBubble,:) - GlobalPos(i,:)
-                !if (exists_loc) RealPressure_Own(i,:) = tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT)*(cModelParams%freq0/cMediumParams%c0) *(dK_c/pi)**3
+                if (exists_loc) RealPressure_Own(i,:) = tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT)*(cModelParams%freq0/cMediumParams%c0) *(dK_c/pi)**3
 
                 iTargetIndex(3) = nint(GlobalPos(i,3)/cSpace%dDx) 
                 iTargetIndex(1) = nint(GlobalPos(i,1)/cSpace%dDx) - iBeamOffsetX(cSpace,iBeamIndex(3))
@@ -516,31 +515,32 @@ CONTAINS
              RealPressure_Own(1,:) = 0.0D0;
              diff(1,:) = dBubbleLocationN(iBubble,:) - dGlobXYZ
              if (exists_loc) RealPressure_Own(1,:) = tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT)*(cModelParams%freq0/cMediumParams%c0) *(dK_c/pi)**3
-             !Needs some more improvement, maybe not fully remove the exact "own" scattering ~ 5-10% error
+             ! Needs some more improvement, maybe not fully remove the exact "own" scattering ~ 5-10% error
              call GREENS1DFREQ( RealPressure_Own(1,:) , RealPressure_Own(1,:), cSpace ,iBeamIndex,diff(1,:))
              RealPressure = RealPressure - RealPressure_Own(1,:)
           endif
 
           !0 for every pressure point for zero-padding later and for initial condition. This should be done for every bubble
           RealPressurePad = 0.0D0 ;  R_Pad = 0.0D0
-		  ! if (ANY(iBubble==INT(BubbleEnhancedP)) .AND. .NOT. exists_loc) RealPressure= 1E4*RealPressure
 		  
           ! You can use INTERP1DFREQ (frequency interpolation) instead, but this is more accurate and efficient
           call INTERP1D( RealTime, RealPressure, RealTimePad, RealPressurePad)  
           ! call INTERP1DFREQ(RealPressure,RealPressurePad, cSpace,0)
 		  
-		  RealPressurePad= RealPressurePad * dTaperSupportWindowN
-          ! open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
-          ! !!Open File
+		  RealPressurePad = RealPressurePad * dTaperSupportWindowN
+          ! Open File
+		  ! open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
           ! write(7,*) iBubble
           ! write(7,*) RealTime, RealPressure,RealTimePad,RealPressurePad
-          ! close(7)
-
+          ! close(7) 
+			
           ! Marmottant solver ( ODE Solver) , Result is R_Pad with R(:,1) is the radius , R(:,2) is the velocity (R_dot) 
           ! and R(:,3) is the acceleration (R_dotdot)
-          call RP_SOLVER(RealPressurePad, RealTimePad,RealTimePad(1), RealTimePad(size(RealTimePad,1)), iDimT*n_pad,iBubble, R_Pad,RealTimePadOut)
-	      ! RealTimePadOut(1) = RealTimePad(1) ; RealTimePadOut(size(RealTimePad,1))=RealTimePad(size(RealTimePad,1));
+          call RP_SOLVER(RealPressurePad, RealTimePad,RealTime(1), RealTime(size(RealTime,1)), iDimT*n_pad,iBubble, R_Pad,RealTimePadOut)
           
+		  R_Pad(:,1)= R_Pad(:,1) * dTaperSupportWindowN
+		  R_Pad(:,2)= R_Pad(:,2) * dTaperSupportWindowN
+		  R_Pad(:,3)= R_Pad(:,3) * dTaperSupportWindowN
 		  ! Find volume acceleration d^2V/dt^2 [m^3/s^2] 
           ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
 

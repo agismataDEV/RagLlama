@@ -44,7 +44,7 @@ if (Bubble.N <=10 && Bubble.N>0)
             
             BubbleVal_loaded = fscanf(fileID_pres,formatSpec,size_pres);
             
-            n_pad = 16;
+            n_pad = ((length(BubbleVal_loaded)-1)/domain.tdimpar-2)/2;
             %         BubbleVal = BubbleVal_loaded(1+size(BubbleVal_loaded,1)/2*(iBubble-1):end*iBubble/2);
             BubbleVal = BubbleVal_loaded(2:(1+n_pad)*2*domain.tdimpar+1);
             
@@ -95,18 +95,20 @@ if (Bubble.N <=10 && Bubble.N>0)
             m_init      =   1;%domain.dimlen(3);
             m_end       =   domain.dimlen(3);
 %             
-%             k_init      =   71;58;
-%             k_end       =   k_init;
-%             m_init      =   10;77;
-%             m_end       =   m_init;
+            k_init      =   71;58;
+            k_end       =   k_init;
+            m_init      =   10;77;
+            m_end       =   m_init;
             RRMS_ErrorG_semi_an = zeros(k_end,m_end);
             RRMS_ErrorG_an = zeros(k_end,m_end);
             
             %======== Driving Frequency ======================
             freq        = medium.freq0;
             w_driving   = 2*pi*freq;
-            Inc_Press   = 1E4*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq)).*(1+sign(domain.tpar))/2;
+            Inc_Press   = 5E4*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq));
             omega       = 2*pi/(domain.tdimpar*domain.dtpar)*((0:domain.tdimpar-1)-ceil((domain.tdimpar-1)/2));
+            w = w_driving;
+            t = domain.tpar;
             
             % Make denser the matrix to increase accuracy
             tpar_N = interp(domain.tpar,OSFactor);
@@ -204,6 +206,9 @@ if (Bubble.N <=10 && Bubble.N>0)
                                         ddpddt          =   fft((Inc_Press+P_scattered(iBubble,:)).^2).*(1i*fftshift(omega)).^2 ; % What the scatterer understands
                                         
                                     end
+                                    % Analytic computation 
+%                                     ddpdddomain.tpar_sub = (12800000*freq^4*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq).^2)/81 - 50000*w_driving^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9) - (1600000*freq^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9))/9 - (1600000*freq^2*w_driving*cos(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq))/9;
+%                                     q = ddpddt_sub .* (4/3*pi*R_rigid(iBubble)^3)/(medium.c0^2)/(4*pi*r_from_scatterer);
                                     ddpddt = ifftshift(fftshift(ddpddt).*(time_signature.*phase_shift));
                                     pnl.an = ddpddt;
                                     pnl.an = real(ifft(pnl.an));

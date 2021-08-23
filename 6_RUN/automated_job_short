@@ -70,4 +70,4 @@ echo "srun ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER} $INPUT_FILE TESTNeuman
 sbatch ../6_RUN/job_INCS_short &
 
 sleep 5
-squeue -u agismatalliota -p imphys,general
+qstat -u agismatalliota 

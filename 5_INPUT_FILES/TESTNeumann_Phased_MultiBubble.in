@@ -23,8 +23,8 @@
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 7.853982E-001		*** Thetat [rad]
-1.000000E+006		*** freq0  = Fundamental frequency [Hz]
-9.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+1.700000E+006		*** freq0  = Fundamental frequency [Hz]
+7.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
@@ -126,19 +126,19 @@ none
 **********************************
 *** Parameters-Bubble Cluster  ***
 **********************************
-3.00000000E-8   *** Kappa_s	= Surface dilatational viscosity of shell [kg/sec]
-0.07200000E+0   *** sigma_w	= Surface tension of water  [N/m]
-0.03600000E+0   *** sigma_R0 	= Initial surface tension   [N/m]
-1.07000000E+0   *** kappa	= Gas polytropic exponent
-0.40000000E+0	*** chi		= Shell elasticity  
+5.800000E-009   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
+0.072000E+000   *** sigma_w	 = Surface tension of water  [N/m]
+0.010000E+000   *** sigma_R0 = Initial surface tension   [N/m]
+1.070000E+000   *** kappa	 = Gas polytropic exponent
+0.500000E+000	*** chi		 = Shell elasticity  
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
-none			*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
+time_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-1E+4	  	*** No. of Bubbles consisting the cluster
+1E+5	  	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
-5.5E-6	 	*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
+1.7E-6	 	*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
 0.3 0.7  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
 0.3 0.7 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
 0.45 0.95	*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len

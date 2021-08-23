@@ -27,20 +27,21 @@ function [V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f)
 %% ========================Initialization==============================================================
 
 % -------------Bubble parameters
-par.R0 = 2e-6 ;                         % [μm],  initial bubble radius R0
-par.S_vis = 3e-8         ;            % [Pa*sec] , Shell viscosity
+par.R0 = 2.4e-6 ;                         % [μm],  initial bubble radius R0
+par.S_vis = 5.8e-9         ;            % [Pa*sec] , Shell viscosity
+par.S_vis = 1.5E-9*exp(8E5*par.R0);
 
 %------------------ Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
 par.P0 = 1.01e+5 ;                             % [Pa], ambient pressure 1 [atm] = 10^5 [Pa]
 par.sigma_w  = 0.072 ;                      % [N/m] surface tension
-par.sigma_R0 = 0.036;                      % [N/m], surface tension at initial radius R0
+par.sigma_R0 = 0.010;                      % [N/m], surface tension at initial radius R0
 par.P_g0 = par.P0+2*par.sigma_R0/par.R0 ;   % [Pa] Initial gas pressure , (Sometimes = P0)
 par.gamma = 1.07   ;                           %  (or κ), dimensionless, polytropic exponent of the gas inside the bubble
 par.mu = 2e-3 ;                             % [Pa*sec], dynamic viscocity of medium
 par.c = c;
 par.rho = rho;
 %---------------Marmottant model parameters
-par.chi = 0.4   ;                                     % [N/m] shell elasticity
+par.chi = 0.5   ;                                     % [N/m] shell elasticity
 par.R_b = par.R0/sqrt(par.sigma_R0/par.chi+1);     % buckling radius
 par.R_r = par.R_b*sqrt(par.sigma_w/par.chi+1);       % upper limit radius after rupture
 

@@ -7,7 +7,7 @@ objects = 	 $(addprefix $(OBJDIR)/, fftw3.o Types.o Constants.o Cisi.o FDWeight.
 								  Stopwatch.o ParnacGeneral.o ParnacParamDef.o ParnacIdentifierDef.o ParnacTransformInit.o \
 								  ParnacDataSpaceInit.o ParnacOutput.o ParnacDataMap.o  Specialfun.o ContrastGenFilt.o \
 								  ParnacDataRedist.o f2kcli.o ParnacParamInit.o  ParnacTransformFilter.o ParnacDerivative.o \
-			 					  RP.o RKF45.o ODEPACK.o ORDERPACK.o ParnacContrastFunctions.o ParnacBubbleContrast.o \
+			 					  ODEPACK_SP.o ORDERPACK.o RP_SP.o RKF45.o ParnacContrastFunctions.o ParnacBubbleContrast.o \
 								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacSchemes.o ParnacMain.o\
 								)  
 
@@ -111,10 +111,14 @@ $(OBJDIR)/ParnacGeneral.o : ParnacGeneral.f90
 	mpiifort -c ParnacGeneral.f90 $(CFLAGS) -o $(OBJDIR)/ParnacGeneral.o -module $(OBJDIR)
 $(OBJDIR)/RP.o : RP.f90
 	mpiifort -c RP.f90 $(CFLAGS) -o $(OBJDIR)/RP.o -module $(OBJDIR)
+$(OBJDIR)/RP_SP.o : RP_SP.f90
+	mpiifort -c RP_SP.f90 $(CFLAGS) -o $(OBJDIR)/RP_SP.o -module $(OBJDIR)
 $(OBJDIR)/RKF45.o : RKF45.f90
 	mpiifort -c RKF45.f90 $(CFLAGS) -o $(OBJDIR)/RKF45.o -module $(OBJDIR)
 $(OBJDIR)/ODEPACK.o : ODEPACK.f
 	mpiifort -c ODEPACK.f $(CFLAGS) -o $(OBJDIR)/ODEPACK.o -module $(OBJDIR)
+$(OBJDIR)/ODEPACK_SP.o : ODEPACK_SP.f
+	mpiifort -c ODEPACK_SP.f $(CFLAGS) -o $(OBJDIR)/ODEPACK_SP.o -module $(OBJDIR)
 $(OBJDIR)/ORDERPACK.o : ORDERPACK.f90
 	mpiifort -c ORDERPACK.f90 $(CFLAGS) -o $(OBJDIR)/ORDERPACK.o -module $(OBJDIR)
 
@@ -131,6 +135,11 @@ $(OBJDIR)/ParnacMain_Compact.o :ParnacMain_Compact.f90
 clean:
 	rm $(OBJDIR)/*.o
 	rm $(OBJDIR)/*.mod
+
+remove:
+    @read -p "Enter File Name: " OBJRM; 
+	rm $(OBJDIR)/$OBJRM.o 
+	rm $(OBJDIR)/$OBJRM.mod
 	
 distclean:
 	rm $(OBJDIR)/INCS_Agis

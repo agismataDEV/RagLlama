@@ -1,6 +1,6 @@
 #!/bin/bash
  
-#SBATCH --job-name=2_MONO_1E4_mono_2
+#SBATCH --job-name=2_MONO_test_4
 #SBATCH --partition=imphys
 #SBATCH --qos=long
 #SBATCH --nodes=1
@@ -8,8 +8,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=500G
 #SBATCH --time=20:00:00
-#SBATCH --output=../7_RESULTS/1E4_mono_2/INCS_1E4_mono_2.out
-#SBATCH --error=../7_RESULTS/1E4_mono_2/INCS_1E4_mono_2.err
+#SBATCH --output=../7_RESULTS/test_4/INCS_test_4.out
+#SBATCH --error=../7_RESULTS/test_4/INCS_test_4.err
 ##SBATCH --exclusive
  
 module use /opt/insy/modulefiles
@@ -28,4 +28,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../3_COMPILED_FILES/INCS_Agis_1E4_mono_2 TESTNeumann_Phased_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/1E4_mono_2
+srun ../3_COMPILED_FILES/INCS_Agis_test_4 TESTNeumann_Phased_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test_4

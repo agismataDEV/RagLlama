@@ -52,30 +52,28 @@ for i = 1:i_end
         eval(['pnl.harm' num2str(i) '= nan(dims);']);
     end
     
-    order = 4z;
+    order = 4;
     % There is not significant change if I use the 1st block of code for a cluster of bubbles,
     % But the opposite cannot happen ,because the 2nd block of code can not accurately visualize
     % the behaviour of one bubble , due to the spectral leakage in the lower harmonics
     % generate fundamental, higher harmonic and superharmonic profiles
 
     if Bubble.N>0
-        
-        % for iz=1:dims(2)
-            % plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
-            % for i = 1: harmonics
-                % eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
-            % end
-                        % pnl.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
-                        % plin.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
-                        % pnl.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
-                        % plin.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
-            
-        % end
-		plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:)=maxhilbert_vec(plin.data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
-		plin.nd((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:)  =maxhilbert_vec(plin.data,domain.dtpar,1.7*medium.freq0,2.3*medium.freq0,order);
-		pnl.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:) =maxhilbert_vec( pnl.xwave_data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+%         
+%         for iz=1:dims(2)
+%             plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
+%             for i = 1: harmonics
+%                 eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+%             end
+% %                         pnl.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
+% %                         plin.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
+% %                         pnl.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+% %                         plin.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+%             
+%         end
+		plin.fund =20*log10(maxhilbert_vec(plin.data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
 		for i = 1: harmonics
-            eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),:)=20*log10(maxhilbert_vec(pharm,domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+            eval(['pnl.harm' num2str(i) '=20*log10(maxhilbert_vec(pharm,domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
         end
         
     end
@@ -83,10 +81,10 @@ for i = 1:i_end
     %% PLOTS
     disp(['Ploting the ', subplot_txt1,'...'])
     
-    I = 20*log10(pnl.atten./plin.atten);
-    pnl.attenuation(dslice.num,:) = [dslice.pos(dslice.num); mean(mean(I))/(dslice.pos(dslice.num) - min(Bubble.LocGlob(:,3)))*10];  % [mm] to [cm]
-    I_fund = 20*log10(pnl.atten_fund./plin.atten_fund);
-    pnl.attenuation_fund(dslice.num,:) = [dslice.pos(dslice.num); mean(mean(I_fund))/(dslice.pos(dslice.num) - min(Bubble.LocGlob(:,3)))*10];  % [mm] to [cm]
+%     I = 20*log10(pnl.atten./plin.atten);
+%     pnl.attenuation(dslice.num,:) = [dslice.pos(dslice.num); mean(mean(I))/(dslice.pos(dslice.num) - min(Bubble.LocGlob(:,3)))*10];  % [mm] to [cm]
+%     I_fund = 20*log10(pnl.atten_fund./plin.atten_fund);
+%     pnl.attenuation_fund(dslice.num,:) = [dslice.pos(dslice.num); mean(mean(I_fund))/(dslice.pos(dslice.num) - min(Bubble.LocGlob(:,3)))*10];  % [mm] to [cm]
     colors = { '#0072BD';'#D95319';	'#4DBEEE';	'#77AC30';'#7E2F8E';'#EDB120';'#A2142F';'#009999'};
     
     f1 = figure('WindowState','maximized');
@@ -111,7 +109,7 @@ for i = 1:i_end
     dBVALUES=30;
     Add = 0;
     
-    FontSize = 30;
+    FontSize = 20;
     
     f2=figure('WindowState','maximized');
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin.fund)

@@ -49,7 +49,7 @@
     real(dp), intent(out) :: R_bub(n_samples,3), RealTimeOut(n_samples)
     
    call BubbleInit()
-   !call R_exp(iBubble)
+   call R_exp(iBubble)
     
 	flag = 1 			!  This is for RK
     itol = 1            !  if atol scalar, itol = 1 and  if atol array, itol = 2	
@@ -109,12 +109,12 @@
 				tout = RealTimeIn(iout) ;
 				! RWORK(1)=tout
 				! call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,(/tout/), P_interp); y(5) = P_interp(1);
-				call dlsode(MARMOTTANT_NORM,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,mf)
+				call dlsode(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,mf)
 				if (istate .LT. 0) then
 					write(*,*) "INSIDE"
 					itask = 4
 					RWORK(1)=tout
-					call dlsoda(MARMOTTANT_NORM,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+					call dlsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
 					! itask = 1
 				endif
 				R_bub(iout,:) = y(1:3)

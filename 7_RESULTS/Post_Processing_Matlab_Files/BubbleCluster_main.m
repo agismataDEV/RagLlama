@@ -1,7 +1,7 @@
 %% A.M. 23-02-2020 - This script reads and displays the results1 contained in the HDF5 data
 clear all
 fclose('all')
-for slicenum1 = [2]%[12,3,4,5,6]
+for slicenum1 = [4]%[12,3,4,5,6]
     
     clearvars -except slicenum1 atten atten_fund
 %     close all
