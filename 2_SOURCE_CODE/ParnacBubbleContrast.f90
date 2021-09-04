@@ -648,11 +648,6 @@ CONTAINS
           write(11, *) dBubbleLocationN(iBubble,1),dBubbleLocationN(iBubble,2),dBubbleLocationN(iBubble,3)
        end do
        close(11) 
-
-       ! Save each Bubble's Contrast term for the correction of the "Own's Scattering"
-       ! open (8,  file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//'Bubble_Contrast'//int2str(cSpace%cGrid%iProcID)), status='REPLACE')
-       ! write(8,*) dBubbleContrast
-       ! close(8) 
 	   
        ! For the polydisperse case , save each bubble's radius
        if (BubbleParams%Distribution == 'polydisperse') then
@@ -1243,9 +1238,6 @@ CONTAINS
 		
     if (iProc_NumBubbles>0) then
        ALLOCATE(dBubbleCon(iDimT*BubbleParams%BubbleN))
-       ! open(9,  file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//trim('Bubble_Contrast')//int2str(0)), FORM = 'FORMATTED', status='OLD')
-       ! read(9,*) dBubbleCon 
-       ! close(9)
 	    call MPI_FILE_READ(FILE_HANDLE,  dBubbleCon, INT(iDimT*BubbleParams%BubbleN,KIND=8), MPI_DOUBLE_PRECISION, MPI_STATUS_IGNORE, iErr)
 	endif
 	call MPI_FILE_CLOSE(FILE_HANDLE, iErr)
@@ -1337,7 +1329,7 @@ CONTAINS
     ! *****************************************************************************
 
 
-    real(sp),allocatable			::  P_scattered(:,:), P_scattered_Total(:,:), dSincMult(:,:)
+    real(dp),allocatable			::  P_scattered(:,:), P_scattered_Total(:,:), dSincMult(:,:)
     real(dp),allocatable			::  dGlobBXYZ(:,:) 
     integer(i8b), allocatable		::  NeighbLocInd(:), XYZIndex(:)
     integer, allocatable 			::	GridPoint_OnProc(:,:)
@@ -1445,7 +1437,7 @@ CONTAINS
 	byte_precision = sizeof(P_scattered(1,1))
 	
     iMemAllocated=iMemAllocated + ( PRODUCT(SHAPE(dSincMult)) )* dpS + PRODUCT(SHAPE(dGlobBXYZ)) * i4bs
-    iMemAllocated=iMemAllocated + ( PRODUCT(SHAPE(P_scattered)) + PRODUCT(SHAPE(P_scattered_Total)) )*  dpS 
+    iMemAllocated=iMemAllocated + ( PRODUCT(SHAPE(P_scattered)) + PRODUCT(SHAPE(P_scattered_Total)) )*  sizeof(P_scattered(1,1)) 
     write(acTemp,"('Create ', I3,' Layer(s) of ', I<INT(log10(K*1.0D0))+1>, ' Bubble(s) for Dirac Array')") B_Div,K;    call PrintToLog(acTemp,3)
 
     ! Here we generate only the contrast source term of interest! This array will include the nonlinear contrast source term for a 
@@ -1466,15 +1458,15 @@ CONTAINS
        ! DO the multiplication with the temporal factor , in order to calculte the scattered pressure
        ! Each processor computes the scattered pressure in the gridpoints of interest only for the iterated layer of microbubbles
 	   ! Uncoment for double precision! You should change the type of P_scattered and P_scattered_Total too to dp
-       ! CALL DGEMM('N','N',M,N,K,1.0D0,RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M),(/M,K/)), M,dSincMult ,K,0.0D0,P_scattered,M)	
-       CALL SGEMM('N','N',M,N,K,1.0,REAL(RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M)* (dK_c/pi)**3,(/M,K/)),sp), M, dSincMult, K, 0.0, P_scattered, M)	  
+       CALL DGEMM('N','N',M,N,K,1.0D0,RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M)* (dK_c/pi)**3,(/M,K/)), M,dSincMult ,K,0.0D0,P_scattered,M)	
+       ! CALL SGEMM('N','N', M, N, K, 1.0, REAL(RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M)* (dK_c/pi)**3,(/M,K/)),sp), M, dSincMult, K, 0.0, P_scattered, M)	  
        P_scattered_Total(2:M+1,:)= P_scattered_Total(2:M+1,:) + P_Scattered
     enddo
 	! We need this row in order to know for which value of the gridpoint, the pressure of each row(gridpoint) is computed so we can send it to the right processor
     P_scattered_Total(1,:) = NeighbGPIndex(1+(i_neighbgp/cSpace%cGrid%iProcN)*cSpace%cGrid%iProcID:(i_neighbgp/cSpace%cGrid%iProcN)*cSpace%cGrid%iProcID+N)*1.0D0
 
     iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(dSincMult)) )* dpS - PRODUCT(SHAPE(dGlobBXYZ)) * i4bs
-    iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(P_scattered)) )* dpS 
+    iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(P_scattered)) )* sizeof(P_scattered(1,1)) 
     DEALLOCATE(P_Scattered)	
     DEALLOCATE(dSincMult) 
     DEALLOCATE(dGlobBXYZ)
@@ -1504,7 +1496,7 @@ CONTAINS
 
        N = sum(GridPoint_Count);
        ALLOCATE(P_Scattered((M+1)*N,1))
-       iMemAllocated=iMemAllocated + PRODUCT(SHAPE(P_Scattered))* dpS 	
+       iMemAllocated=iMemAllocated + PRODUCT(SHAPE(P_Scattered))* sizeof(P_scattered(1,1)) 	
 	   P_scattered = 0.0D0
        
 	   ! This is to automate the proceedure between the selection of single or double precision
@@ -1522,7 +1514,7 @@ CONTAINS
        enddo
 	   
        P_scattered_Total =  RESHAPE(P_scattered,(/M+1,N/))
-       iMemAllocated=iMemAllocated -  PRODUCT(SHAPE(P_Scattered))* dpS 
+       iMemAllocated=iMemAllocated -  PRODUCT(SHAPE(P_Scattered))* sizeof(P_scattered(1,1)) 
        DEALLOCATE(P_Scattered)	 
        DEALLOCATE(GridPoint_OnProc)
 
@@ -1533,7 +1525,7 @@ CONTAINS
           DEALLOCATE(NeighbLocInd)
        endif
     endif
-    iMemAllocated=iMemAllocated -  PRODUCT(SHAPE(P_scattered_Total))* dpS 	
+    iMemAllocated=iMemAllocated -  PRODUCT(SHAPE(P_scattered_Total))* sizeof(P_scattered(1,1)) 	
     DEALLOCATE(P_scattered_Total)
     write(acTemp,"('Proceedure finished.')");    call PrintToLog(acTemp,3)
 

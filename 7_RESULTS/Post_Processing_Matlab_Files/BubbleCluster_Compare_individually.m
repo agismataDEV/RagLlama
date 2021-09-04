@@ -165,27 +165,27 @@ if (Bubble.N <=10 && Bubble.N>0)
                                 phase_shift = exp(-1i*omega.*z_shift/medium.c0);%.*exp(-1i*omega.*z_inc_prop/medium.c0);
                                 Greens_function = exp(-1i*omega.*r_from_scatterer/medium.c0)/(4*pi*r_from_scatterer); % 1/(4*pi*r) and the time shift due to wave travel
                                 number_of_ts=1;
-%                                 number_of_ts = floor(z_shift/medium.c0/domain.dtpar)+1;
-%                                 z_indexpos = floor(((Bubble.LocGlob(iBubble,domain.dimval(3)))*1e-3/medium.c0)/domain.dtpar);
-%                                 if (z_indexpos <domain.tdimpar/2)
-%                                     if (z_indexpos+number_of_ts<domain.tdimpar/2) ; number_of_ts = 1;else ;number_of_ts=z_indexpos+number_of_ts - floor(domain.tdimpar/2); end
-%                                     %                                 if (number_of_ts<0) ; number_of_ts = 1;else ;number_of_ts=z_indexpos-number_of_ts; end
-%                                 else
-%                                     % This should be changed if error is increase. This is due to the shift ! Test a specific example tot understand
-%                                     if (z_indexpos+number_of_ts < domain.tdimpar) ; number_of_ts = domain.tdimpar -2*(domain.tdimpar-z_indexpos-number_of_ts);
-%                                     else ; number_of_ts = domain.tdimpar;
-%                                     end
-%                                 end
+                                number_of_ts = floor(z_shift/medium.c0/domain.dtpar)+1;
+                                z_indexpos = floor(((Bubble.LocGlob(iBubble,domain.dimval(3)))*1e-3/medium.c0)/domain.dtpar);
+                                if (z_indexpos <domain.tdimpar/2)
+                                    if (z_indexpos+number_of_ts<domain.tdimpar/2) ; number_of_ts = 1;else ;number_of_ts=z_indexpos+number_of_ts - floor(domain.tdimpar/2); end
+                                    %                                 if (number_of_ts<0) ; number_of_ts = 1;else ;number_of_ts=z_indexpos-number_of_ts; end
+                                else
+                                    % This should be changed if error is increase. This is due to the shift ! Test a specific example tot understand
+                                    if (z_indexpos+number_of_ts < domain.tdimpar) ; number_of_ts = domain.tdimpar -2*(domain.tdimpar-z_indexpos-number_of_ts);
+                                    else ; number_of_ts = domain.tdimpar;
+                                    end
+                                end
                                 
                                 %================================================== SEMI-ANALYTIC RESULTS SHIFTED =============================================================
                                 
-                                pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
-                                pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
-                                pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
-                                pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
-                                pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
-                                
-                                [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
+%                                 pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
+%                                 pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
+%                                 pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
+%                                 pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
+%                                 pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
+%                                 
+%                                 [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
                                 
                                 %================================================== Compare for passive scattering =======================================
                                 passive = strsplit(file.scatterer,'_');
