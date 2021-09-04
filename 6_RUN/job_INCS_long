@@ -1,13 +1,13 @@
 #!/bin/bash
  
 #SBATCH --job-name=2_MONO_test_4
-#SBATCH --partition=imphys
+#SBATCH --partition=general
 #SBATCH --qos=long
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=56
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=500G
-#SBATCH --time=20:00:00
+#SBATCH --time=40:00:00
 #SBATCH --output=../7_RESULTS/test_4/INCS_test_4.out
 #SBATCH --error=../7_RESULTS/test_4/INCS_test_4.err
 ##SBATCH --exclusive

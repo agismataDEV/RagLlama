@@ -30,11 +30,11 @@ end
 
 pharm = pnl.data;
 %%
-Nsubplot = 4;
+Nsubplot = 3;
 splot_div =2;
 dBVALUES=20;
 Add = 0;
-harmonics = 4 ;
+harmonics = 3 ;
 dims = size(plin.data); dims = dims(2:3);
 %%
 for i = 1:i_end
@@ -96,13 +96,15 @@ for i = 1:i_end
         eval(['p=plot(domain.par{domain.dimval(3)},pnl.harm' num2str(i) '(round(dims(1)/2)+1,:));']);
         set(p,'Color',sscanf(colors{i}(2:end),'%2x%2x%2x',[1 3])/255,'LineWidth',1.5)
     end
+    xline(Bubble.LocRange(3,1),'--','LineWidth',3); xline(Bubble.LocRange(3,2),'--','LineWidth',3)
     grid on
     xlabel(dslice.xlabel)
     ylabel('Pressure [dB re 1 Pa] ')
     legend('Linear P0','NonLin P0', '2H', '3H', '4H','Location', 'southeast')
     title(['Pressure at ' ,dslice.ylabel(1),' = ',num2str(round(domain.par{domain.dimval(2)}(round(dims(1)/2)+1)*1e+3)/1e+3), ' [mm]'])
     xlim([domain.par{domain.dimval(3)}(1) domain.par{domain.dimval(3)}(end)])
-    
+ 
+    %%
     %====================================================== Harmonic Plot =================================================
     Nsubplot = 4;
     splot_div =2;

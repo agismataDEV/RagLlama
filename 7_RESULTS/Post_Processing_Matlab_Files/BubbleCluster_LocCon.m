@@ -36,7 +36,7 @@ if (Bubble.N >0)
     % Load the bubbles' location from file
     Bubble.LocNorm  = LoadContrastParams(Bubble,file,'Bubble_Location', Bubble.LocFile , 'yes');
     % Load the bubbles' contrast source term value
-    Bubble.Contrast = LoadContrastParams(Bubble,file,'Bubble_Contrast', Bubble.ConFile , file.load_contrast_from_file);
+    Bubble.Contrast = LoadContrastParams(Bubble,file,'Bubble_Contrast', Bubble.ConFile , file.load_contrast_from_file, 'rb');
     % Load the bubbles' radius value
     Bubble.Radius   = LoadContrastParams(Bubble,file,'Bubble_Radius'  , Bubble.RadFile , file.load_radius_from_file);
     
@@ -121,18 +121,49 @@ if (Bubble.N >0)
     %
 end
 disp(' ')
+fclose('all')
 end
 
-function output = LoadContrastParams(Bubble,file,filename,input, load_operator)
+function output = LoadContrastParams(Bubble,file,filename,input, load_operator, fformat)
+if (nargin<5) 
+    load_operator='no';
+    fformat = 'r';
+elseif (nargin<6)
+    fformat = 'r';
+end
 
 if (strcmp(load_operator,'yes'))
-    for iProcID =0:1
+    for iProcID =0:0
         
         filename_loc = [file.dirname '/Bubbles/',filename,int2string_ICS(iProcID)];
-        fileID_loc = fopen(filename_loc,'r');
+        fileID_loc = fopen(filename_loc,fformat);
         formatSpec = '%f %f %f';
         size_loc = [1 Inf];
-        input(1+Bubble.N:2*Bubble.N,:)  = reshape(fscanf(fileID_loc,formatSpec,size_loc),size(input,2),Bubble.N)';
+        if strcmp(fformat,'r')  ;input(1+Bubble.N:2*Bubble.N,:) = reshape(fscanf(fileID_loc,formatSpec,size_loc),size(input,2),Bubble.N)'; end
+        if strcmp(fformat,'rb') ;input(1+Bubble.N:2*Bubble.N,:) = reshape(fread(fileID_loc,size_loc,'*double')  ,size(input,2),Bubble.N)'; end
+        %         Check if all the values of all the processors are the same
+        if iProcID >0
+            if sum(sum(abs(input(1+Bubble.N:2*Bubble.N,:)-input(1:Bubble.N,:))>1E-8))~=0 ;error(['ERROR in ',filename]); return; end
+        end
+        input(1:Bubble.N,:) = input(1+Bubble.N:2*Bubble.N,:) ;
+    end
+end
+output = input(1:Bubble.N,:);
+end
+
+function output = LoadContrastParams_F90_BIN(Bubble,file,filename,input, load_operator)
+% File arrtimes.m
+% x = fread(fid,[10 1],'*double')
+
+if (strcmp(load_operator,'yes'))
+    for iProcID =0:0
+        
+        filename_loc = [file.dirname '/Bubbles/',filename,int2string_ICS(iProcID)];
+        fileID_loc = fopen(filename_loc,'rb');
+%         DISCARD_FIRST_BYTES = fread(fileID_loc,[1 1],'*int64');
+        formatSpec = '%f %f %f';
+        size_loc = [1 Inf];
+        input(1+Bubble.N:2*Bubble.N,:) = reshape(fread(fileID_loc,size_loc,'*double'),size(input,2),Bubble.N)';
         %         Check if all the values of all the processors are the same
         if iProcID >0
             if sum(sum(abs(input(1+Bubble.N:2*Bubble.N,:)-input(1:Bubble.N,:))>1E-8))~=0 ;error(['ERROR in ',filename]); return; end

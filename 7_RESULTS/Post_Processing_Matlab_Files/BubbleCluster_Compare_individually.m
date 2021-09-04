@@ -95,17 +95,17 @@ if (Bubble.N <=10 && Bubble.N>0)
             m_init      =   1;%domain.dimlen(3);
             m_end       =   domain.dimlen(3);
 %             
-            k_init      =   71;58;
-            k_end       =   k_init;
-            m_init      =   10;77;
-            m_end       =   m_init;
+%             k_init      =   71;58;
+%             k_end       =   k_init;
+%             m_init      =   10;77;
+%             m_end       =   m_init;
             RRMS_ErrorG_semi_an = zeros(k_end,m_end);
             RRMS_ErrorG_an = zeros(k_end,m_end);
             
             %======== Driving Frequency ======================
             freq        = medium.freq0;
             w_driving   = 2*pi*freq;
-            Inc_Press   = 5E4*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq));
+            Inc_Press   = 1E5*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq));
             omega       = 2*pi/(domain.tdimpar*domain.dtpar)*((0:domain.tdimpar-1)-ceil((domain.tdimpar-1)/2));
             w = w_driving;
             t = domain.tpar;
@@ -176,16 +176,16 @@ if (Bubble.N <=10 && Bubble.N>0)
 %                                     else ; number_of_ts = domain.tdimpar;
 %                                     end
 %                                 end
-                                %
+                                
                                 %================================================== SEMI-ANALYTIC RESULTS SHIFTED =============================================================
                                 
-%                                 pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
-%                                 pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
-%                                 pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
-%                                 pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
-%                                 pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
-%                                 
-%                                 [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
+                                pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
+                                pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
+                                pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
+                                pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
+                                pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
+                                
+                                [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
                                 
                                 %================================================== Compare for passive scattering =======================================
                                 passive = strsplit(file.scatterer,'_');

@@ -24,7 +24,7 @@
 1.570796E+000		*** Thetay [rad]
 7.853982E-001		*** Thetat [rad]
 1.700000E+006		*** freq0  = Fundamental frequency [Hz]
-8.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+4.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
@@ -61,7 +61,7 @@ z 10.03
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-1.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+5.000000E+004		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
 1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
@@ -129,9 +129,9 @@ monodisperse
 0.25 0.75	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
 0.25 0.75	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
 0.45 0.85  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
-15e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
+10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0			*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
-*** calculate pressure in every gridpoint "all" or to the gridpoints close to scatterers "close"
+*** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
 close
 ***************************
 *** Residuals Directory ***

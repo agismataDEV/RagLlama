@@ -39,7 +39,7 @@
     integer(i8b), parameter ::  NEQ_ODEPACK(1) = 2 , NEQN_RK = 4			!   Number of first order ode's
     integer(i4b), parameter ::  lrw = 697			!   LRW   :IN     Declared length of RWORK (in user's DIMENSION statement).
     integer(i4b), parameter ::  liw = 45            !   LIW   :IN     Declared length of IWORK (in user's DIMENSION statement).
-    real(sp)    			::  atol(1), rtol(1), dtout, t, tout, y(NEQN_RK), yp(NEQN_RK)
+    real(sp)    			::  atol(1), rtol(1), dtout, t, tout, y(NEQN_RK), yp(NEQN_RK) , TOLSF, ATOL_UP(1), RTOL_UP(1)
     real(sp)				::  rwork(lrw)
     integer(i4b) 			::  iwork(liw)
     integer(i4b) 			::  i, iopar, iopt, iout, istate, itask, itol, mf, jt, flag
@@ -50,21 +50,22 @@
 	real(dp) 				 :: norm_factor(3), P_interp(1)
     
     call BubbleInit()
-    ! call R_exp(iBubble)
+    call R_exp(iBubble)
     
 	flag = 1 			!  This is for RK
     itol = 1            !  if atol scalar, itol = 1 and  if atol array, itol = 2	
     mf = 12             !   memory flag :10 -(Adams) - Non-stiff code
     jt  = 2 			!   Jacobian Type : 2 - For DLSODA instead of mf
-    iopt = 0            !   0 for not optional inputs, 1 for optional inputs
+    iopt = 1            !   0 for not optional inputs, 1 for optional inputs
     itask = 1
     istate = 1
-	! RWORK(6)=0.0		! Preload the optional inputs in order to be able to change some of them 
-	! RWORK(6) = RealTimeIn(2)-RealTimeIn(1);
     ! IWORK(6)=0
-	! IWORK(6) = 1000;
-				
-    ! If BubbleParams%rad_norm = BubbleParams%R0 , The result of the RP Solver is normalized to x = R/BubbleParams%rad_norm = R/R0 , so the solved value is multiplied by BubbleParams%R0 at the end of the code
+	! IWORK(6) = 2000; 
+	IWORK(7) = 0;
+	IWORK(7) = 1;
+	! CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call
+    
+	! If BubbleParams%rad_norm = BubbleParams%R0 , The result of the RP Solver is normalized to x = R/BubbleParams%rad_norm = R/R0 , so the solved value is multiplied by BubbleParams%R0 at the end of the code
     ! atol and rtol shoudld be 1E-5
     ! If BubbleParams%rad_norm =  1.0D0, the result of the RP solver ir R, so the solved value should not be multiplied with any factor
     ! atol and rtol shoudld be 1E-9. DLSODE input should change to MARMOTTANT_R
@@ -76,8 +77,8 @@
 		 BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
 	endif
 	
-    rtol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
-    atol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
+    rtol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-6.0D0)
+    atol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-6.0D0)
 	
 	BubbleParams%P_driv = RealPressIn;
 	BubbleParams%T_driv = RealTimeIn * BubbleParams%time_norm;
@@ -105,18 +106,35 @@
 		! enddo
 	! else		!For the case of ODEPACK solver
     	do iout = 2,n_samples
-			    ! t  = RealTimeIn(iout-1)
+				ATOL_UP = ATOL
+				RTOL_UP = RTOL
+				! IWORK(6) = 0
+				! IWORK(6) = 500
+			    ! t  = RealTimeIn(iout-1) 
 				tout = BubbleParams%T_driv(iout) ;
 				! RWORK(1)=tout 
 				! call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/tout/),dp), P_interp); y(5) = P_interp(1);
-				call slsoda(MARMOTTANT_NORM,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
-				! if (istate .LT. 0) then
-					! write(*,*) "INSIDE"
-					! itask = 4
-					! RWORK(1)=tout
-					! call slsoda(MARMOTTANT_NORM,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
-					itask = 1
-				! endif
+				call slsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+				do while (ISTATE == -2 .OR. ISTATE == -1)
+					if (ISTATE == -2) then
+						TOLSF = RWORK(14)
+						write(*,*) "Initial tolerance : ", ATOL_UP,RTOL_UP
+						write(*,*) "Tolerance factor used ", TOLSF
+						ATOL_UP = ATOL_UP * TOLSF * 2.0D0
+						RTOL_UP = RTOL_UP * TOLSF * 2.0D0
+						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+						ISTATE = 3
+					else
+						IWORK(6)=0
+						IWORK(6) = INT(IWORK(11) * 2, i4b);
+						! ATOL_UP = ATOL_UP * 2.0D0
+						! RTOL_UP = RTOL_UP * 2.0D0
+						! write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
+						! write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+						ISTATE = 3
+					endif
+					call slsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+				end do
 				R_bub(iout,:) = y(1:3)
 				RealTimeOut(iout) = t
 		enddo

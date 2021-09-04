@@ -39,7 +39,7 @@ MODULE Types
                 integer(i8b), parameter :: i2bS         = sizeof(int(1,i2b))
                 integer(i8b), parameter :: i1bS         = sizeof(int(1,i1b))
 
-                integer, parameter :: sp                = kind(1.0)
+                integer, parameter :: sp                = selected_real_kind(6, 37) ! kind(1.0) 
                 integer, parameter :: dp                = selected_real_kind(15, 307)
                 integer, parameter :: qp                = selected_real_kind(32, 4931)
                 integer(i8b), parameter :: spS          = sizeof(real(1, sp));

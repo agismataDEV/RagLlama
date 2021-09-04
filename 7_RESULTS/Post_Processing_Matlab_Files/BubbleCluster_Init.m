@@ -42,14 +42,14 @@ medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
 medium.P0                  = 1.01E5  ;
 
 %% Bubble Parameters
-Bubble.N                 = 1;
+Bubble.N                 = 1E2;
 Bubble.mindist           = 20e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 1;
+domain.beamiterations       = 9;
 domain.ibeam                = 0;
-domain.Fnyq                 = 8;
+domain.Fnyq                 = 5;
 domain.PPW_t                = 2;
 domain.strides              = [1 1 1 1];
 domain.offsets              = [0 0 0 0];
@@ -57,17 +57,17 @@ domain.offsets              = [0 0 0 0];
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1E7_MBs_9FNYQ';
-file.dirname             = '../test_2';
+file.dirname             = '../test_6';
 file.contrast_name       = 'ContrastSrc';
-file.scatterer           = 'active';         % 'active','passive_lin', 'passive_nonlin'
+file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 
 file.plot_contrast       = 'yes';            % 'yes' or 'no'
 file.plot_attenslices    = 'no';
 file.plot_converr        = 'no';
 file.plot_colour         = 'viridis';          % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
-file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
-file.load_contrast_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
+file.play_movies         = 'no';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
+file.load_contrast_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
 %% Slice Parameters

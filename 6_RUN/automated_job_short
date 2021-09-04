@@ -37,7 +37,7 @@ cd ../6_RUN/
 echo "#!/bin/bash" 									 															> job_INCS_short
 echo " " 											 															>> job_INCS_short
 echo "#SBATCH --job-name=2_MONO_$OUTPUT_FOLDER" 	 															>> job_INCS_short
-echo "#SBATCH --partition=imphys" 					 															>> job_INCS_short
+echo "#SBATCH --partition=general" 					 															>> job_INCS_short
 echo "#SBATCH --qos=short"          				 															>> job_INCS_short
 echo "#SBATCH --nodes=1"           					 															>> job_INCS_short
 echo "#SBATCH --ntasks-per-node=56" 				 															>> job_INCS_short

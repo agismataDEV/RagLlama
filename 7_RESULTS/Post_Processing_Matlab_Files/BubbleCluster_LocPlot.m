@@ -30,7 +30,7 @@ disp('Ploting the microbubble cluster...')
 
 %=============================== 3D Domain View ==============================
 f4 = figure('WindowState','maximized');
-LocPlot_FontSize = 20;
+LocPlot_FontSize = 15;
 subplot(2,3,1)
 hold on;
 box on;

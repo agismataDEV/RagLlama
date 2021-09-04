@@ -44,7 +44,7 @@ if (Bubble.N <=10 && Bubble.N>0)
             
             BubbleVal_loaded = fscanf(fileID_pres,formatSpec,size_pres);
             
-            n_pad = 16;
+            n_pad = ((length(BubbleVal_loaded)-1)/domain.tdimpar-2)/2;
             %         BubbleVal = BubbleVal_loaded(1+size(BubbleVal_loaded,1)/2*(iBubble-1):end*iBubble/2);
             BubbleVal = BubbleVal_loaded(2:(1+n_pad)*2*domain.tdimpar+1);
             
@@ -105,8 +105,10 @@ if (Bubble.N <=10 && Bubble.N>0)
             %======== Driving Frequency ======================
             freq        = medium.freq0;
             w_driving   = 2*pi*freq;
-            Inc_Press   = 1E4*exp( - ((domain.tpar-6/freq)/(3/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq)).*(1+sign(domain.tpar))/2;
+            Inc_Press   = 1E5*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq));
             omega       = 2*pi/(domain.tdimpar*domain.dtpar)*((0:domain.tdimpar-1)-ceil((domain.tdimpar-1)/2));
+            w = w_driving;
+            t = domain.tpar;
             
             % Make denser the matrix to increase accuracy
             tpar_N = interp(domain.tpar,OSFactor);
@@ -174,16 +176,16 @@ if (Bubble.N <=10 && Bubble.N>0)
 %                                     else ; number_of_ts = domain.tdimpar;
 %                                     end
 %                                 end
-                                %
+                                
                                 %================================================== SEMI-ANALYTIC RESULTS SHIFTED =============================================================
                                 
-%                                 pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
-%                                 pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
-%                                 pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
-%                                 pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
-%                                 pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
-%                                 
-%                                 [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
+                                pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
+                                pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
+                                pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
+                                pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
+                                pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
+                                
+                                [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
                                 
                                 %================================================== Compare for passive scattering =======================================
                                 passive = strsplit(file.scatterer,'_');
@@ -204,6 +206,9 @@ if (Bubble.N <=10 && Bubble.N>0)
                                         ddpddt          =   fft((Inc_Press+P_scattered(iBubble,:)).^2).*(1i*fftshift(omega)).^2 ; % What the scatterer understands
                                         
                                     end
+                                    % Analytic computation 
+%                                     ddpdddomain.tpar_sub = (12800000*freq^4*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq).^2)/81 - 50000*w_driving^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9) - (1600000*freq^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9))/9 - (1600000*freq^2*w_driving*cos(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq))/9;
+%                                     q = ddpddt_sub .* (4/3*pi*R_rigid(iBubble)^3)/(medium.c0^2)/(4*pi*r_from_scatterer);
                                     ddpddt = ifftshift(fftshift(ddpddt).*(time_signature.*phase_shift));
                                     pnl.an = ddpddt;
                                     pnl.an = real(ifft(pnl.an));
