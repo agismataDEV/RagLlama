@@ -32,3 +32,8 @@ RP_SP.f90 - ODEPACK_SP : Single Precision Solver was added to increase speed
 RP_SP.f90 : The solution using a normalized Marmottant was fixed because RealTimeIn was used as input and it 
 			should not change when the computations are finished so "intent(in)" was added in the designation
 			of the variable
+      
+=============================================================================================================
+04/09/2021 
+=============================================================================================================
+BubbleContrast.f90  - CalculateCloudPressure : Added proceedure for single precision mkl computation
