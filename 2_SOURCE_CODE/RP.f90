@@ -1,14 +1,17 @@
     MODULE RP
+	USE ParnacGeneral
     USE Specialfun
     USE ParnacDataDef
     USE ParnacParamDef
     USE ParnacParamInit, ONLY : &
         BubbleInit
     USE Constants
+	 USE ParnacTransformFilter, ONLY : &
+       dTaperingWindow, INTERP1DFREQ
     
-    CONTAINS
+    CONTAINS 
 
-    SUBROUTINE RP_SOLVER(RealPressIn,RealTimeIn,T_start,T_end,n_samples,iBubble, R_bub,RealTimeOut)
+    SUBROUTINE RP_SOLVER(RealPressIn, RealTimeIn, n_samples, iBubble, V_dd_pad, RealTimeOut)
     
     ! =============================================================================
     !
@@ -36,20 +39,39 @@
     !   MinDistance  i    i8b          Minimum distance between microbubbles
     !
 	
-    integer(i8b) i, iopar, iopt, iout, istate, itask, itol, mf, nout, nqu, nst,jt,flag
+    integer(i8b), intent(in) ::  iBubble, n_samples
+    real(dp), intent(in)     ::  RealPressIn(n_samples), RealTimeIn(n_samples)
+    real(dp), intent(out)    ::  V_dd_pad(n_samples), RealTimeOut(n_samples)
+	
+	! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    !   iErr            i8b    Error number
+    !   iLi             i8b    Loop counter over the blocks to save
+    !   iLast           i8b    Index of the last full block
+    !   iBlockL         i8b    Size of the blocks
+    !   acFilename      char   Total filename including path and suffix
+    !   acTemp          char   Temporary char array for output log messages
+    !
+    ! *****************************************************************************
+	
     integer(i8b), parameter ::  NEQ_ODEPACK(1) = 2 , NEQN_RK = 4			!   Number of first order ode's
-    integer(i8b), parameter ::  lrw = 697			!   LRW   :IN     Declared length of RWORK (in user's DIMENSION statement).
-    integer(i8b), parameter ::  liw = 45            !   LIW   :IN     Declared length of IWORK (in user's DIMENSION statement).
-    integer(i8b) ::  n_samples, iBubble
-    real(dp)    :: RealPressIn(n_samples), RealTimeIn(n_samples), T_start, T_end, P_interp(1)
-    real(dp)    :: atol(1), rtol(1), dtout, t, tout, y(NEQN_RK), yp(NEQN_RK)
-	real(dp) 	:: norm_factor(3)
-    real(dp)	:: rwork(lrw)
-    integer(i8b):: iwork(liw)
-    real(dp), intent(out) :: R_bub(n_samples,3), RealTimeOut(n_samples)
+    integer(i4b), parameter ::  lrw = 697			!   LRW   :IN     Declared length of RWORK (in user's DIMENSION statement).
+    integer(i4b), parameter ::  liw = 45            !   LIW   :IN     Declared length of IWORK (in user's DIMENSION statement).
+    real(dp)    			::  atol(1), rtol(1), dtout, t, tout, y(NEQN_RK), yp(NEQN_RK) , TOLSF, ATOL_UP(1), RTOL_UP(1)
+    real(dp)				::  rwork(lrw)
+    integer(i4b) 			::  iwork(liw)
+    integer(i4b) 			::  i, iopar, iopt, iout, istate, itask, itol, mf, jt, flag
+	real(dp) 				::  norm_factor(3), P_interp(1)
+	real(dp)				::  R_bub(n_samples,3), dTaperSupportWindowN(n_samples)
+	
+	character(len = 1024)	::  	actemp
+	
+	logical					:: log_isnan
     
-   call BubbleInit()
-   call R_exp(iBubble)
+    call BubbleInit()
+    call R_exp(iBubble)
     
 	flag = 1 			!  This is for RK
     itol = 1            !  if atol scalar, itol = 1 and  if atol array, itol = 2	
@@ -58,12 +80,13 @@
     iopt = 1            !   0 for not optional inputs, 1 for optional inputs
     itask = 1
     istate = 1
-	! RWORK(6)=0.0		! Preload the optional inputs in order to be able to change some of them 
-	! RWORK(6) = RealTimeIn(2)-RealTimeIn(1);
     ! IWORK(6)=0
-	! IWORK(6) = 1000;
-				
-    ! If BubbleParams%rad_norm = BubbleParams%R0 , The result of the RP Solver is normalized to x = R/BubbleParams%rad_norm = R/R0 , so the solved value is multiplied by BubbleParams%R0 at the end of the code
+	! IWORK(6) = 2000; 
+	IWORK(7) = 0;
+	IWORK(7) = 1;
+	CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call
+    
+	! If BubbleParams%rad_norm = BubbleParams%R0 , The result of the RP Solver is normalized to x = R/BubbleParams%rad_norm = R/R0 , so the solved value is multiplied by BubbleParams%R0 at the end of the code
     ! atol and rtol shoudld be 1E-5
     ! If BubbleParams%rad_norm =  1.0D0, the result of the RP solver ir R, so the solved value should not be multiplied with any factor
     ! atol and rtol shoudld be 1E-9. DLSODE input should change to MARMOTTANT_R
@@ -77,55 +100,89 @@
 	
     rtol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
     atol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
-	   
-    RealTimeIn = RealTimeIn*BubbleParams%time_norm
 	
-	BubbleParams%P_driv = RealPressIn;
-	BubbleParams%T_driv = RealTimeIn;
-    
+	dTaperSupportWindowN = dTaperingWindow(n_samples,(RealTimeIn(2)-RealTimeIn(1))* cModelParams%freq0,2.0_dp,2.0_dp)
+	
+	BubbleParams%P_driv = RealPressIn * dTaperSupportWindowN
+	BubbleParams%T_driv = RealTimeIn * BubbleParams%time_norm;
+		  
 	! Medium parameters (water, Room temperature =20° and 1 atm ambient pressure) 
     BubbleParams.P_g0 = cMediumParams%P0+2.0D0*BubbleParams.sigma_R0/BubbleParams.R0(iBubble)
 
     ! Marmottant model parameters
     BubbleParams.R_b =  BubbleParams.R0(iBubble)*1.0D0/sqrt(BubbleParams.sigma_R0*1.0D0/BubbleParams.chi+1.0D0)
     BubbleParams.R_r =  BubbleParams.R_b*sqrt(BubbleParams.sigma_w*1.0D0/BubbleParams.chi+1.0D0)  
-    
+     
     y(1) = BubbleParams%R0(iBubble)/BubbleParams%rad_norm                     
     y(2) = 0.0d0 ; y(3) = 0.0d0 ; y(4) = iBubble*1.0D0;
     R_bub(1,:) = y(1:3)
     
-    tout = RealTimeIn(1)
-    t = RealTimeIn(1)
-    RealTimeOut(1) = RealTimeIn(1)
-	if (BubbleParams%Solver_Method=='RK') then !For the case of Runge Kutta Solver
-		do iout = 2,n_samples
-			tout = RealTimeIn(iout) ; 
-			call R8_RKF45(MARMOTTANT_NORM, NEQN_RK, y, yp, t, tout, rtol, atol, flag )
-			R_bub(iout,:) = y(1:3)
-			RealTimeOut(iout) = t
-		enddo
-	else		!For the case of ODEPACK solver
+    tout = BubbleParams%T_driv(1)
+    t = BubbleParams%T_driv(1)
+    RealTimeOut(1) = BubbleParams%T_driv(1)
+	! if (BubbleParams%Solver_Method=='RK') then !For the case of Runge Kutta Solver
+		! do iout = 2,n_samples
+			! tout = RealTimeIn(iout) ; 
+			! call R8_RKF45(MARMOTTANT_NORM, NEQN_RK, y, yp, t, tout, rtol, atol, flag )
+			! R_bub(iout,:) = y(1:3) 
+			! RealTimeOut(iout) = t 
+		! enddo
+	! else		!For the case of ODEPACK solver
     	do iout = 2,n_samples
-				tout = RealTimeIn(iout) ;
-				! RWORK(1)=tout
-				! call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,(/tout/), P_interp); y(5) = P_interp(1);
-				call dlsode(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,mf)
-				if (istate .LT. 0) then
-					write(*,*) "INSIDE"
-					itask = 4
-					RWORK(1)=tout
-					call dlsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
-					! itask = 1
-				endif
+				ATOL_UP = ATOL
+				RTOL_UP = RTOL
+			    t  = RealTimeIn(iout-1) 
+				tout = BubbleParams%T_driv(iout) ;
+				call dlsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+				do while (ISTATE == -2 .OR. ISTATE == -1)
+					if (ISTATE == -2) then
+						TOLSF = RWORK(14) 
+						write(*,*) "Initial tolerance : ", ATOL_UP,RTOL_UP
+						write(*,*) "Tolerance factor used ", TOLSF
+						ATOL_UP = ATOL_UP * TOLSF * 2.0D0
+						RTOL_UP = RTOL_UP * TOLSF * 2.0D0
+						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+					elseif (ISTATE == -1) then
+						IWORK(6)=0
+						IWORK(6) = INT(IWORK(11) * 2, i4b);
+						ATOL_UP = ATOL_UP * 2.0D0
+						RTOL_UP = RTOL_UP * 2.0D0
+						write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
+						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+					else
+						write(*,*) "ISTATE = " ,ISTATE
+					endif
+					ISTATE = 3
+					call dlsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+					IF (ISTATE>0) RWORK(5:7) = 0 
+					IF (ISTATE>0) IWORK(5:7) = 0 
+				end do
 				R_bub(iout,:) = y(1:3)
 				RealTimeOut(iout) = t
 		enddo
-	endif 
+	! endif 
 	
-    norm_factor = BubbleParams%time_norm**(/0,1,2/)*BubbleParams%rad_norm
+    norm_factor = BubbleParams%time_norm**(/0.0D0,1.0D0,2.0D0/)*BubbleParams%rad_norm
     R_bub(:,1) = R_bub(:,1)*norm_factor(1) ; R_bub(:,2) = R_bub(:,2)*norm_factor(2) ;R_bub(:,3) = R_bub(:,3)*norm_factor(3)
     RealTimeOut = RealTimeOut*1.0D0/BubbleParams%time_norm
 	
+	! Check to see if results are realistic
+	log_isnan = sum(isnan(R_bub(:,1))*-1) + sum(isnan(R_bub)*-1) + sum(isnan(R_bub(:,3))*-1)
+	if ( log_isnan>0 .OR. REAL(maxval(abs(R_bub)),dp)>1.0D+32 .OR. maxval(abs(R_bub)) > HUGE(maxval(abs(R_bub))) ) then ! Check Nan , Large values or Infinity
+	    write(acTemp,"('Error in ODE SOLVER , Bubble No. ', I7, ' .')") iBubble
+        call PrintToLog(acTemp,1) 
+        stop
+	endif
+	
+	! Filter the edges (not absolutely needed)
+	R_bub(:,1)= R_bub(:,1) * dTaperSupportWindowN
+	R_bub(:,2)= R_bub(:,2) * dTaperSupportWindowN
+	R_bub(:,3)= R_bub(:,3) * dTaperSupportWindowN
+		  
+	! Find volume acceleration d^2V/dt^2 [m^3/s^2] 
+    ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
+    V_dd_pad = 4.0D0*pi*R_bub(:,1)*(R_bub(:,1)*R_bub(:,3)+2.0D0*R_bub(:,2)**2)
+
     END SUBROUTINE RP_SOLVER
 
     SUBROUTINE MARMOTTANT_NORM(neq, t, R, Rdot)
@@ -161,12 +218,12 @@
     !   P_vis		  r    dp           damping due to the viscosity of the fluid 
     
     integer neq, iBubble
-    real(dp) t, R(*), Rdot(*), sigma_R, P_interp(1) 
+    real(dp) t, R(*), Rdot(*), sigma_R
+	real(dp) P_interp(1) 
 	real(dp) P_elas, P_vis, P_gas, Damp_ac, Damp_visc
 
     iBubble= NINT(R(4))
-    call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,(/t/), P_interp);
-    ! P_interp(1) = R(5)
+    call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
     ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
     ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)
 
@@ -184,12 +241,13 @@
 	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*R(2)*BubbleParams%time_norm
 	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*BubbleParams%time_norm/R(1)
     P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm*R(1))
+	BubbleParams%kappa_s  = 1.5D-9*EXP(8.0D5*BubbleParams%R0(iBubble))
     P_vis     =  4.0D0*BubbleParams%kappa_s*R(2)*BubbleParams%time_norm/(BubbleParams%rad_norm*R(1)**2)
 	
     Rdot(1) = R(2)  
     Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/R(1)
     R(3) = Rdot(2)
-
+	return
     END SUBROUTINE MARMOTTANT_NORM
     
     !===================================== Experimental Solver ==========================================
@@ -252,14 +310,15 @@
     END SUBROUTINE R_EXP
     
     SUBROUTINE MARMOTTANT_EXP(neq, t, R, Rdot)
-	integer 		:: 	neq, iBubble, i 
+	integer 		:: 	neq
+	integer(i8b) 	::  iBubble, i 
     real(qp)		::	A_R,A_m,sigma_Rcoeff(11), sigma_R
-    real(dp) 		::	t, R(*), Rdot(*), P_interp(1) 
-	real(dp) 		::	P_elas, P_vis, P_gas, Damp_ac, Damp_visc
+    real(dp) 		::	t, R(*), Rdot(*)
+	real(dp) 		::	P_elas, P_vis, P_gas, Damp_ac, Damp_visc, P_interp(1) 
 
     iBubble= NINT(R(4))
-	call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,(/t/), P_interp);
-    
+	call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
+	
     A_R = 4.0D0*pi*(BubbleParams%R0(iBubble)*R(1)*1.0D+6)**2.0D0;
     A_m = A_R*1.0D0/BubbleParams%A0c;
     
@@ -271,16 +330,17 @@
     sigma_R = sum(sigma_Rcoeff)
     sigma_R = sigma_R*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + BubbleParams%sigma_w * abs(A_m > 1.116D0)
 
-    !sigma_R = sigma_R0  + 2*BubbleParams%chi*(R(1)-1)
 	P_gas     =  BubbleParams%P_g0*(BubbleParams%R0(iBubble)/(R(1)*BubbleParams%rad_norm))**(3.0D0*BubbleParams%gama)
 	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*R(2)*BubbleParams%time_norm
 	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*BubbleParams%time_norm/R(1)
     P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm*R(1))
+	BubbleParams%kappa_s  = 1.5D-9*EXP(8.0D5*BubbleParams%R0(iBubble))
     P_vis     =  4.0D0*BubbleParams%kappa_s*R(2)*BubbleParams%time_norm/(BubbleParams%rad_norm*R(1)**2)
 	
     Rdot(1) = R(2)  
     Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/R(1)
     R(3) = Rdot(2)
+	return
     END SUBROUTINE MARMOTTANT_EXP
     
 !    !===================================== END OF Experimental Solver ==========================================

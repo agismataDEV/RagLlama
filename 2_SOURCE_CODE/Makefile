@@ -7,7 +7,7 @@ objects = 	 $(addprefix $(OBJDIR)/, fftw3.o Types.o Constants.o Cisi.o FDWeight.
 								  Stopwatch.o ParnacGeneral.o ParnacParamDef.o ParnacIdentifierDef.o ParnacTransformInit.o \
 								  ParnacDataSpaceInit.o ParnacOutput.o ParnacDataMap.o  Specialfun.o ContrastGenFilt.o \
 								  ParnacDataRedist.o f2kcli.o ParnacParamInit.o  ParnacTransformFilter.o ParnacDerivative.o \
-			 					  ODEPACK_SP.o ORDERPACK.o RP_SP.o RKF45.o ParnacContrastFunctions.o ParnacBubbleContrast.o \
+			 					  ODEPACK.o ORDERPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacBubbleContrast.o \
 								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacSchemes.o ParnacMain.o\
 								)  
 

@@ -59,7 +59,7 @@ file.rootname            = 'TESTNeumann';
 file.dirname             = '../1E7_MBs_9FNYQ';
 file.dirname             = '../test_3';
 file.contrast_name       = 'ContrastSrc';
-file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
+file.scatterer           = 'active';         % 'active','passive_lin', 'passive_nonlin'
 
 file.plot_contrast       = 'yes';            % 'yes' or 'no'
 file.plot_attenslices    = 'no';
