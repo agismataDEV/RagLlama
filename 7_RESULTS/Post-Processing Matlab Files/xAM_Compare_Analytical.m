@@ -67,7 +67,7 @@ pnl.an.filename     = [an.file.dirname '/' 'phi_fourier' int2string_ICS(1) '_' a
 an.filename        = [an.file.dirname '/' 'phi_sq_fourier' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
 [sim.phi_sq]        = FieldLoad(an.filename,'yes');
 Frequency(domain, sim.phi_sq,real(an.phi_sq),an.depth, sim.title);
-%test
+
 %% ====================================================== Time Derivative of (phi)^2 ============================================================
 
 an.filename        = [an.file.dirname '/' 'Time_Deriv' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
