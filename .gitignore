@@ -6,7 +6,10 @@
 /7_RESULTS/**
 # This pattern only works with the two previous patterns
 # (i remember it was working alone on older git versions)
-!7_RESULTS/Post_Processing_Matlab_Files
+!/Post_Processing_Matlab_Files/*
+!/Post_Processing_Matlab_Files
+!/Figures
+!/Results_for_separate_Variables
 ###############################
 
 !3_COMPILED_FILES/
