@@ -483,7 +483,8 @@ SUBROUTINE DerivativeComplex(acIn, acOut, iLength, rDelta, arWeights, aiPoints)
 !   arWeights   i   dp   Array containing the weights of the stencils
 !   aiPoints    i   i8b  Array containing the positions of the stencils
 !
-	complex(dpc), intent(inout)::	acIn(:), acOut(:);
+	complex(dpc), intent(in)::	acIn(:)
+	complex(dpc), intent(inout)::	 acOut(:);
 	integer(i8b), intent(in)::	iLength;
 	real(dp), intent(in) ::			rDelta
 	real(dp), intent(in)::	arWeights(:, :, :)

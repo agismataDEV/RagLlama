@@ -158,9 +158,9 @@ CONTAINS
     !   exists/exists_loc      logical    variable used to check if files exist in a specific dir
     ! ***********************************************************************************************
 
-    integer 	         		::  	iErr, iStat(MPI_STATUS_SIZE), iREQUEST
+    integer 	         		::  	iErr, iStat(MPI_STATUS_SIZE), iREQUEST, ErrCode
     integer(i8b)         		:: 		iBeamIndex(3),iBeamIndexN(3), XYZindex , iTargetIndex(3)
-    integer(i8b)				::		ones(8,3), XYZ_i1(8), p(6), XYZ_i2(size(p,1)**3), NeighbGridPoints(size(p,1)**3,3), iBeamIndexNGP(size(p,1)**3,3)
+    integer(i8b)				::		ones(8,3), XYZ_i1(8), p(10), XYZ_i2(size(p,1)**3), NeighbGridPoints(size(p,1)**3,3), iBeamIndexNGP(size(p,1)**3,3)
     real(dp)             		:: 		dGlobXYZ(3), GlobalPos(8,3) , xyz_factor(3), diff(8,3), Domain_Range(2,3), BubbleEnhancedP(1E3)
     real(dp)             		:: 		dRadius(1), dLambdaMM, dK_c
     integer(i8b)         		:: 		iDimX, iDimY, iDimZ, iDimT
@@ -176,9 +176,9 @@ CONTAINS
     real(dp),allocatable		::		temploc(:), tempcon(:), temp_globloc(:), LocPres(:,:)
 
     ! Parameters for Rayleigh - Plesset Solver
-    integer(i8b),parameter		::  	n_pad = 4
+    integer(i8b),parameter		::  	n_pad = 4 , OS_Factor = 1
 
-    real(dp)		 			::  	RealPressure(cSpace%iDimT)				, RealTime(cSpace%iDimT)						
+    real(dp)		 			::  	RealPressure(OS_Factor * cSpace%iDimT)	, RealTime(cSpace%iDimT)						
     real(dp)             		::  	RealPressurePad(cSpace%iDimT *n_pad)  	, RealTimePad(cSpace%iDimT *n_pad)	,  RealTimePadOut(cSpace%iDimT *n_pad)
     real(dp)             		::  	RealPressure_i1(8,cSpace%iDimT)			, RealPressure_Own(8,cSpace%iDimT)	,  Interp_PressureBL(cSpace%iDimT)
     real(dp)             		::  	V_dd_norm(cSpace%iDimT)					, V_dd_Pad(cSpace%iDimT *n_pad)		
@@ -262,7 +262,7 @@ CONTAINS
     dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor λ in [mm]
     dK_c = pi / cSpace%dDx
 
-    ibDimT   = cSpace%iDimT ! This should not be changed because ibDimT is Integer
+    ibDimT   = OS_Factor * cSpace%iDimT ! This should not be changed because ibDimT is Integer
 
     !Allocate for memory management
     ALLOCATE(arBufferXYZ(cSpace.cGrid.iD0LocN,3))
@@ -337,8 +337,8 @@ CONTAINS
     ! that are positioned in corner cases (close to each cpu domain boundaries)
 
     ! This is done to reduce the memory usage
-    call ProcBubbleCount(cSpace,dBubbleLocationN,tempcon,i_loc)
-    if (.NOT. ALLOCATED(tempcon)) ALLOCATE(tempcon(i_loc*cSpace%iDimT))
+    call ProcBubbleCount(cSpace,dBubbleLocationN,tempcon,i_loc,ibDimT)
+    if (.NOT. ALLOCATED(tempcon)) ALLOCATE(tempcon(i_loc*ibDImT))
     ALLOCATE(LocPres(8,(3+iDimT)*i_loc))
 
     ALLOCATE(NeighbGPIndex(size(p,1)**3*BubbleParams%BubbleN))
@@ -424,9 +424,10 @@ CONTAINS
     DEALLOCATE(arBufferXYZ)
 
     call I_unista(NeighbGPIndex(1:i_neighbgp), i_neighbgp)
-    iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(NeighbGPIndex)) + PRODUCT(SHAPE(arBufferXYZ)) ) * i4bs
     ! NeighGPIndex has more elements than needed. Here we transfer only the one needed to save memory
-    ALLOCATE(tempbuffer(i_neighbgp)); tempbuffer = NeighbGPIndex(1:i_neighbgp) ; DEALLOCATE(NeighbGPIndex) ; 
+    ALLOCATE(tempbuffer(i_neighbgp)); tempbuffer = NeighbGPIndex(1:i_neighbgp) ; DEALLOCATE(NeighbGPIndex) ;
+    iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(NeighbGPIndex)) + PRODUCT(SHAPE(arBufferXYZ)) ) * i4bs
+	
     ALLOCATE(NeighbGPIndex(i_neighbgp)); NeighbGPIndex = tempbuffer; DEALLOCATE(tempbuffer);
     iMemAllocated=iMemAllocated + PRODUCT(SHAPE(NeighbGPIndex)) * i4bs
 
@@ -489,7 +490,7 @@ CONTAINS
                    write(acTemp,"('Error in Trilinear Interpolation in Location , Bubble No. ', I7, ' Neighbouring ',I5, ' .')") iBubble, i
                    call PrintToLog(acTemp,1) 
                    write(*,*) "Exists : " , exists , XYZIndex ,cSpace%cGrid%iProcID
-                   stop
+                   call MPI_Abort(MPI_COMM_WORLD, ErrCode ,iErr)
                 endif
 
                 RealPressure_Own(i,:) = 1.0D-30;
@@ -523,21 +524,35 @@ CONTAINS
           ! call INTERP1D( RealTime, RealPressure, RealTimePad, RealPressurePad)  
           call INTERP1DFREQ(RealPressure,RealPressurePad, cSpace,0)
 
-          ! Open File
+          ! Open File 
           ! open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
           ! write(7,*) iBubble
           ! write(7,*) RealTime, RealPressure,RealTimePad,RealPressurePad
           ! close(7) 
-
+ 
           ! Marmottant solver ( ODE Solver) , Result is V_dd_Pad (volume acceleration) and RealTimePadOut which is the updated time values 
           call RP_SOLVER(RealPressurePad, RealTimePad, iDimT * n_pad, iBubble, V_dd_Pad , RealTimePadOut)
 
           ! Return to the initial dimensions!
           call INTERP1DFREQ(V_dd_Pad, V_dd_norm, cSpace,0)
           ! call INTERP1D( RealTimePadOut, V_dd_Pad, RealTime, V_dd_norm)
-
-          ! V_dd_norm = 0.0D0;
-          ! BubbleParams%R0(iBubble) = 1D-4
+		  
+		  ! Check to see if results are realistic
+		  if ( .NOT. ALL(ABS(V_dd_norm)<1E100_dp)) then ! Check Nan , Large values or Infinity
+				write(acTemp,"('Error in ODE SOLVER in V_dd_pad , Bubble No. ', I7, ' .')") iBubble
+				call PrintToLog(acTemp,1) 
+				open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
+				  write(7,*) iBubble
+				  write(7,*) RealTime, RealPressure,RealTimePad,RealPressurePad
+				  close(7) 
+				  open (8, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('v_dd_norm')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
+				  write(8,*) V_dd_norm,V_dd_pad
+				  close(8)
+				call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
+		  endif
+           
+		  ! V_dd_norm = 0.0D0; 
+          ! BubbleParams%R0(iBubble) = 1D-4       
 
           ! Normalize by freq based on the order of the spectral derivative
           call LinScatterer(RealPressure , RealPressure, cSpace, 4.0/3.0*pi*BubbleParams%R0(iBubble)**3/cMediumParams%c0**2*cModelParams%freq0**2, 2 )
@@ -567,8 +582,8 @@ CONTAINS
     call MPI_Allgather(i_loc-1,1,MPI_INTEGER,Bubble_count,1,MPI_INTEGER,MPI_COMM_WORLD,iErr)
     if ( sum(Bubble_count) .NE. BubbleParams%BubbleN) then
        write(acTemp,"('Error! Less bubbles that total are considered .')") iBubble, i
-       call PrintToLog(acTemp,1) 
-       stop
+       call PrintToLog(acTemp,1)  
+       call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
     endif
     call MPI_BARRIER(MPI_COMM_WORLD,iErr)
 
@@ -597,8 +612,9 @@ CONTAINS
     iMemAllocated=iMemAllocated + PRODUCT(SHAPE(dBubbleContrast)) * dpS
 
     ! Same idea with previous. This is done in order each processor to know the contrast and location of all the scatterers
-    dBubbleContrast=1D-30 ! Change below to MPI_DOUBLE_PRECISION if error
+    dBubbleContrast=1D-30 
     call MPI_Allgatherv(tempcon,ibDimT*(i_loc-1),MPI_DOUBLE_PRECISION,dBubbleContrast,ibDimT*Bubble_count,Bubble_condisps,MPI_DOUBLE_PRECISION,MPI_COMM_WORLD,iErr)	
+	
     call MPI_BARRIER(MPI_COMM_WORLD, iErr); ! Wait for all the processors that the bubbles are located in to store the values
 
     !Wait until each processor has checked in , in order to finalize the number of bubbles in each processor and the proceed to next step
@@ -611,8 +627,8 @@ CONTAINS
     ! Iniatilize pressure field with 0
     ! Iterate through each bubble and find the pressure field in the whole domain
     ! Add each field to the previous to find the total pressure distribution in the grid
-    call NonlinContrastOperator_Ali(cSpace); ! Add Nonlinearities ! If beta=0 then it will result on 0 
-
+    ! call NonlinContrastOperator_Ali(cSpace); ! Add Nonlinearities ! If beta=0 then it will result on 0 
+	cSpace%cGrid%parD0 = 1.0D-20
     !First, transform to W-domain (use small transform, no wraparound regions)
     write(acTemp,"('Calculate pressure field due to the Bubble Cloud')");    call PrintToLog(acTemp,2)
     call CalculateCloudPressure(cSpace,i_neighbgp, NeighbGPIndex, dBubbleLocationN, dBubbleContrast)
@@ -646,6 +662,7 @@ CONTAINS
     write(8,*) i_loc-1
     close(8) 
 
+    call MPI_BARRIER(MPI_COMM_WORLD, iErr);
     iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(dBubbleContrast)) + PRODUCT(SHAPE(dBubbleLocationN)) ) * dpS - PRODUCT(SHAPE(BubbleID)) * i4bs
 
     DEALLOCATE(dBubbleContrast)
@@ -653,7 +670,6 @@ CONTAINS
     DEALLOCATE(dBubbleLocationN)
 
     call PrintToLog("End of Pressure Calculation",2) 
-    ! call MPI_BARRIER(MPI_COMM_WORLD, iErr);
 
   END SUBROUTINE BubbleContrastOperator
 
@@ -709,20 +725,20 @@ CONTAINS
     !
     ! *****************************************************************************
     ! Cubes
-    integer(i4b)         		::  	iErr
-    real(dp),allocatable		::      GridDist(:,:)
-    real(dp)					::      MaxDist(3), dLambdaMM, MinDist
-    integer(i8b)				::		i ,j
-    integer(i8b)				::		Nx, Ny, Nz
-    logical 					::		cubes
-    character(len=1024)			::      acTemp
+    integer(i4b)         					::  	iErr, ErrCode
+    real(dp),allocatable					::      GridDist(:,:)
+    real(dp)								::      MaxDist(3), dLambdaMM, MinDist
+    integer(i8b)							::		i ,j
+    integer(i8b)							::		Nx, Ny, Nz
+    logical 								::		cubes
+    character(len=1024)						::      acTemp
 
     ! Lines
 
-    integer(i8b)			::		arBubble_i(BubbleParams%BubbleN), arBubble_j(BubbleParams%BubbleN)
-    integer(i8b)			:: 		iBubble, counter, diff,iBubbleInside
-    integer(i8b)			::		LocXYZ(BubbleParams%BubbleN) , LocX(BubbleParams%BubbleN), LocY(BubbleParams%BubbleN), LocZ(BubbleParams%BubbleN) 
-    real(dp)				::		randpos(BubbleParams%BubbleN)
+    integer(i8b)							::		arBubble_i(BubbleParams%BubbleN), arBubble_j(BubbleParams%BubbleN)
+    integer(i8b)							:: 		iBubble, counter, diff,iBubbleInside
+    integer(i8b)							::		LocXYZ(BubbleParams%BubbleN) , LocX(BubbleParams%BubbleN), LocY(BubbleParams%BubbleN), LocZ(BubbleParams%BubbleN) 
+    real(dp)								::		randpos(BubbleParams%BubbleN)
 
     ! *****************************************************************************
     !
@@ -754,7 +770,7 @@ CONTAINS
             maxval(Domain_Range(2,:) - (/cSpace.iDimX,cSpace%iDimY,cSpace%iDimZ/) * cSpace.dDx*dLambdaMM) >= 0.0D0 )then
           write(acTemp,"('Error in CreateBubbleCluster, Domain out of boundaries')")
           call PrintToLog(acTemp,-1)
-          stop
+          call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
        endif
 
        if (cubes) then
@@ -767,7 +783,7 @@ CONTAINS
           if (Nx*Ny*Nz < size(dBubbleLocationN,1)) then
              write(acTemp,"('Error in CreateBubbleCluster, less discretized points than Bubble number')")
              call PrintToLog(acTemp,-1)
-             stop
+             call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
           endif
 
           ALLOCATE(GridDist(Nx*Ny*Nz,3))
@@ -778,7 +794,7 @@ CONTAINS
              call PrintToLog(acTemp,-1)
              write(acTemp,"('Max Bubble number for this Cluster size',I5,' Bubbles.')") size(dBubbleLocationN,1)/((MinDist/MaxDist(1))**(1.0D0/3))
              call PrintToLog(acTemp,-1)
-             stop
+             call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
           endif
 
           call RANDOM_SEED(PUT = [(1, i = 1,Nx*Ny*Nz*3)])
@@ -806,7 +822,7 @@ CONTAINS
           if (Nx*Ny*Nz < BubbleParams%BubbleN) then
              write(acTemp,"('Too big minimum in-between distance or too small domain')")
              call PrintToLog(acTemp,-1)
-             stop
+             call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
           endif
 
           arBubble_i = 1
@@ -852,7 +868,7 @@ CONTAINS
             (cSpace%iDimZ-1) * cSpace.dDx - maxval(dBubbleLocationN(:,3),1) /)) <= 0) then
           write(acTemp,"('Error in CreateBubbleCluster, Bubble positioned outside domain boundaries')")
           call PrintToLog(acTemp,-1)
-          stop
+          call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
        endif
 
     endif
@@ -916,17 +932,17 @@ CONTAINS
     !	LocXYZ				i				vector with one values for a triplet of (X,Y,Z)
     !
     ! *****************************************************************************
-    integer(i4b)         	::  	iErr
-    real(dp),parameter		::		MultFactor = 1.0D0
-    integer(i8b)         	::  	Bubble_count(INT(MultFactor*BubbleParams%BubbleN,8)), BubbleID(INT(MultFactor*BubbleParams%BubbleN,8))
-    integer				    ::		Bcounter, iBubble, BubbleIdx, i, MaxBubbles
-    integer					::		Num_counter(cSpace%cGrid%iProcN),Bubble_Outliers(cSpace%cGrid%iProcN), Geom_Series(cSpace%cGrid%iProcN)
-    real(dp)				::      dLambdaMM, MinAllowableDist,randpos(INT(BubbleParams%BubbleN*MultFactor,8),3), Dist , RadFactor(INT(BubbleParams%BubbleN*MultFactor))
-    character(len=1024)		::      acTemp
+    integer(i4b)         					::  	iErr, ErrCode
+    real(dp),parameter						::		MultFactor = 1.0D0
+    integer(i8b)         					::  	Bubble_count(INT(MultFactor*BubbleParams%BubbleN,8)), BubbleID(INT(MultFactor*BubbleParams%BubbleN,8))
+    integer				    				::		Bcounter, iBubble, BubbleIdx, i, MaxBubbles
+    integer									::		Num_counter(cSpace%cGrid%iProcN),Bubble_Outliers(cSpace%cGrid%iProcN), Geom_Series(cSpace%cGrid%iProcN)
+    real(dp)								::      dLambdaMM, MinAllowableDist,randpos(INT(BubbleParams%BubbleN*MultFactor,8),3), Dist , RadFactor(INT(BubbleParams%BubbleN*MultFactor))
+    character(len=1024)						::      acTemp
     !Geometric series parameters 
-    real(dp)				:: 		a, r
-    integer(i8b)			::		n, S, iProc
-    integer(i8b), allocatable 	:: 		GridDist(:)
+    real(dp)								:: 		a, r
+    integer(i8b)							::		n, S, iProc
+    integer(i8b), allocatable 				:: 		GridDist(:)
 
     ! *****************************************************************************
     !
@@ -958,7 +974,7 @@ CONTAINS
          maxval(Domain_Range(2,:) - (/cSpace.iDimX,cSpace%iDimY,cSpace%iDimZ/) * cSpace.dDx*dLambdaMM) >= 0.0D0 )then
        write(acTemp,"('Error in CreateBubbleCluster, Domain out of boundaries')")
        call PrintToLog(acTemp,-1)
-       stop
+       call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
     endif
 
     ! ================================================ Geometric Series ====================================================
@@ -1088,12 +1104,12 @@ CONTAINS
          (cSpace%iDimZ-1) * cSpace.dDx - maxval(dBubbleLocationN(:,3),1) /)) <= 0) then
        write(acTemp,"('Error in CreateBubbleCluster, Bubble positioned outside domain boundaries')")
        call PrintToLog(acTemp,-1)
-       stop
+       call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
     endif
 
   END SUBROUTINE CreateBubbleCluster_Random
 
-  SUBROUTINE ProcBubbleCount(cSpace, dBubbleLocationN, tempcon, iProc_NumBubbles)
+  SUBROUTINE ProcBubbleCount(cSpace, dBubbleLocationN, tempcon, iProc_NumBubbles, iDimT)
 
     ! =============================================================================
     !
@@ -1130,7 +1146,7 @@ CONTAINS
     real(dp), intent(in)					::		dBubbleLocationN(:,:)
     real(dp),allocatable, intent(inout)		::		tempcon(:)
     type(Space),  intent(in)				::		cSpace
-    integer, intent(inout)					::		iProc_NumBubbles
+    integer, intent(inout)					::		iProc_NumBubbles, iDimT
 
 
     ! *****************************************************************************
@@ -1147,10 +1163,10 @@ CONTAINS
     !
     ! *****************************************************************************
 
-    integer(i4b)         	::  	iErr , BubbleID(size(dBubbleLocationN,1)), FILE_HANDLE
-    integer(i8b)			::		iBubble ,XYZIndex,  iBeamIndex(3),iDimT, FILE_IN, FILE_OUT
-    real(dp),allocatable   	::		dBubbleCon(:)
-    character(len=1024)		::      acTemp   , MPI_FILENAME
+    integer(i4b)         					::  	iErr , BubbleID(size(dBubbleLocationN,1)), FILE_HANDLE, ErrCode
+    integer(i8b)							::		iBubble ,XYZIndex,  iBeamIndex(3), FILE_IN, FILE_OUT
+    real(dp),allocatable   					::		dBubbleCon(:)
+    character(len=1024)						::      acTemp   , MPI_FILENAME
 
 
     ! *****************************************************************************
@@ -1210,7 +1226,6 @@ CONTAINS
     !    call MPI_Barrier(MPI_COMM_WORLD,iErr)
     !***********************************CALCULATE HOW MANY MICROBUBBLES ARE LOCATED IN EACH PROCESSOR***********************************************	
 
-    iDimT = cSpace%iDimT
     MPI_FILENAME = trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//trim('Bubble_Contrast')//int2str(0))
     call MPI_FILE_OPEN(MPI_COMM_WORLD, MPI_FILENAME, MPI_MODE_RDWR, MPI_INFO_NULL, FILE_HANDLE, iErr) 
 
@@ -1282,11 +1297,11 @@ CONTAINS
     !   last_iter		         l        logical value which states if it is the last iteration or not
     !
     ! *****************************************************************************
-    real(dp), intent(inout) 	:: 		dBubbleLocationN(:,:)
-    real(dp), intent(inout)		:: 		dBubbleContrast(:) 
-    integer(i8b),intent(in)		::		i_neighbgp
-    integer(i8b),intent(in)		::		NeighbGPIndex(:)
-    type(Space), intent(inout) 	:: 		cSpace
+    real(dp), intent(inout) 		:: 		dBubbleLocationN(:,:)
+    real(dp), intent(inout)			:: 		dBubbleContrast(:) 
+    integer(i8b),intent(in)			::		i_neighbgp
+    integer(i8b),intent(in)			::		NeighbGPIndex(:)
+    type(Space), intent(inout) 		:: 		cSpace
 
     ! *****************************************************************************
     ! 
@@ -1307,20 +1322,20 @@ CONTAINS
     ! *****************************************************************************
 
 
-    real(sp),allocatable			::  P_scattered(:,:), P_scattered_Total(:,:), dSincMult(:,:)
+    real(dp),allocatable			::  P_scattered(:,:), P_scattered_Total(:,:), dSincMult(:,:)
     real(dp),allocatable			::  dGlobBXYZ(:,:) 
     integer(i8b), allocatable		::  NeighbLocInd(:), XYZIndex(:)
     integer, allocatable 			::	GridPoint_OnProc(:,:)
 
-    integer					::	M, N, K, iDimT, BLayer, iDimX, iDimY, iDimZ, iDimXYZ, i,j, BubbleProc , byte_precision
-    integer					::	GridPoint_Count(cSpace%cGrid%iProcN), GridPoint_Disps(cSpace%cGrid%iProcN), TimePoints(cSpace%iDimT)
-    integer 	         	::  iErr, iStat(MPI_STATUS_SIZE), iREQUEST, MPI_NEWTYPE 
-    integer(i8b)         	::  iIndex, iLI , x, y, z, iBubble, B_Div , GridPointsNum
-    real(dp)             	::  dLambdaMM, dK_c 
-
-    real(dp)				:: dRightBand(BubbleParams%BubbleN,3), dLeftBand(BubbleParams%BubbleN,3), dBand(BubbleParams%BubbleN,3)
-    real(dp)				:: dTaperingWindowX(cSpace%iDimx,BubbleParams%BubbleN) ,dTaperingWindowY(cSpace%iDimY,BubbleParams%BubbleN) ,dTaperingWindowZ(cSpace%iDimZ,BubbleParams%BubbleN)
-    character(len = 1024)	:: actemp 
+    integer							::	M, N, K, iDimT, BLayer, iDimX, iDimY, iDimZ, iDimXYZ, i,j, BubbleProc , byte_precision
+    integer							::	GridPoint_Count(cSpace%cGrid%iProcN), GridPoint_Disps(cSpace%cGrid%iProcN), TimePoints(cSpace%iDimT)
+    integer 	         			::  iErr, iStat(MPI_STATUS_SIZE), iREQUEST, MPI_NEWTYPE , ErrCode
+    integer(i8b)         			::  iIndex, iLI , x, y, z, iBubble, B_Div , GridPointsNum
+    real(dp)             			::  dLambdaMM, dK_c 
+		
+    real(dp)						::  dRightBand(BubbleParams%BubbleN,3), dLeftBand(BubbleParams%BubbleN,3), dBand(BubbleParams%BubbleN,3)
+    real(dp)						::  dTaperingWindowX(cSpace%iDimx,BubbleParams%BubbleN) ,dTaperingWindowY(cSpace%iDimY,BubbleParams%BubbleN) ,dTaperingWindowZ(cSpace%iDimZ,BubbleParams%BubbleN)
+    character(len = 1024)			::  actemp 
 
 
     ! *****************************************************************************
@@ -1411,11 +1426,10 @@ CONTAINS
     ALLOCATE(P_scattered(M,N))
     ALLOCATE(P_scattered_Total(M+1,N))
     ALLOCATE(dSincMult(K,N))
-
-    byte_precision = sizeof(P_scattered(1,1))
-
-    iMemAllocated=iMemAllocated + ( PRODUCT(SHAPE(dSincMult)) )* dpS + PRODUCT(SHAPE(dGlobBXYZ)) * i4bs
+	
+    iMemAllocated=iMemAllocated + ( PRODUCT(SHAPE(dSincMult)) ) * sizeof(dSincMult(1,1))  + PRODUCT(SHAPE(dGlobBXYZ)) * dpS
     iMemAllocated=iMemAllocated + ( PRODUCT(SHAPE(P_scattered)) + PRODUCT(SHAPE(P_scattered_Total)) )*  sizeof(P_scattered(1,1)) 
+	
     write(acTemp,"('Create ', I3,' Layer(s) of ', I<INT(log10(K*1.0D0))+1>, ' Bubble(s) for Dirac Array')") B_Div,K;    call PrintToLog(acTemp,3)
 
     ! Here we generate only the contrast source term of interest! This array will include the nonlinear contrast source term for a 
@@ -1423,27 +1437,25 @@ CONTAINS
     ! the number of cores, the time is divided. In this way we have the same number of computations per processor and every processor 
     ! takes part in the computations
     P_scattered_Total = 1.0D-30;
+	if (.NOT. ALL(ABS(dBubbleContrast)<1E100_dp) ) call PrintToLog("Error: P_scattered !!!", 1)
 
-    do iBubble = 1,B_Div ! This is the loop for the number of layers of the bubbles 
-       P_scattered = 1.0D-30
-       dSincMult   = 1.0D-30        
+    do iBubble = 1,B_Div ! This is the loop for the number of layers of the bubbles     
        ! Calculate the spatial signature in the point source definition for every scatterer
        do i = 0, N-1  					  				
           dSincMult(:,1+i) =	 dSinc(dK_c*(dBubbleLocationN(K*(iBubble-1)+1:K*iBubble,1) - dGlobBXYZ(1+i,1) ))   &
-               *dSinc(dK_c*(dBubbleLocationN(K*(iBubble-1)+1:K*iBubble,2) - dGlobBXYZ(1+i,2) ))   &
-               *dSinc(dK_c*(dBubbleLocationN(K*(iBubble-1)+1:K*iBubble,3) - dGlobBXYZ(1+i,3) )) 
+								*dSinc(dK_c*(dBubbleLocationN(K*(iBubble-1)+1:K*iBubble,2) - dGlobBXYZ(1+i,2) ))   &
+								*dSinc(dK_c*(dBubbleLocationN(K*(iBubble-1)+1:K*iBubble,3) - dGlobBXYZ(1+i,3) )) 
        enddo
        ! DO the multiplication with the temporal factor , in order to calculte the scattered pressure
        ! Each processor computes the scattered pressure in the gridpoints of interest only for the iterated layer of microbubbles
        ! Uncoment for double precision! You should change the type of P_scattered and P_scattered_Total too to dp
-       ! CALL DGEMM('N','N',M,N,K,1.0D0,RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M)* (dK_c/pi)**3,(/M,K/)), M,dSincMult ,K,0.0D0,P_scattered,M)	
-       CALL SGEMM('N','N', M, N, K, 1.0, REAL(RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M)* (dK_c/pi)**3,(/M,K/)),sp), M, dSincMult, K, 0.0, P_scattered, M)	  
+       CALL DGEMM('N','N',M,N,K,1.0D0,RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M) * (dK_c/pi)**3, (/M,K/)), M, dSincMult, K, 0.0D0, P_scattered, M)	
+       ! CALL SGEMM('N','N', M, N, K, 1.0, REAL(RESHAPE(dBubbleContrast(1+K*(iBubble-1)*M:K*iBubble*M)* (dK_c/pi)**3,(/M,K/)),sp), M, dSincMult, K, 0.0, P_scattered, M)	  
        P_scattered_Total(2:M+1,:)= P_scattered_Total(2:M+1,:) + P_Scattered
     enddo
-    ! We need this row in order to know for which value of the gridpoint, the pressure of each row(gridpoint) is computed so we can send it to the right processor
-    P_scattered_Total(1,:) = NeighbGPIndex(1+(i_neighbgp/cSpace%cGrid%iProcN)*cSpace%cGrid%iProcID:(i_neighbgp/cSpace%cGrid%iProcN)*cSpace%cGrid%iProcID+N)*1.0D0
-
-    iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(dSincMult)) )* dpS - PRODUCT(SHAPE(dGlobBXYZ)) * i4bs
+	if (.NOT. ALL(ABS(P_scattered_Total)<1E100_dp) ) call PrintToLog("Error: P_scattered !!!", 1)
+	
+    iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(dSincMult)) ) * sizeof(dSincMult(1,1)) - PRODUCT(SHAPE(dGlobBXYZ)) * dpS
     iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(P_scattered)) )* sizeof(P_scattered(1,1)) 
     DEALLOCATE(P_Scattered)	
     DEALLOCATE(dSincMult) 
@@ -1454,6 +1466,10 @@ CONTAINS
     if (BubbleParams%GridPointsPressure == 'all') then
        cSpace%cGrid%parD0 = cSpace%cGrid%parD0 + RESHAPE(P_scattered_Total(2:M+1,:) *(cModelParams%freq0/cMediumParams%c0),(/M*N/))
     else
+	
+		! We need this row in order to know for which value of the gridpoint, the pressure of each row(gridpoint) is computed so we can send it to the right processor
+		P_scattered_Total(1,:) = NeighbGPIndex(1+(i_neighbgp/cSpace%cGrid%iProcN)*cSpace%cGrid%iProcID:(i_neighbgp/cSpace%cGrid%iProcN)*cSpace%cGrid%iProcID+N)*1.0D0
+
        ! Here, the array for the number of elements GridPoint_Count and 
        ! the array for the starting index of the location of the elements per processor GridPoint_Disps is generated.
        GridPoint_Count=0;
@@ -1478,6 +1494,7 @@ CONTAINS
        P_scattered = 0.0D0
 
        ! This is to automate the proceedure between the selection of single or double precision
+	   byte_precision = sizeof(P_scattered(1,1))
        MPI_NEWTYPE = MPI_REAL8 ;   if (byte_precision == spS) MPI_NEWTYPE = MPI_REAL
 
        do BubbleProc = 0,cSpace%cGrid%iProcN-1
@@ -1503,6 +1520,9 @@ CONTAINS
           DEALLOCATE(NeighbLocInd)
        endif
     endif
+    
+    cSpace%cGrid%parD0= cSpace%cGrid%parD0 * (/SPREAD(dTaperingWindow(cSpace%iDimT,cSpace%dDt, 2.0_dp, 2.0_dp),2,cSpace%cGrid%iD0LocN)/)
+       
     iMemAllocated=iMemAllocated -  PRODUCT(SHAPE(P_scattered_Total))* sizeof(P_scattered(1,1)) 	
     DEALLOCATE(P_scattered_Total)
     write(acTemp,"('Proceedure finished.')");    call PrintToLog(acTemp,3)
@@ -1538,11 +1558,11 @@ CONTAINS
     !   OutputLen        i   i8b    Length of output signal
     !   OutputVal        r   dp   a vector of OutputLen length of the  output signal
     !
-    real(dp), intent(in) 		:: 		InputVal(:)
-    real(dp), intent(out) 		:: 		OutputVal(:)
-    integer(i8b),intent(in)		::		OrderFFT
-    real(dp), intent(in) 		:: 		Magnitude
-    type(Space), intent(in) 	:: 		cSpace
+    real(dp), intent(in) 				:: 		InputVal(:)
+    real(dp), intent(out) 				:: 		OutputVal(:)
+    integer(i8b),intent(in)				::		OrderFFT
+    real(dp), intent(in) 				:: 		Magnitude
+    type(Space), intent(in) 			:: 		cSpace
 
 
     ! *****************************************************************************
@@ -1560,14 +1580,14 @@ CONTAINS
     !   dRightBand		   		dp    Right limit of banded tapering
     !
 
-    complex(dpc) 				::	 		InputValW(size(InputVal)/2+1)
-    complex(dpc),allocatable	::			OutputValW(:)
-    complex(dpc),allocatable	::			dMultFactor(:)
-    integer(i8b) 				::			InputLen, OutputLen, EvenOrOdd, iNumPlanTransform, iNumPlanTransform_inv, iDimW
+    complex(dpc) 						::	 		InputValW(size(InputVal)/2+1)
+    complex(dpc),allocatable			::			OutputValW(:)
+    complex(dpc),allocatable			::			dMultFactor(:)
+    integer(i8b) 						::			InputLen, OutputLen, EvenOrOdd, iNumPlanTransform, iNumPlanTransform_inv, iDimW
 
     !Filtering and windowing parameters 
-    real(dp) 	::			dTaperMaxFreqWindow(size(InputVal)/2+1), dLeftBand,dRightBand, dDomega
-    integer		::			i,iErr
+    real(dp) 							::			dTaperMaxFreqWindow(size(InputVal)/2+1), dLeftBand,dRightBand, dDomega
+    integer								::			i,iErr, ErrCode
 
     ! *****************************************************************************
     !
@@ -1656,11 +1676,11 @@ CONTAINS
     !   OutputLen        i   i8b    Length of output signal
     !   OutputVal        r   dp   a vector of OutputLen length of the  output signal
     !
-    real(dp), intent(in) 		:: 		InputVal(:)
-    real(dp), intent(out) 		:: 		OutputVal(:)
-    integer(i8b),intent(in)		::		OrderFFT, OrderP
-    real(dp), intent(in) 		:: 		Magnitude
-    type(Space), intent(in) 	:: 		cSpace
+    real(dp), intent(in) 				:: 		InputVal(:)
+    real(dp), intent(out) 				:: 		OutputVal(:)
+    integer(i8b),intent(in)				::		OrderFFT, OrderP
+    real(dp), intent(in) 				:: 		Magnitude
+    type(Space), intent(in) 			:: 		cSpace
 
 
     ! *****************************************************************************
@@ -1678,15 +1698,15 @@ CONTAINS
     !   dRightBand		   		dp    Right limit of banded tapering
     !
 
-    complex(dpc) 				::	 		InputValW(size(InputVal)+1)
-    complex(dpc),allocatable	::			OutputValW(:)
-    complex(dpc),allocatable	::			dMultFactor(:)
-    integer(i8b) 				::			InputLen, OutputLen, EvenOrOdd, iNumPlanTransform, iNumPlanTransform_inv, iDimW
+    complex(dpc) 						::	 		InputValW(size(InputVal)+1)
+    complex(dpc),allocatable			::			OutputValW(:)
+    complex(dpc),allocatable			::			dMultFactor(:)
+    integer(i8b) 						::			InputLen, OutputLen, EvenOrOdd, iNumPlanTransform, iNumPlanTransform_inv, iDimW
 
     !Filtering and windowing parameters 
-    real(dp) 	::			dTaperMaxFreqWindow(size(InputVal)/2+1), dLeftBand,dRightBand, dDomega,dFFTFactor
-    real(dp)	::			arBuffer1(size(InputVal)+1),arBuffer2(size(InputVal)+1)
-    integer		::			i,iErr
+    real(dp) 							::			dTaperMaxFreqWindow(size(InputVal)/2+1), dLeftBand,dRightBand, dDomega,dFFTFactor
+    real(dp)							::			arBuffer1(size(InputVal)+1),arBuffer2(size(InputVal)+1)
+    integer								::			i,iErr
 
     ! *****************************************************************************
     !
@@ -1818,14 +1838,14 @@ CONTAINS
     !   acTemp          char   Temporary char array for output log messages
     !
     ! *****************************************************************************
-    character(len = 1024)	::  	filename, actemp
-    real(dp)				::      DimStart(3) , CountPos(3), dLambdaMM
-    integer(i8b)			::		i , j(3) , slicedim, ExtraSliceNum
-    character(LEN=1)		:: 		xyzslicedim(cModelParams%Numslices)		!Which dimension: x, y, z or t
-    real(dp) 				:: 		xyzslicepos(cModelParams%Numslices)		!Position in [mm]
-    integer(i8b)			:: 		xyzslicebeam(cModelParams%Numslices)	!Which beam the slice is located; -1 if it may be all
-    integer(i8b) 			:: 		xyzsliceindex(cModelParams%Numslices)	!Index within the beam
-    character(len =1)		::		allslicexyzdim(BubbleParams%ClusterSlicesN)	
+    character(len = 1024)					::  	filename, actemp
+    real(dp)								::      DimStart(3) , CountPos(3), dLambdaMM
+    integer(i8b)							::		i , j(3) , slicedim, ExtraSliceNum
+    character(LEN=1)						:: 		xyzslicedim(cModelParams%Numslices)		!Which dimension: x, y, z or t
+    real(dp) 								:: 		xyzslicepos(cModelParams%Numslices)		!Position in [mm]
+    integer(i8b)							:: 		xyzslicebeam(cModelParams%Numslices)	!Which beam the slice is located; -1 if it may be all
+    integer(i8b) 							:: 		xyzsliceindex(cModelParams%Numslices)	!Index within the beam
+    character(len =1)						::		allslicexyzdim(BubbleParams%ClusterSlicesN)	
 
     ! *****************************************************************************
     !
@@ -1980,9 +2000,9 @@ CONTAINS
     !   acTemp          char   Temporary char array for output log messages
     !
     ! *****************************************************************************
-    integer 					:: 		ibDimT
-    integer						::		FILE_HANDLE, FILE_IN, FILE_OUT, FILE_STATUS(MPI_STATUS_SIZE), MPI_ERROR, MPI_BUF_COUNT
-    integer(KIND=MPI_OFFSET_KIND)::     FILE_OFFSET
+    integer 								:: 		ibDimT
+    integer									::		FILE_HANDLE, FILE_IN, FILE_OUT, FILE_STATUS(MPI_STATUS_SIZE), MPI_ERROR, MPI_BUF_COUNT
+    integer(KIND=MPI_OFFSET_KIND)			::      FILE_OFFSET
     ! *****************************************************************************
     !
     !   I/O
@@ -2018,3 +2038,4 @@ CONTAINS
 
 
 END MODULE ParnacBubbleContrast
+

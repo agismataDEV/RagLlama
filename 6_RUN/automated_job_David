@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+INPUT_FILE_DAVID=${1?Error: No input file given}
+OUTPUT_FOLDER_DAVID=${2?Error: No output folder given}
+export INPUT_FILE_DAVID
+export OUTPUT_FOLDER_DAVID
+A2="$(cut -d'_' -f2 <<<$OUTPUT_FOLDER_DAVID)"
+A3="$(cut -d '_' -f3 <<<$OUTPUT_FOLDER_DAVID)"
+A="${A2}_${A3}"
+
+export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_$OUTPUT_FOLDER_DAVID.out
+export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_$OUTPUT_FOLDER_DAVID.err
+
+cd ../2_SOURCE_CODE/
+#rm ../3_COMPILED_FILES/INCS_Agis_*
+make 
+cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER_DAVID}
+
+#if [ -d ../7_RESULTS/$OUTPUT_FOLDER_DAVID]; then
+	mkdir ../7_RESULTS/$OUTPUT_FOLDER_DAVID
+#	echo "Directory is created ..."
+#fi
+
+cd ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+find . -name '*GlobalLoc*' | xargs rm -f
+mkdir 2_SOURCE_CODE
+
+cd ../../2_SOURCE_CODE/
+
+rm ../7_RESULTS/$OUTPUT_FOLDER_DAVID/*
+rm ../7_RESULTS/$OUTPUT_FOLDER_DAVID/Bubbles/*
+cp *.f90 ../7_RESULTS/$OUTPUT_FOLDER_DAVID/2_SOURCE_CODE/
+cp ../5_INPUT_FILES/$INPUT_FILE_DAVID ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../5_INPUT_FILES/td_$A.dat ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../5_INPUT_FILES/apod_$A.dat ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+
+cd ../6_RUN/
+
+### HERE WE CREATE THE BASH FILE
+echo "#!/bin/bash" 									 															 > job_INCS_David
+echo " " 											 															>> job_INCS_David
+echo "#SBATCH --job-name=${OUTPUT_FOLDER_DAVID}" 	 																		>> job_INCS_David
+echo "#SBATCH --partition=general" 					 															>> job_INCS_David
+echo "#SBATCH --qos=short"          				 																>> job_INCS_David
+echo "#SBATCH --nodes=1"           					 															>> job_INCS_David
+echo "#SBATCH --ntasks-per-node=54" 				 															>> job_INCS_David
+echo "#SBATCH --cpus-per-task=1"    				 															>> job_INCS_David
+echo "#SBATCH --mem=300G"           				 															>> job_INCS_David
+echo "#SBATCH --time=04:00:00"      				 															>> job_INCS_David
+echo "#SBATCH --output=$OUT_FILE" 					 															>> job_INCS_David
+echo "#SBATCH --error=$ERR_FILE"     				 															>> job_INCS_David
+echo "##SBATCH --exclusive"          				 															>> job_INCS_David
+echo " " 											 															>> job_INCS_David
+echo "module use /opt/insy/modulefiles" 			 															>> job_INCS_David
+echo "module load intel" 							 															>> job_INCS_David
+echo " " 											 															>> job_INCS_David
+echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64" 		>> job_INCS_David
+echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh" 				>> job_INCS_David
+echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64" 		>> job_INCS_David
+echo " " 																										>> job_INCS_David
+echo "ulimit -s unlimited" 																						>> job_INCS_David
+echo " " 																										>> job_INCS_David
+echo "# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so" 						>> job_INCS_David
+echo "export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so" 															>> job_INCS_David
+echo "export OMP_NUM_THREADS=1" 																				>> job_INCS_David
+echo "export MKL_NUM_THREADS=1" 																				>> job_INCS_David
+echo "#export MKL_THREADING_LAYER=intel" 																		>> job_INCS_David
+echo "#export MKL_DYNAMIC="FALSE"" 																				>> job_INCS_David
+echo "#export MKL_VERBOSE=1" 																					>> job_INCS_David
+echo "srun ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER_DAVID} $INPUT_FILE_DAVID TESTNeumann ../7_RESULTS/$OUTPUT_FOLDER_DAVID ../7_RESULTS/$OUTPUT_FOLDER_DAVID" >> job_INCS_David
+
+sbatch ../6_RUN/job_INCS_David &
+
+sleep 5
+squeue -u agismatalliota

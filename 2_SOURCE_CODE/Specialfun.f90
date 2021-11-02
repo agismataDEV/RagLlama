@@ -632,7 +632,7 @@
     real(dp), dimension(:), intent(out) :: x
     real(dp)    :: x_start, x_end, dx
     integer(i8b)  :: x_len,i
-    dx = (x_end-x_start)*1.0D0/(x_len-1)
+    dx = (x_end-x_start)*1.0D0/real(x_len-1,dp)
 
     x = [(x_start + dx*(i-1), i = 1,x_len)]
     END SUBROUTINE LINSPACE
@@ -650,30 +650,29 @@
     max_xData_pos = size(xData,1)
     max_xVal_pos  = size(xVal,1)
     
-    i_min = minloc(xVal,1 , xVal > xData(1))
+    i_min = minloc(xVal,1 , xVal >= xData(1))
     xval_start = 1
-        
     i_max = maxloc(xVal, 1, xVal< xData(max_xData_pos))+1
     xval_end = size(xVal,1)
     
     ! Check if there are values in the xVal higher than the max value of xData.
     ! If true, this means that the interpolation should take place using the last 2 values of the xData
     ! if there are more than 1 value, then do this for all the data and change the iteration range
-    ! else  change on
+    ! else change on
     if (size(xVal,1)==1) then
         xval_end = 1
     elseif (i_max /= size(xVal,1)) then
-        yVal(i_max : max_xVal_pos) = (yData(max_xData_pos)-yData(1))*1.0_dp/max_xData_pos*(xVal(i_max : max_xVal_pos)-xData(max_xData_pos))+yData(max_xData_pos)
+        yVal(i_max : max_xVal_pos) = (yData(max_xData_pos)-yData(1))*1.0_dp/real(max_xData_pos,dp)*(xVal(i_max : max_xVal_pos)-xData(max_xData_pos))+yData(max_xData_pos)
         xval_end = i_max-1
     else
-        yVal(i_max) = (yData(max_xData_pos)-yData(1))*1.0_dp/max_xData_pos*(xVal(i_max)-xData(max_xData_pos))+yData(max_xData_pos)
+        yVal(i_max) = (yData(max_xData_pos)-yData(1))*1.0_dp/real(max_xData_pos,dp)*(xVal(i_max)-xData(max_xData_pos))+yData(max_xData_pos)
         xval_end = i_max - 1
     endif
     
     if (i_min /= 1) then
        xval_start=i_min+1
     endif
-    
+	
     do inputIndex = xval_start,  xval_end
         i_start = minloc(xData, 1, xData > xVal(inputIndex))-1
         i_end = minloc(xData, 1, xData > xVal(inputIndex))
@@ -682,7 +681,6 @@
     end do
    
     END SUBROUTINE INTERP1D
-	
 
     SUBROUTINE INTERP3D(LOCDATA,FDATA,LOCFINAL,FFINAL)
   

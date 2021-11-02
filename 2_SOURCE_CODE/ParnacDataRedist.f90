@@ -8,7 +8,7 @@ MODULE ParnacDataRedist
 !
 !   Version Date    Comment
 !   ------- -----   -------
-!   1.0     090505  Original code (KH)
+!   1.0     090505  Original code (KH) 
 !
 !   Copyright (C)   Laboratory of Electromagnetic Research
 !                   Delft University of Technology, Delft, The Netherlands
@@ -139,10 +139,6 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 	integer(i8b) ::				iSrcInd, iDestInd
 	integer(i4b) ::				iErr
 	character(LEN = 2048) ::		acTemp;
-  	type(C_PTR) :: plan
-!	integer(i4b)::			aiStatus(MPI_STATUS_SIZE) 
-!	integer(i4b)::			aiReqSent(cGrid.iProcN), aiReqRecv(cGrid.iProcN);
-	
 ! *****************************************************************************
 !
 !   I/O
@@ -220,13 +216,13 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 
 		    end do
 	    end do
-		! PacD1 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS), XYZ2T1 XYZ2T2 .... XYZ2T(N/CPUS), XYZNT1 XYZNT2 .... XYZNT(N/CPUS),
+		! PacD2 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS), XYZ2T1 XYZ2T2 .... XYZ2T(N/CPUS), XYZNT1 XYZNT2 .... XYZNT(N/CPUS),
 		! XYZ1T(N/CPUS+1) XYZ1T(N/CPUS+2) XYZ1T(N/CPUS+3) ..... XYZ1T(N/CPUS+ N/CPUS), ...
  	    
 !	     Now we have allocated the buffer space and have packed the data, it is time to start with 
 !	     the distributing itself. We have to send one block of data from each processor, to each other processor. 
 !         This is done by the MPI_Alltoall primitive.
-	    write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
+	    ! write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
         call MPI_Alltoall(cGrid.pacD2,              &
                           int(Local1XYZ*Local2T),   &
                           MPI_DOUBLE_COMPLEX,       &
@@ -235,7 +231,8 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
                           MPI_DOUBLE_COMPLEX,       &
                           MPI_COMM_WORLD,           &
                           iErr)
-						  
+		
+
 		! with MPI_ALLTOALL each processor gets an array for the first N/CPUS time from all the process so
 		! pacD1 has the form XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS),XYZ2T1 XYZ2T2 XYZ2T3 ..... XYZ2T(N/CPUS),XYZNT1 XYZNT2 XYZNT3 ..... XYZNT(N/CPUS)
 
@@ -414,7 +411,7 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 	    ! this operation is not in-place. This command is not inplace either, but we could fiddle around with it for a bit,
 	    ! such that it might BECOME inplace. Therefore, to keep options open we use this method.
 	    write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
-
+		
         call MPI_Alltoall(cGrid.pacD1,              &
                           int(Local1XYZ*Local2T),   &
                           MPI_DOUBLE_COMPLEX,       &

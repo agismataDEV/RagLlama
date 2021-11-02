@@ -1,36 +1,36 @@
-*** Parnac Input File ***
+﻿*** Parnac Input File ***
 *************************
 1.3			 *** Version number
 ***************************
 ***  medium parameters  ***
 ***************************
 1.060000E+003		*** rho0   = Ambient density rho0 [kg/m^3]
-1.482000E+003		*** c0     = Small signal sound velocity [m/s] 
+1.480000E+003		*** c0     = Small signal sound velocity [m/s] 
 2.000000E-003		*** μ	   = Medium viscosity [Pa*sec]
 1.010000E+005		*** P0 	   = Ambient Pressure [Pa]
-15.000000E+006		*** fc0    = Frequency at which sound velocity is given [Hz]
-3.500000E+000		*** beta   = Nonlinearity parameter
-2.310000E-004		*** a_att  = Frequency-dependent attenuation parameter [Np/cm MHz^b]
+1.000000E+006		*** fc0    = Frequency at which sound velocity is given [Hz]
+0.000000E+000		*** beta   = Nonlinearity parameter
+0.000000E-004		*** a_att  = Frequency-dependent attenuation parameter [Np/cm MHz^b]
 2.000000E+000		*** b_att  = Power in frequency power attenuation law
 *************************************************
 ***   domain and discretization parameters    ***
 *************************************************
-6.500000E+000		*** Lx in [mm]
+3.210000E+000		*** Lx in [mm]
 1.020000E+000		*** Ly in [mm]
-8.800000E+001		*** Lt in [cycles]
+7.000000E+001		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
-0.80000E+001		*** Lz in [mm]	(length of the field in z)
+0.400000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
-7.853982E-001		*** Thetat [rad]
+1.570796E-000		*** Thetat [rad]
 15.00000E+006		*** freq0  = Fundamental frequency [Hz]
-3.500000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
-2			*** Points Per Wavelength
+4.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
 ************************************
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave"
-qsource
+planewave
 *** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
 nonlin
 30		*** Order of the Temporal Finite Difference schemes
@@ -39,9 +39,9 @@ nonlin
 1		*** Switch: Use Anti-Aliasing in contrast source evaluation
 1		*** Switch: Use Support Tapering in contrast source evaluation	
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
-1		***	Switch: Use Symmetry in the Y axis
+1		*** Switch: Use Symmetry in the Y axis
 1		*** Number of beams in which the total field is split
-5		*** Number of iterations of the first beam
+2		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 3		*** Number of slices to be stored
@@ -54,32 +54,12 @@ z 4.0000
 ***   source inputfilename    *** Use "standard" for [inputfilename]_src.mat, use "none" for parametric source definition (below)
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
-gaussian
-4.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
-1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
+blackman
+4.000000E+004		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+0.600000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
-1.87000E+000		*** Twidth = Width of gaussian window
 6.00000E+000		*** Tdelay = Delay of gaussian window
-2					*** Power  = Power of gaussian window	
-*** Source shape, choices: "cylindricalflat", "rectangularflat", "triangularflat", "pointsource", "phasedarray"
-phasedarray
-*** cylindricalflat specific: Radius (in mm), Radfocus (in mm)
-*** rectangularflat specific: Width(x, in mm), Height(y, in mm)
-*** triangularflat specific: Edge size (in mm), Position of the center in the x-dimension (in mm) (top corner of the triangle lies on the positive x-axis)
-*** pointsource specific: No parameters
-*** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), TimeDelatFilename, PhaseApodFilename
-65			*** Number of elements
-0.0800000	*** Element width
-1.00      	*** Element height
-0.0200000	*** Kerf
-0.0000000	*** Focus x
-1.00000E+5	*** Focus z
-1.00000E+5	*** Elevation focus
-***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-td_15deg_right.dat
-***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_15deg_right.dat
 ***************************
 ***  Switches  		***
 ***************************

@@ -1036,15 +1036,16 @@ SUBROUTINE InitSourceSignature(Signature, dDt)
 										  (cSourceParams%Twidth/2.0_dp))**cSourceParams%power)&
 			   * sin(two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay))						&
 			   * (1.0_dp + dsign(1.0_dp,taxis(1:Ksource)))/2.0_dp	
-
+		
 	else if (cSourceParams%srcsigntype==iGI_BLACKMAN) then
-    ! Generate a blackman pulse
-
-		Signature= cSourceParams.Pstart*(b0+ b1*cos(1.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse)	&
+    ! Generate a blackman pulse	
+			   
+		Signature = cSourceParams.Pstart * sin(two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)) &
+					*(b0+ b1*cos(1.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse)	&
 					+ b2*cos(2.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse) 		&
 					+ b3*sin(3.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse) )		&
 				*(dsign(1.0_dp,taxis(1:Ksource)-cSourceParams%Tdelay)-dsign(1.0_dp,taxis(1:Ksource)-cSourceParams%Tdelay-cSourceParams%Tpulse))/2.0_dp
-
+ 
 	else if (cSourceParams%srcsigntype==iGI_FILE) then
 	!load stored source signature file
 
