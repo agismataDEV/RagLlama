@@ -46,7 +46,7 @@ Bubble.mindist           = 20e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 1;
+domain.beamiterations       = 4;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
@@ -56,7 +56,7 @@ domain.offsets              = [0 0 0 0];
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1E7_MBs_9FNYQ';
-file.dirname             = '../test';
+file.dirname             = '../test_2';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 

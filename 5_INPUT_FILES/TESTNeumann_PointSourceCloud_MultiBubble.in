@@ -17,7 +17,7 @@
 *************************************************
 1.000000E+001		*** Lx in [mm]
 0.500000E+001		*** Ly in [mm]
-2.000000E+001		*** Lt in [cycles]
+3.000000E+001		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
 1.500000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
@@ -129,7 +129,7 @@ gaussian
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-1.000000E+004	*** No. of Bubbles consisting the cluster
+2.000000E+004	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	

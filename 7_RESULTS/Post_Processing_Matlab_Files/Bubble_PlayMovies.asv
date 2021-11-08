@@ -49,7 +49,7 @@ if (strcmp(file.play_movies,'yes'))
     %% ========================= Initialize first frame=========================
     
     dBVALUES = 50;
-    plot_value = 20*log10(abs(pnl.contrastdata));
+    plot_value = 20*log10(abs(pnl.data));
     if (domain.a_t) ;plot_value = Linear_Field;end
     
     %% ========================= Initialize first frame=========================
