@@ -30,11 +30,11 @@ end
 
 pharm = pnl.data;
 %%
-Nsubplot = 3;
+Nsubplot = 4;
 splot_div =2;
 dBVALUES=20;
 Add = 0;
-harmonics = 3 ;
+harmonics = 4 ;
 dims = size(plin.data); dims = dims(2:3);
 %%
 for i = 1:i_end
@@ -58,7 +58,6 @@ for i = 1:i_end
     % the behaviour of one bubble , due to the spectral leakage in the lower harmonics
     % generate fundamental, higher harmonic and superharmonic profiles
 
-    if Bubble.N>0
 %         
 %         for iz=1:dims(2)
 %             plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
@@ -75,8 +74,6 @@ for i = 1:i_end
 		for i = 1: harmonics
             eval(['pnl.harm' num2str(i) '=20*log10(maxhilbert_vec(pharm,domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
         end
-        
-    end
     
     %% PLOTS
     disp(['Ploting the ', subplot_txt1,'...'])

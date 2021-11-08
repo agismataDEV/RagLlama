@@ -39,3 +39,12 @@ RP_SP.f90 : The solution using a normalized Marmottant was fixed because RealTim
 BubbleContrast.f90  - CalculateCloudPressure : Added proceedure for single precision mkl computation
 BubbleContrast.f90  : Added proceedure for writing the bubble contrast using MPI I/O for increased efficiency
 The corresponding MATLAB files were changed in order to be able to read the values
+
+=============================================================================================================
+08/11/2021 
+=============================================================================================================
+BubbleContrast.f90  - PointSourceCloudOperator: Added proceedure for a cloud of point sources (e.g protons)
+BubbleContrast.f90  - CalculateCloudMonoEnergeticPressure : Added proceedure for calculating pressure field
+This function does not take into account the size of the point sources 
+BubbleContrast.f90  - DeltaPulse: Delta Pulse generator for the time signature of the proton sources
+The MATLAB files were readjusted for the (non) time coming time frame and automatic parameters

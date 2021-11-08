@@ -1,6 +1,6 @@
 #!/bin/bash
  
-#SBATCH --job-name=2_MONO_test_3
+#SBATCH --job-name=2_MONO_test
 #SBATCH --partition=general
 #SBATCH --qos=short
 #SBATCH --nodes=1
@@ -8,8 +8,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=300G
 #SBATCH --time=04:00:00
-#SBATCH --output=../7_RESULTS/test_3/INCS_test_3.out
-#SBATCH --error=../7_RESULTS/test_3/INCS_test_3.err
+#SBATCH --output=../7_RESULTS/test/INCS_test.out
+#SBATCH --error=../7_RESULTS/test/INCS_test.err
 ##SBATCH --exclusive
  
 module use /opt/insy/modulefiles
@@ -28,4 +28,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../3_COMPILED_FILES/INCS_Agis_test_3 TESTNeumann_Planewave_OneBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test_3
+srun ../3_COMPILED_FILES/INCS_Agis_test TESTNeumann_PointSourceCloud_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test

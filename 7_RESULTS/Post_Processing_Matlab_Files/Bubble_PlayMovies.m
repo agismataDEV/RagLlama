@@ -23,15 +23,15 @@ if (strcmp(file.play_movies,'yes'))
     disp(['Play movie ...'])
     
     sizeP = size(plin.data);
-    %     Linear_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
-    Scatter_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
+        Linear_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
+%     Scatter_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
     %     Total_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
-    
+    %%
     if (domain.dimval(1) ==1 || domain.dimval(1)==2)   % For X and Y , the domain should be moved in order to get a nice movie
         %         Scatter_Field=round(ifft(fft(reshape(pnl.contrastdata,sizeP(1)*sizeP(2),sizeP(3))',[],2).* exp(-2i*pi/10*[1:sizeP(3)]),[],2))
         for k=1:sizeP(3)
-            %             Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(plin.data(:,:,k)));
-            Scatter_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.contrastdata(:,:,k)));
+                        Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(plin.data(:,:,k)));
+%             Scatter_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.contrastdata(:,:,k)));
             %             Total_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.data(:,:,k)));
         end
         
@@ -45,10 +45,12 @@ if (strcmp(file.play_movies,'yes'))
         end
         i_end = sizeP(1)+sizeP(3);   % For Z the plot is only for the time points
     end
+    
     %% ========================= Initialize first frame=========================
     
     dBVALUES = 50;
-    plot_value = Scatter_Field;
+    plot_value = 20*log10(abs(plin.data));
+    if (domain.a_t) ;plot_value = Linear_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots

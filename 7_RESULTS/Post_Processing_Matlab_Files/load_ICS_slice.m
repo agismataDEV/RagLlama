@@ -146,6 +146,7 @@ if (all(strides==[1 1 1 1])&&all(offsets==[0 0 0 0]))
     output.stepsize=rStepsize;
     output.sliceindex=iSliceIndex;
     output.lengthslice = iLengthSlice;
+    output.iNumProc = iNumProc;
     output.data=datatot;
 
 else

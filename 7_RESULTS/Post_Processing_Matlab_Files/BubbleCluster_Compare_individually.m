@@ -30,14 +30,14 @@ disp(' ')
 disp('Calculating the difference between analytic and simulation solution...')
 if (Bubble.N <=10 && Bubble.N>0)
     
-        Sim_OSFactor=1;
+    Sim_OSFactor=1;
     %% ============== Comparison of time signature based on ODE Solvers ====================================
     if (strcmp(file.scatterer,'active'))
-        
+        %%
         % Load pressure values from file
-        filename_pres = split(ls([file.dirname '/Bubbles/' 'output_file_pressure_*.txt']));
+        filename_pres = split(cellstr(ls([file.dirname '/Bubbles/' 'output_file_pressure_*.txt'])));
         %             filename_pres = filename_pres(1:end-1);
-        for ifile = 1:size(filename_pres)
+        for ifile = 1:1
             fileID_pres = fopen([file.dirname '/Bubbles/' filename_pres{ifile} ],'r');
             size_pres = [1 Inf];
             formatSpec = '%f';
@@ -45,7 +45,6 @@ if (Bubble.N <=10 && Bubble.N>0)
             BubbleVal_loaded = fscanf(fileID_pres,formatSpec,size_pres);
             
             n_pad = ((length(BubbleVal_loaded)-1)/domain.tdimpar-2)/2;
-            %         BubbleVal = BubbleVal_loaded(1+size(BubbleVal_loaded,1)/2*(iBubble-1):end*iBubble/2);
             BubbleVal = BubbleVal_loaded(2:(1+n_pad)*2*domain.tdimpar+1);
             
             BubbleTime = BubbleVal(1:domain.tdimpar)-domain.dtpar;
@@ -54,15 +53,19 @@ if (Bubble.N <=10 && Bubble.N>0)
             BubblePresPad = BubbleVal((n_pad+2)*domain.tdimpar + 1 : end);
             figure; plot(BubbleTime,BubblePres);hold on; plot(BubbleTimePad,BubblePresPad)
             
+            F_s = 1/(domain.dtpar/n_pad);                          % [Hz] , 1/dt
+            [f_p,Sp_p] = Freq_Calc(BubblePres,1/(domain.dtpar));            % Spectrum of simulation
+            [f_ppad,Sp_ppad] = Freq_Calc(BubblePresPad,F_s);                % Spectrum of analytical pulse
+            figure;plot(f_p(1:domain.tdimpar),Sp_p(1:domain.tdimpar)-max(Sp_p));hold on;plot(f_ppad(1:domain.tdimpar),Sp_ppad(1:domain.tdimpar)-max(Sp_ppad))
+            
             % Create Simulation Contrast, correct if n_padded in INCS code
-            n_pad = length(BubblePres)/domain.tdimpar;
-            BubbleTimeSim = interp(domain.tpar,n_pad);
+            BubbleTimeSim = resampleSINC(domain.tpar,n_pad);
             Sim_OSFactor = n_pad*length(Bubble.Contrast)/length(BubbleTimeSim);
-            if Sim_OSFactor>1 ; BubbleCon_Sim = downsample(Bubble.Contrast,Sim_OSFactor/n_pad); else ; BubbleCon_Sim = interp(Bubble.Contrast,n_pad/Sim_OSFactor); end
+            if Sim_OSFactor>1 ; BubbleCon_Sim = downsample(Bubble.Contrast,Sim_OSFactor/n_pad); else ; BubbleCon_Sim = resampleSINC(Bubble.Contrast,n_pad/Sim_OSFactor); end
         end
-        
-        
-        V_dd_norm = Bubble_SimAnalytic(BubblePresPad,BubbleTimePad,medium.c0,medium.rho0,medium.freq0);         % Solution of RP Solver with ode45 MATLAB solver
+        %%
+        BubbleTimeAn = BubbleTimePad;
+        V_dd_norm = Bubble_SimAnalytic(BubblePresPad,BubbleTimeAn,medium.c0,medium.rho0,medium.freq0);         % Solution of RP Solver with ode45 MATLAB solver
         BubbleCon_an = V_dd_norm*medium.rho0;                                                             % Contrast Source Term
         %========================== Save plot ===================================
         if (strcmp(file.saveplot,'yes'))
@@ -71,165 +74,186 @@ if (Bubble.N <=10 && Bubble.N>0)
         %
         f5 = figure('WindowState','maximized');
         ax = gca; hold on;
-        plot(BubbleTimeSim,BubbleCon_Sim,'--','color','k');
-        plot(BubbleTimePad,BubbleCon_an,'-','color',[17 17 17]./255);
-        legend('Simulation', 'Analytic')
+        plot(BubbleTimeSim,BubbleCon_SimPad,'--','color','k');
+        plot(BubbleTimeAn,BubbleCon_an,'-','color',[17 17 17]./255);
+        legend('Simulation', 'Matlab ODE')
         ax.YLabel.String = 'Pressure [Pa]';
-        BubbleCon_Sim(isnan(BubbleCon_Sim)) = 0 ;
+        %         BubbleCon_Sim(isnan(BubbleCon_Sim)) = 0 ;
         %         RRMS_ErrorG = sqrt( sum(sum((BubbleCon_Sim - BubbleCon_an).^2))./sum(BubbleCon_an.^2));
         set(ax,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Time [microsec]';
-    else
-        %% =============================================== Compare simulation with analutical Results =======================================================
-        % This is working for 1 or 2 Bubbles and up to 1st order multiple scattering
-        % it can easily expanded to more but these are enough for the validation of the code
-%         close all
-        if (Bubble.N<=5 )
-            if (Bubble.N==1); domain.beamiterations=1;end
-            if (domain.beamiterations>2) ;domain.beamiterations=2;end
-            
-            OSFactor = 	1;
-            R_rigid = [1E-4 1E-4];
-            
-            k_init      =   1;%79;
-            k_end       =   domain.dimlen(1);
-            m_init      =   1;%domain.dimlen(3);
-            m_end       =   domain.dimlen(3);
-%             
-%             k_init      =   71;58;
-%             k_end       =   k_init;
-%             m_init      =   10;77;
-%             m_end       =   m_init;
-            RRMS_ErrorG_semi_an = zeros(k_end,m_end);
-            RRMS_ErrorG_an = zeros(k_end,m_end);
-            
-            %======== Driving Frequency ======================
-            freq        = medium.freq0;
-            w_driving   = 2*pi*freq;
-            Inc_Press   = 1E5*exp( - ((domain.tpar-6/freq)/(1.5/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq));
-            omega       = 2*pi/(domain.tdimpar*domain.dtpar)*((0:domain.tdimpar-1)-ceil((domain.tdimpar-1)/2));
-            w = w_driving;
-            t = domain.tpar;
-            
-            % Make denser the matrix to increase accuracy
-            tpar_N = interp(domain.tpar,OSFactor);
-            pdiff  = pnl.contrastdata;  % If you do not save contrastdata,  pdiff = plin.data - pnl.data
-            
-            %======= Initialize Arrays ========================
-            pnl.simN                = zeros(domain.tdimpar*OSFactor,1);
-            pnl.anN                 = zeros(domain.tdimpar*OSFactor,1);
-            pnl.semi_anN            = zeros(domain.tdimpar*OSFactor,1);
-            
-            % Iterate over k in x axis and m in z axis. This implementation is done for a y slice so the index in y equals always to the closest point of the slice position (SliceIndex(2))
-            for k = k_init: k_end
-                for m = m_init:m_end
-                    P_scattered = zeros(Bubble.N,domain.tdimpar);
-                    % Iterate to include higher orders of multiple scattering
-                    for i = 1: domain.beamiterations
-                        %======= Initialize Arrays ========================
-                        pnl.simN_cluster        = zeros(domain.tdimpar*OSFactor,1);
-                        pnl.anN_cluster         = zeros(domain.tdimpar*OSFactor,1);
-                        pnl.semi_anN_cluster    = zeros(domain.tdimpar*OSFactor,1);
-                        
-                        % If 0 order then no scattering between scatterers, else include scattering in the for loop
-                        % this is done only for 2 bubbles, otherwise another more complicated idea should be implemented
-                        if (i==1); Bubbles = [1:Bubble.N]; else ;Bubbles = [Bubble.N:-1:1];end
-                        for j = 1: i
-                            % Initialize for higher order multiple scattering . This is done because on previous j's scattered pressure is calculated
-                            if (j>1) ;Bubbles = [1:Bubble.N] ;pnl.anN_cluster = zeros(domain.tdimpar*OSFactor,1); pnl.semi_anN_cluster=pnl.anN_cluster;end
-                            for iBubble = 1:Bubble.N
-                                % Find the position of interest which is the position of slice
-                                % Find the grid points with which the bubble has the smallest distance
-                                [~,SliceIndex(1)] = min(abs(Bubble.LocGlob(Bubbles(iBubble),domain.dimval(2)) - domain.par{domain.dimval(2)}));
-                                [~,SliceIndex(2)] = min(abs(dslice.pos(dslice.num)-domain.par{domain.dimval(1)}));
-                                [~,SliceIndex(3)] = min(abs(Bubble.LocGlob(Bubbles(iBubble),domain.dimval(3)) - domain.par{domain.dimval(3)})) ;
-                                if (i==1 || j>1) ;SliceIndex(1) = k ;  SliceIndex(3) = m; else; pnl.anN_cluster = zeros(domain.tdimpar*OSFactor,1); pnl.semi_anN_cluster=pnl.anN;  end
-                                
-                                %================================================== SIMULATION RESULTS =============================================================
-                                
-                                % The check for the time signature for microbubbles is done from the previous step of the comparison of the ode solvers
-                                pnl.sim = squeeze(pdiff(:,SliceIndex(1),SliceIndex(3)));
-                                pnl.simN = pnl.sim;%interp(pnl.sim,OSFactor); % Normalize to calculate error
-                                pnl.simN_cluster = pnl.simN;
-                                
-                                %================================================== GLOBAL VARIABLES =============================================================
-                                % This is used to show the propagation in the horizontal axis,This is because of the results of INCS
-                                % As in the movies, there should be a shift in
-                                r_from_scatterer = sqrt((Bubble.LocGlob(iBubble,domain.dimval(2)) - domain.par{domain.dimval(2)}(SliceIndex(1))).^2+(Bubble.LocGlob(iBubble,domain.dimval(1)) - dslice.pos(dslice.num)).^2 ...
-                                    +(Bubble.LocGlob(iBubble,domain.dimval(3)) - domain.par{domain.dimval(3)}(SliceIndex(3))).^2)*1e-3;
-                                z_shift = (Bubble.LocGlob(iBubble,domain.dimval(3))-domain.par{domain.dimval(3)}(SliceIndex(3)) )*1e-3;
-%                                 z_inc_prop = domain.par{domain.dimval(3)}(SliceIndex(3))
-%                                 z_shift=0;
-                                if (i>1 && j==1); r_from_scatterer = sqrt(sum((Bubble.LocGlob(iBubble,:) - Bubble.LocGlob(Bubbles(iBubble),:)).^2) )*1e-3; ...
-                                        z_shift = (Bubble.LocGlob(iBubble,domain.dimval(3))-Bubble.LocGlob(Bubbles(iBubble),domain.dimval(3)) )*1e-3; end
-%                                 
-                                phase_shift = exp(-1i*omega.*z_shift/medium.c0);%.*exp(-1i*omega.*z_inc_prop/medium.c0);
-                                Greens_function = exp(-1i*omega.*r_from_scatterer/medium.c0)/(4*pi*r_from_scatterer); % 1/(4*pi*r) and the time shift due to wave travel
-                                number_of_ts=1;
-                                number_of_ts = floor(z_shift/medium.c0/domain.dtpar)+1;
-                                z_indexpos = floor(((Bubble.LocGlob(iBubble,domain.dimval(3)))*1e-3/medium.c0)/domain.dtpar);
-                                if (z_indexpos <domain.tdimpar/2)
-                                    if (z_indexpos+number_of_ts<domain.tdimpar/2) ; number_of_ts = 1;else ;number_of_ts=z_indexpos+number_of_ts - floor(domain.tdimpar/2); end
-                                    %                                 if (number_of_ts<0) ; number_of_ts = 1;else ;number_of_ts=z_indexpos-number_of_ts; end
+        
+        F_s = 1/(domain.dtpar/n_pad);                          % [Hz] , 1/dt
+        [f_p,Sp_p] = Freq_Calc(BubbleCon_an,F_s);            % Spectrum of simulation
+        [~,Sp_ppad] = Freq_Calc(BubbleCon_SimPad,F_s);                % Spectrum of analytical pulse
+        f_p = f_p*1E-6/2;
+        figure('WindowState','maximized');plot(f_p(1:domain.tdimpar),Sp_p(1:domain.tdimpar)-max(Sp_p));hold on;plot(f_p(1:domain.tdimpar),Sp_ppad(1:domain.tdimpar)-max(Sp_ppad))
+        xlabel('Frequency [MHz]')
+        ylabel('Normalized Amplitude [db]')
+        legend('Simulation', 'Matlab ODE')
+        
+    end
+    
+    %% =============================================== Compare simulation with analutical Results =======================================================
+    % This is working for 1 or 2 Bubbles and up to 1st order multiple scattering
+    % it can easily expanded to more but these are enough for the validation of the code
+    %         close all
+    if (Bubble.N<=5 )
+        if (Bubble.N==1); domain.beamiterations=1;end
+        if (domain.beamiterations>2) ;domain.beamiterations=2;end
+        
+        OSFactor = 	1;
+        R_rigid = [1E-4 1E-4];
+        
+        k_init      =   1;%79;
+        k_end       =   domain.dimlen(1);
+        m_init      =   1;%domain.dimlen(3);
+        m_end       =   domain.dimlen(3);
+        
+%         k_init      =   80;58;
+%         k_end       =   k_init;
+%         m_init      =   81;77;
+%         m_end       =   m_init;
+        RRMS_ErrorG_semi_an = zeros(k_end,m_end);
+        RRMS_ErrorG_an = zeros(k_end,m_end);
+        
+        %======== Driving Frequency ======================
+        freq        = medium.freq0;
+        w_driving   = 2*pi*freq;
+        Inc_Press   = repmat(5E4*exp( - ((domain.tpar-6/freq)/(3/freq/2)).^2).* sin(w_driving*(domain.tpar-6/freq)),Bubble.N,1)';
+        omega       = 2*pi/(domain.tdimpar*domain.dtpar)*((0:domain.tdimpar-1)-ceil((domain.tdimpar-1)/2));
+        w = w_driving;
+        t = domain.tpar;
+        if (domain.a_t==0);Inc_Press = real(ifft(ifftshift(fftshift(fft(Inc_Press(1,:)).* exp(-1i*omega/medium.c0.*Bubble.LocGlob(:,domain.dimval(3))*1E-3 )'))))';end
+        % Make denser the matrix to increase accuracy
+        tpar_N = interp(domain.tpar,OSFactor);
+        pdiff  = pnl.contrastdata;  % If you do not save contrastdata,  pdiff = plin.data - pnl.data
+        
+        %======= Initialize Arrays ========================
+        pnl.simN                = zeros(domain.tdimpar*OSFactor,1);
+        pnl.anN                 = zeros(domain.tdimpar*OSFactor,1);
+        pnl.semi_anN            = zeros(domain.tdimpar*OSFactor,1);
+        pnl.anN_map             = zeros(domain.tdimpar*OSFactor,1);
+        
+        % Iterate over k in x axis and m in z axis. This implementation is done for a y slice so the index in y equals always to the closest point of the slice position (SliceIndex(2))
+        for k = k_init: k_end
+            for m = m_init:m_end
+                P_scattered = zeros(Bubble.N,domain.tdimpar);
+                % Iterate to include higher orders of multiple scattering
+                for i = 1: domain.beamiterations
+                    %======= Initialize Arrays ========================
+                    pnl.simN_cluster        = zeros(domain.tdimpar*OSFactor,1);
+                    pnl.anN_cluster         = zeros(domain.tdimpar*OSFactor,1);
+                    pnl.semi_anN_cluster    = zeros(domain.tdimpar*OSFactor,1);
+                    
+                    % If 0 order then no scattering between scatterers, else include scattering in the for loop
+                    % this is done only for 2 bubbles, otherwise another more complicated idea should be implemented
+                    if (i==1); Bubbles = [1:Bubble.N]; else ;Bubbles = [Bubble.N:-1:1];end
+                    for j = 1: i
+                        % Initialize for higher order multiple scattering . This is done because on previous j's scattered pressure is calculated
+                        if (j>1) ;Bubbles = [1:Bubble.N] ;pnl.anN_cluster = zeros(domain.tdimpar*OSFactor,1); pnl.semi_anN_cluster=pnl.anN_cluster;end
+                        for iBubble = 1:Bubble.N
+                            % Find the position of interest which is the position of slice
+                            % Find the grid points with which the bubble has the smallest distance
+                            [~,SliceIndex(1)] = min(abs(Bubble.LocGlob(Bubbles(iBubble),domain.dimval(2)) - domain.par{domain.dimval(2)}));
+                            [~,SliceIndex(2)] = min(abs(dslice.pos(dslice.num)-domain.par{domain.dimval(1)}));
+                            [~,SliceIndex(3)] = min(abs(Bubble.LocGlob(Bubbles(iBubble),domain.dimval(3)) - domain.par{domain.dimval(3)})) ;
+                            if (i==1 || j>1) ;SliceIndex(1) = k ;  SliceIndex(3) = m; else; pnl.anN_cluster = zeros(domain.tdimpar*OSFactor,1); pnl.semi_anN_cluster=pnl.anN;  end
+                            
+                            %================================================== SIMULATION RESULTS =============================================================
+                            
+                            % The check for the time signature for microbubbles is done from the previous step of the comparison of the ode solvers
+                            pnl.sim = squeeze(pdiff(:,SliceIndex(1),SliceIndex(3)));
+                            pnl.simN = pnl.sim;%interp(pnl.sim,OSFactor); % Normalize to calculate error
+                            pnl.simN_cluster = pnl.simN;
+                            
+                            %================================================== GLOBAL VARIABLES =============================================================
+                            % This is used to show the propagation in the horizontal axis,This is because of the results of INCS
+                            % As in the movies, there should be a shift in
+                            r_from_scatterer = sqrt((Bubble.LocGlob(iBubble,domain.dimval(2)) - domain.par{domain.dimval(2)}(SliceIndex(1))).^2+(Bubble.LocGlob(iBubble,domain.dimval(1)) - dslice.pos(dslice.num)).^2 ...
+                                +(Bubble.LocGlob(iBubble,domain.dimval(3)) - domain.par{domain.dimval(3)}(SliceIndex(3))).^2)*1e-3;
+                            z_shift = (Bubble.LocGlob(iBubble,domain.dimval(3))-domain.par{domain.dimval(3)}(SliceIndex(3)) )*1e-3;
+                            %                                 z_inc_prop = domain.par{domain.dimval(3)}(SliceIndex(3))
+                            %                                 z_shift=0;
+                            if (i>1 && j==1); r_from_scatterer = sqrt(sum((Bubble.LocGlob(iBubble,:) - Bubble.LocGlob(Bubbles(iBubble),:)).^2) )*1e-3; ...
+                                    z_shift = (Bubble.LocGlob(iBubble,domain.dimval(3))-Bubble.LocGlob(Bubbles(iBubble),domain.dimval(3)) )*1e-3; end
+                            
+                            phase_shift = 1;
+                            if (domain.a_t);phase_shift = exp(-1i*omega.*z_shift/medium.c0);end
+                            Greens_function = exp(-1i*omega.*r_from_scatterer/medium.c0)/(4*pi*r_from_scatterer); % 1/(4*pi*r) and the time shift due to wave travel
+                            number_of_ts=1;
+%                             number_of_ts = floor(z_shift/medium.c0/domain.dtpar)+1;
+%                             z_indexpos = floor(((Bubble.LocGlob(iBubble,domain.dimval(3)))*1e-3/medium.c0)/domain.dtpar);
+%                             if (z_indexpos <domain.tdimpar/2)
+%                                 if (z_indexpos+number_of_ts<domain.tdimpar/2) ; number_of_ts = 1;else ;number_of_ts=z_indexpos+number_of_ts - floor(domain.tdimpar/2); end
+%                                 %                                 if (number_of_ts<0) ; number_of_ts = 1;else ;number_of_ts=z_indexpos-number_of_ts; end
+%                             else
+%                                 % This should be changed if error is increase. This is due to the shift ! Test a specific example tot understand
+%                                 if (z_indexpos+number_of_ts < domain.tdimpar) ; number_of_ts = domain.tdimpar -2*(domain.tdimpar-z_indexpos-number_of_ts);
+%                                 else ; number_of_ts = domain.tdimpar;
+%                                 end
+%                             end
+                            
+                            %================================================== SEMI-ANALYTIC RESULTS SHIFTED =============================================================
+                            
+%                             pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
+%                             pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
+%                             pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
+%                             pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
+%                             pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
+%                             
+%                             [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
+                            
+                            %================================================== Compare for passive scattering =======================================
+                            passive = strsplit(file.scatterer,'_');
+                            if (strcmp(passive{1},'passive'))
+                                % The shift due to the time that takes for the planewave to travel to the position of the scatterer
+                                % is not taken into account because the output of INCS do not include this
+                                % that's why in INCS the movie should be shifted with the z axis, otherwise the result is not logical.
+                                % but in case of test, r_from_transducer = sqrt(sum(Bubble.LocGlob(iBubble,3).^2))*1e-3;
+
+                                if (strcmp(passive{2},'lin'))
+                                    %Spectral derivative
+                                    time_signature  =   (4/3*pi*R_rigid(iBubble)^3)/(medium.c0^2);
+                                    ddpddt          =   fft(Inc_Press(iBubble,:)+P_scattered(iBubble,:)).*(1i*fftshift(omega)).^2 ; % What the scatterer understands
+                                    
                                 else
-                                    % This should be changed if error is increase. This is due to the shift ! Test a specific example tot understand
-                                    if (z_indexpos+number_of_ts < domain.tdimpar) ; number_of_ts = domain.tdimpar -2*(domain.tdimpar-z_indexpos-number_of_ts);
-                                    else ; number_of_ts = domain.tdimpar;
-                                    end
-                                end
-                                
-                                %================================================== SEMI-ANALYTIC RESULTS SHIFTED =============================================================
-                                
-%                                 pnl.semi_an = (Bubble.Contrast(iBubble,:)) ; % Semi - analytic because checking only the Green's function
-%                                 pnl.semi_an = real(ifft(ifftshift(fftshift(fft(pnl.semi_an)).*Greens_function.*phase_shift)));
-%                                 pnl.semi_an = [zeros(1,number_of_ts-1) pnl.semi_an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
-%                                 pnl.semi_anN = interp(pnl.semi_an,OSFactor/Sim_OSFactor)'; % Normalize to calculate error
-%                                 pnl.semi_anN_cluster = pnl.semi_anN_cluster +pnl.semi_anN;
-%                                 
-%                                 [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an] = Error(pnl.semi_anN_cluster,pnl.simN_cluster);
-                                
-                                %================================================== Compare for passive scattering =======================================
-                                passive = strsplit(file.scatterer,'_');
-                                if (strcmp(passive{1},'passive'))
-                                    % The shift due to the time that takes for the planewave to travel to the position of the scatterer
-                                    % is not taken into account because the output of INCS do not include this
-                                    % that's why in INCS the movie should be shifted with the z axis, otherwise the result is not logical.
-                                    % but in case of test, r_from_transducer = sqrt(sum(Bubble.LocGlob(iBubble,3).^2))*1e-3;
-                                    if (strcmp(passive{2},'lin'))
-                                        %Spectral derivative
-                                        time_signature  =   (4/3*pi*R_rigid(iBubble)^3)/(medium.c0^2).*Greens_function;
-                                        ddpddt          =   fft(Inc_Press+P_scattered(iBubble,:)).*(1i*fftshift(omega)).^2 ; % What the scatterer understands
-                                        
-                                    else
-                                        %Spectral derivative
-                                        Amplitude       =   1E-23;
-                                        time_signature  =   Amplitude.*Greens_function;
-                                        ddpddt          =   fft((Inc_Press+P_scattered(iBubble,:)).^2).*(1i*fftshift(omega)).^2 ; % What the scatterer understands
-                                        
-                                    end
-                                    % Analytic computation 
-%                                     ddpdddomain.tpar_sub = (12800000*freq^4*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq).^2)/81 - 50000*w_driving^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9) - (1600000*freq^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9))/9 - (1600000*freq^2*w_driving*cos(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq))/9;
-%                                     q = ddpddt_sub .* (4/3*pi*R_rigid(iBubble)^3)/(medium.c0^2)/(4*pi*r_from_scatterer);
-                                    ddpddt = ifftshift(fftshift(ddpddt).*(time_signature.*phase_shift));
-                                    pnl.an = ddpddt;
-                                    pnl.an = real(ifft(pnl.an));
+                                    %Spectral derivative
+                                    Amplitude       =   1E-23;
+                                    time_signature  =   Amplitude;
+                                    ddpddt          =   fft((Inc_Press(iBubble,:)+P_scattered(iBubble,:)).^2).*(1i*fftshift(omega)).^2 ; % What the scatterer understands
                                     
-                                    pnl.an = [zeros(1,number_of_ts-1) pnl.an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
-                                    if (i>1 && j==1); P_scattered(Bubbles(iBubble),:) = pnl.an;end % Add the scattered pressure from the other scatterer
-                                    pnl.anN = pnl.an';%interp(pnl.an,OSFactor)';
-                                    
-                                    pnl.anN_cluster = pnl.anN_cluster + pnl.anN;
                                 end
+                                % Analytic computation
+                                %                                     ddpdddomain.tpar_sub = (12800000*freq^4*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq).^2)/81 - 50000*w_driving^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9) - (1600000*freq^2*sin(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9))/9 - (1600000*freq^2*w_driving*cos(w_driving*(domain.tpar - 6/freq)).*exp(-(16*freq^2*(domain.tpar - 6/freq).^2)/9).*(2*domain.tpar - 12/freq))/9;
+                                %                                     q = ddpddt_sub .* (4/3*pi*R_rigid(iBubble)^3)/(medium.c0^2)/(4*pi*r_from_scatterer);
+                                ddpddt = ifftshift(fftshift(ddpddt).*(time_signature .* phase_shift .* Greens_function));
+                                pnl.an = ddpddt;
+                                pnl.an = real(ifft(pnl.an));
                                 
-                                [RRMS_ErrorG_an(k,m),Rel_ErrorG_an] = Error(pnl.anN_cluster,pnl.simN_cluster);
-                                %Safety measure , max 10 plots
-                                if ( (k_end-k_init+1)*(m_end-m_init+1)<10 )
-                                    Plot_Error(tpar_N,pnl,domain,medium,iBubble,SliceIndex,RRMS_ErrorG_semi_an,RRMS_ErrorG_an,k,m,i,j)
-                                    Plot_Spectral_Response(domain,pnl,OSFactor)
-                                    %% ========================== Save plot ===================================
-                                    if (strcmp(file.saveplot,'yes'))
-                                        saveas(gca,[file.savedir,'/',file.dirname,'_comparison_scattered_pressure_slice',int2str(dslice.num),int2str([i;j;iBubble])','.jpg'])
-                                        %saveas(f7,[file.savedir,'/',file.dirname,'_frequencyspectrum',int2str(dslice.num),int2str([i;j])','.jpg'])
-                                    end
+                                pnl.an = [zeros(1,number_of_ts-1) pnl.an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
+                                if (i>1 && j==1); P_scattered(Bubbles(iBubble),:) = pnl.an;end % Add the scattered pressure from the other scatterer
+                                pnl.anN = pnl.an';%interp(pnl.an,OSFactor)';
+                                
+                                pnl.anN_cluster = pnl.anN_cluster + pnl.anN;
+                            elseif (strcmp(passive{1},'active'))
+                                ddpddt = ifftshift(fftshift(fft(Bubble.Contrast(iBubble,:))) .* phase_shift .* Greens_function);
+                                pnl.an = ddpddt;
+                                pnl.an = [zeros(1,number_of_ts-1) pnl.an(number_of_ts:end)]; % Shift in horizontal due to the results of INCS
+                                pnl.anN = real(ifft(ddpddt))';%interp(pnl.an,OSFactor)';
+                                
+                                pnl.anN_cluster = pnl.anN_cluster + pnl.anN;
+                            end
+%                             pnl.anN_map(:,k,m) = pnl.anN_cluster;
+                            
+                            [RRMS_ErrorG_an(k,m),Rel_ErrorG_an] = Error(pnl.anN_cluster,pnl.simN_cluster);
+                            %Safety measure , max 10 plots
+                            if ( (k_end-k_init+1)*(m_end-m_init+1)<10 )
+                                Plot_Error(tpar_N,pnl,domain,medium,iBubble,SliceIndex,RRMS_ErrorG_semi_an,RRMS_ErrorG_an,k,m,i,j)
+                                Plot_Spectral_Response(domain,pnl,OSFactor)
+                                %% ========================== Save plot ===================================
+                                if (strcmp(file.saveplot,'yes'))
+                                    saveas(gca,[file.savedir,'/',file.dirname,'_comparison_scattered_pressure_slice',int2str(dslice.num),int2str([i;j;iBubble])','.jpg'])
+                                    %saveas(f7,[file.savedir,'/',file.dirname,'_frequencyspectrum',int2str(dslice.num),int2str([i;j])','.jpg'])
                                 end
                             end
                         end
@@ -237,37 +261,37 @@ if (Bubble.N <=10 && Bubble.N>0)
                 end
             end
         end
-        %% ========================================= PLOT ERROR IN 2D SLICE ==================================================================
-        if ( k_end == domain.dimlen(1) && m_end == domain.dimlen(3))
-            RRMS_Err_Corr = RRMS_ErrorG_an;
-            RRMS_Err_Corr(abs(RRMS_Err_Corr-1)<=1E-1)=0;
-            figure;
-            contourf(domain.par{3},domain.par{1},RRMS_Err_Corr*100)
-            BubbleCluster_Colormaps(file)
-            shading interp;
-            xlabel('Z [mm]')
-            ylabel('X [mm]')
-            c = colorbar;
-            c.Label.String = 'RRRMS [%]';
-            title(['Analytic vs Simulation of MB scattered pressure at y = ',num2str(dslice.pos(dslice.num)),])
-            mean(mean(RRMS_Err_Corr))
-            std(std(RRMS_Err_Corr))
-        end
-        %% ========================================= PLOT Scattered pressure ==================================================================
+    end
+    %% ========================================= PLOT ERROR IN 2D SLICE ==================================================================
+    if ( k_end == domain.dimlen(1) && m_end == domain.dimlen(3))
+        RRMS_Err_Corr = RRMS_ErrorG_an;
+        RRMS_Err_Corr(abs(RRMS_Err_Corr-0.9)<=1E-1)=0;
+        figure;
+        contourf(domain.par{3}(25:end),domain.par{1},RRMS_Err_Corr(:,25:end)*100)
+        BubbleCluster_Colormaps(file)
+        shading interp;
+        xlabel('Z [mm]')
+        ylabel('X [mm]')
+        c = colorbar;
+        c.Label.String = 'RRRMS [%]';
+        title(['Analytic vs Simulation of MB scattered pressure at y = ',num2str(dslice.pos(dslice.num)),])
+        mean(mean(RRMS_Err_Corr))
+        std(std(RRMS_Err_Corr))
+    end
+    %% ========================================= PLOT Scattered pressure ==================================================================
+    
+    for iBubble = 1:Bubble.N
         
-        for iBubble = 1:Bubble.N
-            
-            figure;
-            ax = gca;
-            hold on;
-            plot(domain.tpar,P_scattered(iBubble,:))
-            ax=gca;
-            xlabel('time [μsec]')
-            set(gca,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Time [μsec]';
-            ylabel('Pressure [Pa]')
-            title(['Scattered pressure of Bubble No. ',num2str(Bubbles(iBubble)),' to Bubble No. ' num2str(iBubble), '.'])
-            hold off;
-        end
+        figure;
+        ax = gca;
+        hold on;
+        plot(domain.tpar,P_scattered(iBubble,:))
+        ax=gca;
+        xlabel('time [μsec]')
+        set(gca,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Time [μsec]';
+        ylabel('Pressure [Pa]')
+        title(['Scattered pressure of Bubble No. ',num2str(Bubbles(iBubble)),' to Bubble No. ' num2str(iBubble), '.'])
+        hold off;
     end
 end
 end

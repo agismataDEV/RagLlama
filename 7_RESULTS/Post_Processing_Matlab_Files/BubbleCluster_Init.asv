@@ -35,21 +35,21 @@
 
 function [medium,domain,dslice,file,plin,pnl,Bubble] = BubbleCluster_Init(slicenumber)
 %% Medium Parameters
-medium.freq0               = 1.7E6;                    %fundamental frequency
+medium.freq0               = 1E6;                    %fundamental frequency
 medium.c0                  = 1482;                     % Speed of Sound [m/sec]
 medium.rho0                = 1060;
 medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
 medium.P0                  = 1.01E5  ;
 
 %% Bubble Parameters
-Bubble.N                 = 1E4;
+Bubble.N                 = 0;
 Bubble.mindist           = 20e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 4;
+domain.beamiterations       = 0;
 domain.ibeam                = 0;
-domain.Fnyq                 = 8;
+domain.Fnyq                 = 6;
 domain.PPW_t                = 2;
 domain.strides              = [1 1 1 1];
 domain.offsets              = [0 0 0 0];
@@ -57,16 +57,16 @@ domain.offsets              = [0 0 0 0];
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1E7_MBs_9FNYQ';
-file.dirname             = '../test_4';
+file.dirname             = '../test_2';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'active';         % 'active','passive_lin', 'passive_nonlin'
 
-file.plot_contrast       = 'yes';            % 'yes' or 'no'
+file.plot_contrast       = 'no';            % 'yes' or 'no'
 file.plot_attenslices    = 'no';
 file.plot_converr        = 'no';
 file.plot_colour         = 'viridis';          % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
-file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'yes'; end
+file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
 file.load_contrast_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
@@ -87,13 +87,6 @@ dslice.xlabel = ([upper(dslice.dims(domain.dimval(3))) ' [mm]']);
 dslice.ylabel = ([upper(dslice.dims(domain.dimval(2))) ' [mm]']);
 dslice.zlabel = ([upper(dslice.savedim(dslice.num)) ' [mm]']);
 
-%%
-% Find the all the log files and split them based on file.rootname to get all possibles processor files .
-% Split with the extension and get the max value added +1 because the first processor is 0 , to get the ProcNum
-LS_log = split(cellstr(ls([file.dirname,'/*.log'])),[file.rootname,'_']);
-LS_logsplit = split(LS_log(2:end,2),'.log');  % if in cluster change this to LS_log(2:end)
-domain.iProcN              = max(str2double(LS_logsplit(:,1)))+1;
-
 file.focalplanename = [ dslice.savedim(dslice.num) int2string_ICS(dslice.num) ];
 
 %% LINEAR DATA WITHOUT ANY BUBBLES
@@ -106,6 +99,7 @@ if isempty(file.dirname); i_start = 2; end
 output             = load_ICS_slice(plin.filename(i_start:end),domain.strides,domain.offsets);
 plin.data          = squeeze(output.data);
 domain.tdimpar     = size(plin.data,1);
+domain.iProcN      = output.iNumProc;
 
 % %% Source Delay
 % file_srcdelay       = [file.dirname '/' file.rootname  'srcdelay' int2string_ICS(0)];

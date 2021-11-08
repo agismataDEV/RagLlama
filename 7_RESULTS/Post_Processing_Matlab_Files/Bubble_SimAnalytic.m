@@ -29,7 +29,7 @@ function [V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f)
 % -------------Bubble parameters
 par.R0 = 2.4e-6 ;                         % [μm],  initial bubble radius R0
 par.S_vis = 5.8e-9         ;            % [Pa*sec] , Shell viscosity
-% par.S_vis = 1.5E-9*exp(8E5*par.R0);
+par.S_vis = 1.5E-9*exp(8E5*par.R0);
 
 %------------------ Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
 par.P0 = 1.01e+5 ;                             % [Pa], ambient pressure 1 [atm] = 10^5 [Pa]
@@ -53,7 +53,7 @@ Initial_Cond = [par.R0  ;  0 ]   ;  % initial radius R0 ; initial wall velocity 
 
 % Numerically solve the Rayleigh-Plesset with Marmottant using ode45-solver
 % Output: T_m=time, R_m=radius
-options  = odeset('RelTol', 1e-10, 'AbsTol', [1e-9 1e-9]', 'Refine', 1);
+options  = odeset('RelTol', 1e-12, 'AbsTol', [1e-8 1e-8]', 'Refine', 1);
 [T_m, R_m] = ode45 (@(t,R) Bubble_RPAnalytic(t, R, t_p_driv, p_driv, par), [T_start T_end], Initial_Cond, options);
 
 %% ==================== Compare with analytical solution ====================
