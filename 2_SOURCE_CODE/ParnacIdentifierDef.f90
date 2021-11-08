@@ -106,6 +106,8 @@ MODULE ParnacIdentifierDef
 	integer(i8b), parameter :: iEI_FSOURCE=2
 	integer(i8b), parameter :: iEI_DTQSOURCE=3
 	integer(i8b), parameter :: iEI_PLANEWAVE=4
+	integer(i8b), parameter :: iEI_POINTSOURCECLOUD=5
+	integer(i8b), parameter :: iEI_LOADFIELD=6
 
 	!identifiers for the Contrast Identifier
 	integer(i8b), parameter :: iCI_NONLIN=1

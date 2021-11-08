@@ -62,11 +62,11 @@
     real(dp)    			::  atol(1), rtol(1), dtout, t, tout, y(NEQN_RK), yp(NEQN_RK) , TOLSF, ATOL_UP(1), RTOL_UP(1)
     real(dp)				::  rwork(lrw)
     integer(i4b) 			::  iwork(liw)
-    integer(i4b) 			::  i, iopar, iopt, iout, istate, itask, itol, mf, jt, flag
+    integer(i4b) 			::  i, iopar, iopt, iout, istate, itask, itol, mf, jt, flag , iErr, ErrCode
 	real(dp) 				::  norm_factor(3), P_interp(1)
 	real(dp)				::  R_bub(n_samples,3), dTaperSupportWindowN(n_samples)
 	
-	character(len = 1024)	::  	actemp
+	character(len = 1024)	::  actemp
 	
 	logical					:: log_isnan
     
@@ -75,16 +75,11 @@
     
 	flag = 1 			!  This is for RK
     itol = 1            !  if atol scalar, itol = 1 and  if atol array, itol = 2	
-    mf = 12             !   memory flag :10 -(Adams) - Non-stiff code
+    mf = 10             !   memory flag : 10 (Adams) Stiff - 22 (BDF) Non-stiff code
     jt  = 2 			!   Jacobian Type : 2 - For DLSODA instead of mf
     iopt = 1            !   0 for not optional inputs, 1 for optional inputs
     itask = 1
     istate = 1
-    ! IWORK(6)=0
-	! IWORK(6) = 2000; 
-	IWORK(7) = 0;
-	IWORK(7) = 1;
-	CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call
     
 	! If BubbleParams%rad_norm = BubbleParams%R0 , The result of the RP Solver is normalized to x = R/BubbleParams%rad_norm = R/R0 , so the solved value is multiplied by BubbleParams%R0 at the end of the code
     ! atol and rtol shoudld be 1E-5
@@ -93,19 +88,22 @@
 
 	if (trim(BubbleParams%Solver_Normalize) =='time') BubbleParams%time_norm = cModelParams%freq0
 	if (trim(BubbleParams%Solver_Normalize) =='radius') BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
-	if (trim(BubbleParams%Solver_Normalize) =='time_and_radius') then
+	if (trim(BubbleParams%Solver_Normalize) =='freq0_and_radius') then
 		 BubbleParams%time_norm = cModelParams%freq0
 		 BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
+	elseif (trim(BubbleParams%Solver_Normalize) =='Minnaert_and_radius') then
+		 BubbleParams%time_norm = SQRT(cMediumParams%P0/cMediumParams%rho0/BubbleParams%R0(iBubble)**2)
+		 BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
 	endif
-	
-    rtol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
-    atol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
+
+    rtol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-6.0D0)
+    atol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-6.0D0)
 	
 	dTaperSupportWindowN = dTaperingWindow(n_samples,(RealTimeIn(2)-RealTimeIn(1))* cModelParams%freq0,2.0_dp,2.0_dp)
 	
 	BubbleParams%P_driv = RealPressIn * dTaperSupportWindowN
 	BubbleParams%T_driv = RealTimeIn * BubbleParams%time_norm;
-		  
+		   
 	! Medium parameters (water, Room temperature =20° and 1 atm ambient pressure) 
     BubbleParams.P_g0 = cMediumParams%P0+2.0D0*BubbleParams.sigma_R0/BubbleParams.R0(iBubble)
 
@@ -113,79 +111,97 @@
     BubbleParams.R_b =  BubbleParams.R0(iBubble)*1.0D0/sqrt(BubbleParams.sigma_R0*1.0D0/BubbleParams.chi+1.0D0)
     BubbleParams.R_r =  BubbleParams.R_b*sqrt(BubbleParams.sigma_w*1.0D0/BubbleParams.chi+1.0D0)  
      
-    y(1) = BubbleParams%R0(iBubble)/BubbleParams%rad_norm                     
-    y(2) = 0.0d0 ; y(3) = 0.0d0 ; y(4) = iBubble*1.0D0;
-    R_bub(1,:) = y(1:3)
+    y(1) = BubbleParams%R0(iBubble)/BubbleParams%rad_norm - 1.0D0             
+    y(2) =0.0D0 ; y(3) = 0.0D0 ; y(4) = iBubble*1.0D0; 
+	R_bub = 0.0D0 ;     R_bub(1,:) = y(1:3) 
     
     tout = BubbleParams%T_driv(1)
     t = BubbleParams%T_driv(1)
-    RealTimeOut(1) = BubbleParams%T_driv(1)
-	! if (BubbleParams%Solver_Method=='RK') then !For the case of Runge Kutta Solver
-		! do iout = 2,n_samples
-			! tout = RealTimeIn(iout) ; 
-			! call R8_RKF45(MARMOTTANT_NORM, NEQN_RK, y, yp, t, tout, rtol, atol, flag )
-			! R_bub(iout,:) = y(1:3) 
-			! RealTimeOut(iout) = t 
-		! enddo
-	! else		!For the case of ODEPACK solver
-    	do iout = 2,n_samples
+	RealTimeOut  = BubbleParams%T_driv
+	if (BubbleParams%Solver_Method=='RK') then !For the case of Runge Kutta Solver
+	
+		do iout = 2,n_samples
+			tout = RealTimeIn(iout) ; 
+			call R8_RKF45(EXP_SIGMA, NEQN_RK, y, yp, t, tout, rtol, atol, flag )
+			R_bub(iout,:) = y(1:3) 
+			RealTimeOut(iout) = t 
+		enddo
+		
+	else		!For the case of ODEPACK solver
+		CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call, comment for normal messaging
+    	do iout = 2,n_samples-1
+		
 				ATOL_UP = ATOL
 				RTOL_UP = RTOL
-			    t  = RealTimeIn(iout-1) 
+			    ! t  = RealTimeIn(iout-1) 
 				tout = BubbleParams%T_driv(iout) ;
-				call dlsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
-				do while (ISTATE == -2 .OR. ISTATE == -1)
+				
+				call dlsode(EXP_SIGMA,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,mf)
+				
+				do while (ISTATE <0)
+				
 					if (ISTATE == -2) then
-						TOLSF = RWORK(14) 
+						TOLSF = RWORK(14) ; if (isnan(TOLSF)) TOLSF = 1.0D0
 						write(*,*) "Initial tolerance : ", ATOL_UP,RTOL_UP
 						write(*,*) "Tolerance factor used ", TOLSF
 						ATOL_UP = ATOL_UP * TOLSF * 2.0D0
 						RTOL_UP = RTOL_UP * TOLSF * 2.0D0
-						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+						if (ATOL_UP(1) .GE. atol(1)*8.0D0) then; ITASK = 4; ISTATE = 2;RWORK(1) = tout; end if
 					elseif (ISTATE == -1) then
-						IWORK(6)=0
-						IWORK(6) = INT(IWORK(11) * 2, i4b);
-						ATOL_UP = ATOL_UP * 2.0D0
-						RTOL_UP = RTOL_UP * 2.0D0
+						IWORK(6)=0 
+						IWORK(6) = INT(IWORK(11)*1.5, i4b);
+						tout = BubbleParams%T_driv(iout) + 1D-15;
 						write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
 						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+						ISTATE = 3
+					elseif(ISTATE == -3) then
+						RWORK(5:7) = 0 ; IWORK(5:7) = 0;
+						tout = RWORK(13)-RWORK(11)/2.0D0
+						ATOL_UP = ATOL_UP  * 2.0D0
+						RTOL_UP = RTOL_UP  * 2.0D0
+						IWORK(6) = INT(IWORK(11) * 2, i4b);
+						write(*,*) "TOUT CHANGED TO = ", tout,"ATOL = ", ATOL_UP
+						write(*,*) "ISTATE = " ,ISTATE
+						ISTATE = 3
+					elseif(ISTATE == -4) then
+						RWORK(5:7) = 0 ; IWORK(5:7) = 0;
+						write(*,*) "RESET DEFAULT VALUES"
+						write(*,*) "ISTATE = " ,ISTATE
+						ISTATE = 3
 					else
 						write(*,*) "ISTATE = " ,ISTATE
+						ISTATE = 3
 					endif
-					ISTATE = 3
-					call dlsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
-					IF (ISTATE>0) RWORK(5:7) = 0 
-					IF (ISTATE>0) IWORK(5:7) = 0 
+					
+					call dlsoda(EXP_SIGMA,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+					
+					IF (ISTATE>0) RWORK((/5,7,8,9/)) = 0 
+					IF (ISTATE>0) IWORK(5:6) = 0 
+					
 				end do
+				
 				R_bub(iout,:) = y(1:3)
 				RealTimeOut(iout) = t
+				
 		enddo
-	! endif 
-	
-    norm_factor = BubbleParams%time_norm**(/0.0D0,1.0D0,2.0D0/)*BubbleParams%rad_norm
-    R_bub(:,1) = R_bub(:,1)*norm_factor(1) ; R_bub(:,2) = R_bub(:,2)*norm_factor(2) ;R_bub(:,3) = R_bub(:,3)*norm_factor(3)
-    RealTimeOut = RealTimeOut*1.0D0/BubbleParams%time_norm
-	
-	! Check to see if results are realistic
-	log_isnan = sum(isnan(R_bub(:,1))*-1) + sum(isnan(R_bub)*-1) + sum(isnan(R_bub(:,3))*-1)
-	if ( log_isnan>0 .OR. REAL(maxval(abs(R_bub)),dp)>1.0D+32 .OR. maxval(abs(R_bub)) > HUGE(maxval(abs(R_bub))) ) then ! Check Nan , Large values or Infinity
-	    write(acTemp,"('Error in ODE SOLVER , Bubble No. ', I7, ' .')") iBubble
-        call PrintToLog(acTemp,1) 
-        stop
 	endif
 	
-	! Filter the edges (not absolutely needed)
-	R_bub(:,1)= R_bub(:,1) * dTaperSupportWindowN
-	R_bub(:,2)= R_bub(:,2) * dTaperSupportWindowN
-	R_bub(:,3)= R_bub(:,3) * dTaperSupportWindowN
-		  
+    norm_factor = BubbleParams%time_norm**(/0.0D0,1.0D0,2.0D0/)*BubbleParams%rad_norm
+    R_bub(:,1) = (R_bub(:,1) + 1.0D0)*norm_factor(1) ; R_bub(:,2) = R_bub(:,2)*norm_factor(2) ;R_bub(:,3) = R_bub(:,3)*norm_factor(3)
+    RealTimeOut = RealTimeOut*1.0D0/BubbleParams%time_norm
+
 	! Find volume acceleration d^2V/dt^2 [m^3/s^2] 
     ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
-    V_dd_pad = 4.0D0*pi*R_bub(:,1)*(R_bub(:,1)*R_bub(:,3)+2.0D0*R_bub(:,2)**2)
-
+    V_dd_pad = REAL(4.0D0*pi*R_bub(:,1)*(R_bub(:,1)*R_bub(:,3)+2.0D0*R_bub(:,2)**2)*dTaperSupportWindowN,dp)
+		
+	if ( .NOT. ALL(ABS(V_dd_pad)<1E100_dp)) then ! Check Nan , Large values or Infinity
+			write(acTemp,"('Error in ODE SOLVER in V_dd_pad , Bubble No. ', I7, ' .')") iBubble
+			call PrintToLog(acTemp,1) 
+			write(*,*) ALL(ABS(R_bub(:,1))<1E100_dp),ALL(ABS(R_bub(:,2))<1E100_dp),ALL(ABS(R_bub(:,3))<1E100_dp)
+	endif
     END SUBROUTINE RP_SOLVER
 
-    SUBROUTINE MARMOTTANT_NORM(neq, t, R, Rdot)
+    SUBROUTINE MARMOTTANT(neq, t, R, Rdot)
     
     ! =============================================================================
     !
@@ -226,30 +242,28 @@
     call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
     ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
     ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)
-
-    if (R(1)*BubbleParams%rad_norm .lt. BubbleParams%R_b) then                        	!rupture state
+ 
+    if ( (R(1)+1) *BubbleParams%rad_norm .lt. BubbleParams%R_b) then                        	!rupture state
        sigma_R = 0.0D0
-    else if (R(1)*BubbleParams%rad_norm .ge. BubbleParams%R_b .AND. &
-    		 R(1)*BubbleParams%rad_norm .le. BubbleParams%R_r) then 					!Elastic state
-        sigma_R = BubbleParams%chi*((BubbleParams%rad_norm*R(1)/BubbleParams%R_b)**2-1.0D0)
+    else if ( (R(1)+1) *BubbleParams%rad_norm .ge. BubbleParams%R_b .AND. &
+    		  (R(1)+1) *BubbleParams%rad_norm .le. BubbleParams%R_r) then 					!Elastic state
+        sigma_R = BubbleParams.sigma_R0 + BubbleParams%chi*((BubbleParams%rad_norm * (R(1)+1) /BubbleParams%R_b)**2-1.0D0)
     else  																				!buckled state
         sigma_R = BubbleParams%sigma_w
     end if
 	
-    ! sigma_R = sigma_R0  + 2*BubbleParams%chi*(R(1)/BubbleParams%R0(iBubble)-1)
-	P_gas     =  BubbleParams%P_g0*(BubbleParams%R0(iBubble)/(R(1)*BubbleParams%rad_norm))**(3.0D0*BubbleParams%gama)
-	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*R(2)*BubbleParams%time_norm
-	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*BubbleParams%time_norm/R(1)
-    P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm*R(1))
-	BubbleParams%kappa_s  = 1.5D-9*EXP(8.0D5*BubbleParams%R0(iBubble))
-    P_vis     =  4.0D0*BubbleParams%kappa_s*R(2)*BubbleParams%time_norm/(BubbleParams%rad_norm*R(1)**2)
+    P_gas     =  BubbleParams%P_g0*(BubbleParams%R0(iBubble)/BubbleParams%rad_norm * 1.0D0/(R(1) + 1) )**(3.0D0*BubbleParams%gama)
+	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*BubbleParams%time_norm*R(2)
+	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*BubbleParams%time_norm/(1+R(1))
+    P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm * (R(1)+1) )
+	BubbleParams%kappa_s  = (1.5D-9)*EXP(8.0D5*BubbleParams%R0(iBubble))
+    P_vis     =  4.0D0*BubbleParams%kappa_s*R(2)*BubbleParams%time_norm/(BubbleParams%rad_norm * (R(1) + 1.0D0) ** 2)
 	
     Rdot(1) = R(2)  
-    Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/R(1)
+    Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - R(5) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/(R(1)+1)
     R(3) = Rdot(2)
-	return
-    END SUBROUTINE MARMOTTANT_NORM
-    
+    END SUBROUTINE MARMOTTANT
+	
     !===================================== Experimental Solver ==========================================
     
     ! =============================================================================
@@ -289,7 +303,7 @@
     real(qp)			::	sigma_RExp(2*int(BubbleParams%R0(iBubble)*1.0D+9/2.0))
     real(qp)			::	A(2*int(BubbleParams%R0(iBubble)*1.0D+9/2.0)), A0, A_m(2*int(BubbleParams%R0(iBubble)*1.0D+9/2.0))
     integer(i8b)		::	i, j, b
-    
+     
     ! ======================  Proceedure for A0 corrected
     Rexp = [( i*1.0D0/1000.0+BubbleParams%R0(iBubble)*1.0E+6 , i = -int(BubbleParams%R0(iBubble)*1E+9/2.0),int(BubbleParams%R0(iBubble)*1E+9/2.0) )] 
 
@@ -308,8 +322,109 @@
     BubbleParams%A0c = 2.0D0*A0 - 4.0D0*pi*(Rexp(b))**2;
     
     END SUBROUTINE R_EXP
+	
+    SUBROUTINE EXP_SIGMA(neq, t, R, Rdot)
+    ! =============================================================================
+    !
+    !   Programmer: Agisilaos Matalliotakis // Date : 211106
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   3.0     200514  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine EXP_SIGMA solves the ODE for the microbubble 
+    !	response. The main difference is that in this case , the curve used for the
+    !	surface tension is generated by experimental results taken from TU Twente.
+	!	Moreover, a normalization factor is assumed for R = R0*(1+x) and t = tau / y
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   neq		  i    i8b          number of equations (R_dot , R_dotdot)
+    !   t		  r    dp           time stamp for solving the equation
+    !   R		  r    dp           solution of the equation ( same length with y)
+    !   Rdot		  r    dp           Rdot variable for the solution of the equation
+    !   sigma_R		  r    dp           surface tension as a function of Radius
+    !   P_elas		  r    dp           damping due to surface tension
+    !   P_vis		  r    dp           damping due to the viscosity of the fluid 
+	integer 		:: 	neq
+	integer(i8b) 	::  iBubble, i 
+    real(qp)		::	A_R,A_m,sigma_Rcoeff(11), sigma_R
+    real(dp) 		::	t, R(*), Rdot(*)
+	real(qp) 		::	P_elas, P_vis, P_gas, Damp_ac, Damp_visc
+	real(dp)		::	P_interp(1) , R_VanderWaals
+
+    iBubble= NINT(R(4))
+	call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
+	! R = R0*(1+x)
+    A_R = 4.0D0*pi*(BubbleParams%R0(iBubble) * (1+R(1)) *1.0D+6)**2.0D0;
+    A_m = A_R*1.0D0/BubbleParams%A0c;
     
-    SUBROUTINE MARMOTTANT_EXP(neq, t, R, Rdot)
+    ! First case is created by doing the multiplication for every R_test
+    sigma_R = 0.0D0
+    do i = 1,size(BubbleParams%coeff_fit)
+    	sigma_Rcoeff(i)  =  BubbleParams%coeff_fit(i)*A_m**(11 - i)
+    end do
+    sigma_R = sum(sigma_Rcoeff)
+    sigma_R = sigma_R*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + BubbleParams%sigma_w * abs(A_m > 1.116D0)
+
+	! COmpute the pressure values for each component in RP Equation
+	call VanDerWaalsHardCoreRadius(R,R_VanderWaals)
+	! P_gas     =  BubbleParams%P_g0*(BubbleParams%R0(iBubble)/BubbleParams%rad_norm * 1.0D0/(R(1) + 1)) ** (3.0D0*BubbleParams%gama)
+	P_gas     =  BubbleParams%P_g0*R_VanderWaals
+	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*R(2)*BubbleParams%time_norm
+	Damp_visc =  4.0D0*cMediumParams%mu*BubbleParams%time_norm * R(2)/real(1+R(1),dp)
+    P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm * (R(1)+1) )
+	BubbleParams%kappa_s  = (1.5D-9)*EXP(8.0D5*BubbleParams%R0(iBubble))
+    P_vis     =  4.0D0*BubbleParams%kappa_s*BubbleParams%time_norm/BubbleParams%rad_norm * R(2) / real(R(1) + 1,dp) ** 2
+	
+    Rdot(1) = R(2)  
+    Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/real(R(1)+1,dp)
+    R(3) = Rdot(2)
+	
+	return
+    END SUBROUTINE EXP_SIGMA
+	
+	 SUBROUTINE MARMOTTANT_EXP_NNORM(neq, t, R, Rdot)
+    ! =============================================================================
+    !
+    !   Programmer: Agisilaos Matalliotakis // Date : 200514
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   3.0     200514  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine MARMOTTANT_EXP_NNORM solves the ODE for the microbubble 
+    !	response. The marmottant model is used in order to describe the behaviour
+	!	of 1 microbubble. Moreover, a normalization factor is assumed for R = R0*x 
+	! 	and t = tau / y
+	!	See "A model for large amplitude oscillations of coated bubbles accounting for buckling and rupture"
+    !	Marmottant et. al.
+	!
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   neq		  i    i8b          number of equations (R_dot , R_dotdot)
+    !   t		  r    dp           time stamp for solving the equation
+    !   R		  r    dp           solution of the equation ( same length with y)
+    !   Rdot		  r    dp           Rdot variable for the solution of the equation
+    !   sigma_R		  r    dp           surface tension as a function of Radius
+    !   P_elas		  r    dp           damping due to surface tension
+    !   P_vis		  r    dp           damping due to the viscosity of the fluid 
 	integer 		:: 	neq
 	integer(i8b) 	::  iBubble, i 
     real(qp)		::	A_R,A_m,sigma_Rcoeff(11), sigma_R
@@ -331,7 +446,7 @@
     sigma_R = sigma_R*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + BubbleParams%sigma_w * abs(A_m > 1.116D0)
 
 	P_gas     =  BubbleParams%P_g0*(BubbleParams%R0(iBubble)/(R(1)*BubbleParams%rad_norm))**(3.0D0*BubbleParams%gama)
-	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*R(2)*BubbleParams%time_norm
+	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0
 	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*BubbleParams%time_norm/R(1)
     P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm*R(1))
 	BubbleParams%kappa_s  = 1.5D-9*EXP(8.0D5*BubbleParams%R0(iBubble))
@@ -341,8 +456,44 @@
     Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/R(1)
     R(3) = Rdot(2)
 	return
-    END SUBROUTINE MARMOTTANT_EXP
+    END SUBROUTINE MARMOTTANT_EXP_NNORM
     
+	
+	SUBROUTINE VanDerWaalsHardCoreRadius(R,R_VanderWaals)
+	! =============================================================================
+    !
+    !   Programmer: Agisilaos Matalliotakis // Date : 200514
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   3.0     200514  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine VanDerWaalsHardCoreRadius includes a change in the radius of 
+	! 	the pressure inside the microbubble using the Van der Waals hardcore radius.
+	!	see "Phase diagrams for sonoluminescing bubbles", Hilgenfeldt et. al.
+    !
+    ! *****************************************************************************
+    
+    real(dp),intent(out) :: R_VanderWaals
+    real(dp),intent(in)  ::	R(*)
+    real(dp) 			 :: h, Nominator, Denominator
+	integer				 :: iBubble
+	iBubble = NINT(R(4))
+	
+	h = BubbleParams%R0(iBubble)/8.86D0
+	Nominator   = (BubbleParams%R0(iBubble)			  )**3 - h**3
+	Denominator = (BubbleParams%rad_norm * (R(1) + 1) )**3 - h**3
+	R_VanderWaals = (Nominator/Denominator) ** (BubbleParams%gama)
+	
+    END SUBROUTINE VanDerWaalsHardCoreRadius
+
+
 !    !===================================== END OF Experimental Solver ==========================================
 !    
 !    SUBROUTINE JAC1 (neq, t, R, ml, mu, pd, nrowpd)

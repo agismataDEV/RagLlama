@@ -667,149 +667,6 @@ SUBROUTINE TransformTInv_sml(cGrid)
 	call SWStop(cswTrans);	call SWStop(cswTransTInv)
 END SUBROUTINE TransformTInv_sml
 
-
-SUBROUTINE TransformT_lrg(cGrid)
-
-! =============================================================================
-!
-!   Programmer: Jasper de Koning / Koos Huijssen
-!
-!   Language: Fortran 90
-!
-!   Version Date    Comment
-!   ------- -----   -------
-!   1.0     090505  Original code (KH)
-!
-! *****************************************************************************
-!
-!   DESCRIPTION
-!
-!   The subroutine TransformT_sml applies the forward FFT in the T-dimension
-!   on a Grid. The data array should be stored in Distr. 1. As the length of 
-!   the T-axis, we use iD0TL, that is the time axis without the wraparound 
-!   region.
-!
-! *****************************************************************************
-!
-!   INPUT/OUTPUT PARAMETERS
-!
-!   cGrid   io   type(Grid)   Grid containing the data array to which the 
-!                             FFT is applied
-!
-	type(Grid), intent(inout) ::	cGrid;
-
-! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
-!
-!   none
-!	
-! *****************************************************************************
-!
-!   I/O
-!
-!   none
-!   
-! *****************************************************************************
-!
-!   SUBROUTINES/FUNCTIONS CALLED
-!
-!   SwStartAndCount
-!   SwStop
-!   dfftw_execute_dft_r2c
-!   
-! =============================================================================
-
-	call SwStartAndCount(cswTrans);	call SwStartAndCount(cswTransT)
-	
-	! Standard test, to make sure that we are in the correct distribution
-	if (cGrid%iDistr /= 1) then
-		write ( *, '("Attempted to do a transform on a grid, with respect to the T-axis, however the grid is in distribution ", I3, " (should be 1)")') cGrid%iDistr
-		write (30, '("Attempted to do a transform on a grid, with respect to the T-axis, however the grid is in distribution ", I3, " (should be 1)")') cGrid%iDistr			
-		stop
-	end if
-
-	! Perform the FFT
-!	print *, "Number fft_small"
-!	print *, cGrid%cTransforms%iPlanTransformT_sml
-!	print *, "Size in-out"
-!	print *,size(cGrid%pacD1(:))
-	call dfftw_execute_dft_r2c(cGrid%cTransforms%iPlanTransformT_lrg, cGrid%pacD1(:), cGrid%pacD1(:))
-	
-	call SWStop(cswTrans);	call SWStop(cswTransT)
-END SUBROUTINE TransformT_lrg
-
-SUBROUTINE TransformTInv_lrg(cGrid)
-	
-! =============================================================================
-!
-!   Programmer: Jasper de Koning / Koos Huijssen
-!
-!   Language: Fortran 90
-!
-!   Version Date    Comment
-!   ------- -----   -------
-!   1.0     090505  Original code (KH)
-!
-! *****************************************************************************
-!
-!   DESCRIPTION
-!
-!   The subroutine TransformTInv_sml applies the inverse FFT in the T-dimension
-!   on a Grid. The data array should be stored in Distr. 1. As the length of 
-!   the T-axis, we use iD0TL, that is the time axis without the wraparound 
-!   region.
-!
-! *****************************************************************************
-!
-!   INPUT/OUTPUT PARAMETERS
-!
-!   cGrid   io   type(Grid)   Grid containing the data array to which the 
-!                             FFT is applied
-!
-	type(Grid), intent(inout) ::	cGrid;
-
-! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
-!
-!   none
-!	
-! *****************************************************************************
-!
-!   I/O
-!
-!   none
-!   
-! *****************************************************************************
-!
-!   SUBROUTINES/FUNCTIONS CALLED
-!
-!   SwStartAndCount
-!   SwStop
-!   dfftw_execute_dft_c2r
-!   
-! =============================================================================
-	
-	call SwStartAndCount(cswTrans);	call SwStartAndCount(cswTransTInv)
-	call PrintToLog("AttenuationEval6", 2);
-	! Standard test, to make sure that we are in the correct distribution
-	if (cGrid%iDistr /= 1) then
-		write ( *, '("Attempted to do an inverse transform on a grid, with respect to the T-axis, however the grid is in distribution ", I3, "(should be 1)")') cGrid%iProcID
-		write (30, '("Attempted to do an inverse transform on a grid, with respect to the T-axis, however the grid is in distribution ", I3, "(should be 1)")') cGrid%iProcID
-		stop
-	end if
-	
-	! Perform the FFT
-!	print *, "Number ifft_small"
-!	print *, cGrid%cTransforms%iPlanTransformT_sml_inv
-!	print *, "Size in-out"
-!	print *,size(cGrid%pacD1(:))
-	call dfftw_execute_dft_c2r(cGrid%cTransforms%iPlanTransformT_lrg_inv, cGrid%pacD1(:), cGrid%pacD1(:))
-	
-	call SWStop(cswTrans);	call SWStop(cswTransTInv)
-END SUBROUTINE TransformTInv_lrg
-
 SUBROUTINE TransformXYZ_sml(cGrid)
 
 ! =============================================================================
@@ -1885,10 +1742,11 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     complex(dpc) 				::	 		InputValW(size(InputVal)/2+1)
     complex(dpc),allocatable	::			OutputValW(:)
     complex(dpc),allocatable	::			dMultFactor(:)
+	real(dp),allocatable		::			dTaperMaxFreqWindow(:)
     integer(i8b) 				::			InputLen, OutputLen, EvenOrOdd, iNumPlanTransform, iNumPlanTransform_inv, iDimW
     
     !Filtering and windowing parameters 
-    real(dp) 	::			dTaperMaxFreqWindow(size(InputVal)/2+1), dLeftBand,dRightBand, dOmega(size(InputVal)/2+1)
+    real(dp) 	::			dLeftBand,dRightBand, dOmega(size(InputVal)/2+1)
     integer		::			i,iErr
 
 ! *****************************************************************************
@@ -1913,13 +1771,13 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     iDimW = min(InputLen/2+1,OutputLen/2+1)
         
     ! Do a FFT of InputLen-point (Initial Variable Length) with complex numbers 
-    call dfftw_plan_dft_r2c_1d(iNumPlanTransform, InputLen-1, InputVal, InputValW, FFTW_ESTIMATE)
+    call dfftw_plan_dft_r2c_1d(iNumPlanTransform, InputLen, InputVal, InputValW, FFTW_ESTIMATE)
     call dfftw_execute_dft_r2c(iNumPlanTransform, InputVal, InputValW)
     call dfftw_destroy_plan(iNumPlanTransform)
     
     !Allocate to upsample or decimate . OutputValW has to have more or equal points to the initial signal 
     ALLOCATE(OutputValW(max(InputLen/2+1,OutputLen/2+1)))
-    
+    ALLOCATE(dTaperMaxFreqWindow(iDimW))
     ! Tapering of the max frequency because of artifact created due to higher frequencies
     dLeftBand = 0.0
     dRightBand =0.1_dp  
@@ -1932,11 +1790,12 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     OutputValW(1:iDimW) = InputValW(1:iDimW) * dTaperMaxFreqWindow(1:iDimW) /InputLen
 
     ! Inverse FFT of OutputLen-point	
-    call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, OutputLen-1, OutputValW, OutputVal, FFTW_ESTIMATE)
+    call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, OutputLen, OutputValW, OutputVal, FFTW_ESTIMATE)
     call dfftw_execute_dft_c2r(iNumPlanTransform_inv, OutputValW, OutputVal)
     call dfftw_destroy_plan(iNumPlanTransform_inv)
     
     DEALLOCATE(OutputValW)
+	DEALLOCATE(dTaperMaxFreqWindow)
     END SUBROUTINE INTERP1DFREQ
     
     SUBROUTINE GREENS1DFREQ( InputVal , OutputVal, cSpace ,iTargetIndex,Bubble_diff)

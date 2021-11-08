@@ -7,10 +7,10 @@ objects = 	 $(addprefix $(OBJDIR)/, fftw3.o Types.o Constants.o Cisi.o FDWeight.
 								  Stopwatch.o ParnacGeneral.o ParnacParamDef.o ParnacIdentifierDef.o ParnacTransformInit.o \
 								  ParnacDataSpaceInit.o ParnacOutput.o ParnacDataMap.o  Specialfun.o ContrastGenFilt.o \
 								  ParnacDataRedist.o f2kcli.o ParnacParamInit.o  ParnacTransformFilter.o ParnacDerivative.o \
-			 					  ODEPACK.o ORDERPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacBubbleContrast.o \
+			 					  ORDERPACK.o ODEPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacBubbleContrast.o \
 								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacSchemes.o ParnacMain.o\
 								)  
-
+ 
 LIB_PATH_HDF5 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/hdf5_ifort_v1.8.7/lib #-L ~/hdf5_ifort_v1.8.21/lib
 INC_PATH_HDF5 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/hdf5_ifort_v1.8.7/include #-I ~/hdf5_ifort_v1.8.21/include
 LIB_PATH_MKL 	= -L ${MKLROOT}/lib/intel64/
@@ -21,13 +21,13 @@ INC_PATH_FFTW 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3
 
 LIBS_HDF5 	= 	-lhdf5_fortran -lhdf5 -lhdf5_hl -lhdf5hl_fortran  
 LIBS_MPI 	= 	-lmpifort -lmpi 
-LIBS_FFTW3 	= 	$(LIB_PATH_FFTW) $(INC_PATH_FFTW) $(BIN_PATH_FFTW) -lfftw3 -lfftw3_mpi -lfftw3_threads ##-L ~/FFTW_3.3.9/lib/libfftw3.a -L ~/FFTW_3.3.9/libfftw3_mpi.a -lm 
+LIBS_FFTW3 	= 	$(LIB_PATH_FFTW) $(INC_PATH_FFTW) $(BIN_PATH_FFTW) -lfftw3 ##-lfftw3_mpi -lfftw3_threads ##-L ~/FFTW_3.3.9/lib/libfftw3.a -L ~/FFTW_3.3.9/libfftw3_mpi.a -lm 
 LIBS		=  	$(LIBS_HDF5) $(LIBS_MPI) $(LIBS_FFTW3) -lz -lm -shared-intel
 
 CFLAGS_MKL 		= 	-mkl -liomp5 -lpthread -lm -qopenmp $(INC_PATH_MKL)
 CFLAGS_OPT 		= 	-O3 -funroll-all-loops #-xSSE4.2 -axAVX,CORE-AVX2 # -fast -ipo
 CFLAGS_DEBUG 	= 	-g -traceback -debug extended #-check all -fpe0 -warn 
-CFLAGS 			=  	-fpp -heap-arrays $(CFLAGS_OPT)  
+CFLAGS 			=  	-fpp -heap-arrays $(CFLAGS_DEBUG)  
 
 # For debugging use -g -check all -fpe0 -warn -traceback -debug extended
 FFTW_WRAPPERS   = 	-I fftw_wrappers.inc

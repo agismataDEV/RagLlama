@@ -78,7 +78,7 @@
         LoadField, StoreField, AddStoredToField, AddStoredtoFieldDFM, SubtractData, SumData, Copydata, SubtractStoredToFieldBis, SubtractStoredToFieldTris, sumsquare, sumandmultiply, sumandmultiplyCG, sumandmultiplyCGbis, sumandmultiplyCGtris, TwoRealValueCalculation, AbsoluteValueCalculation,  &
         LoadPlane, StorePlane, ZeroFirstPlane, &
         StoreSlices, UpdateRRMSError, ExportRRMSError, &
-        test_isnan
+        test_isnan,PointSourceCloudField
     USE ParnacContrastFunctions, ONLY : &
         InitContrastSpace
     USE ParnacOutput, ONLY : &
@@ -134,8 +134,10 @@
     real(8) ::              deltaepsilonNegative,deltaepsilon, ThirOrderPolinomialValueDeltaNegative, ThirOrderPolinomialValueDelta, ThirOrderPolinomialValue
     real(8) ::              AlphaCG, OmegaCG, RhoOld, RhoNew, BetaCG, RandomNumber,AlphaCoeffCGscheme,Phi2,Phi3,Phi4,TempPhi,z,q,acoefficient1,acoefficient2,singacoefficient1,singacoefficient2,TempResidualOutput1,TempResidualOutput2,TempResidualOutput3
     REAL(8), ALLOCATABLE :: TempResidualOutputVectorNum(:,:), TempResidualOutputVectorDen(:,:)
-    type(Space)::           cRefBeam, cBeam, cBeamDFM, cBeamCS, cBeamST, cBeamTot, cResidual, cResidualNKCDX,cResidualNKCDY,cResidualNKCDZ, cPCG, cTemp, cTemp1,cTemp2,cTemp3,cTemp4, cP, cXCG, cV, cPlaneCF, cT, cInhomContrast, cDirection, cBeamF, cTheta1, cTheta2, cResidualNeumann1, cResidualNeumann2
+    
+	type(Space)::           cRefBeam, cBeam, cBeamDFM, cBeamCS, cBeamST, cBeamTot, cResidual, cResidualNKCDX,cResidualNKCDY,cResidualNKCDZ, cPCG, cTemp, cTemp1,cTemp2,cTemp3,cTemp4, cP, cXCG, cV, cPlaneCF, cT, cInhomContrast, cDirection, cBeamF, cTheta1, cTheta2, cResidualNeumann1, cResidualNeumann2
     type(RRMSNormtype) ::	cRRMSNorm
+	
     integer(i8b) ::			iBeam, iIter, i, error, indexResidualVectorNumDen
     integer(i8b) ::			iStartT,iStartX,iStartY,iStartZ, LCSM, BiCGSTAB, DFM, CG, ResidualNeumann, NKC, LINEARCASEIMPLEMENTATION
     integer(i8b) ::			iProcN, iProcID, IndexBiCG, indicerefinedapproximation
@@ -212,11 +214,10 @@
     ! General Initialization Phase
     !------------------------------------------
 
-    call MPI_INIT_THREAD(REQUIRED, PROVIDED, iErr)	!Added by A.M 13/09/2020 [before MPI_INIT(iErr)]
-!    call MPI_INIT(iErr)
+    ! call MPI_INIT_THREAD(REQUIRED, PROVIDED, iErr)	!Added by A.M 13/09/2020 [before MPI_INIT(iErr)]
+    call MPI_INIT(iErr)
     call MPI_COMM_SIZE(MPI_COMM_WORLD, iProcN4, iErr);
     call MPI_COMM_RANK(MPI_COMM_WORLD, iProcID4, iErr);
-!    call OMP_SET_NUM_THREADS(1)				!Added by A.M 13/09/2020
     
     iProcN = iProcN4
     iProcID = iProcID4
@@ -596,34 +597,44 @@
 
         ! Either from source description or as plane wave, this function generates the primary field
         ! given the source type defined in the input file
-        if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE) then
+        if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams%PrimarySourceType/=iEI_POINTSOURCECLOUD) then
             call PrimarySourcetoField(cBeam);
-        else
+        elseif (cModelParams%PrimarySourceType==iEI_PLANEWAVE) then
             call PlanewaveField(cBeam);
+		! elseif ( cModelParams%PrimarySourceType==iEI_LOADFIELD) then
+			! call LoadField_FF(cBeam,cModelParams.FieldFilename)
+		elseif(cModelParams%PrimarySourceType==iEI_POINTSOURCECLOUD) then
+			call PointSourceCloudField(cBeam);
         end if
 
-        if (ResidualNeumann==1) then
+        if (ResidualNeumann==1) then 
 
-            if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE) then
+            if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams%PrimarySourceType/=iEI_POINTSOURCECLOUD) then
                 call PrimarySourcetoField(cResidualNeumann1);
-            else
+            elseif (cModelParams%PrimarySourceType==iEI_PLANEWAVE) then
                 call PlanewaveField(cResidualNeumann1);
+			elseif(cModelParams%PrimarySourceType==iEI_POINTSOURCECLOUD) then
+				call PointSourceCloudField(cBeam);
             end if
 
-            if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE) then
+            if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams%PrimarySourceType/=iEI_POINTSOURCECLOUD) then
                 call PrimarySourcetoField(cResidualNeumann2);
-            else
+            elseif (cModelParams%PrimarySourceType==iEI_PLANEWAVE) then
                 call PlanewaveField(cResidualNeumann2);
+			elseif(cModelParams%PrimarySourceType==iEI_POINTSOURCECLOUD) then
+				call PointSourceCloudField(cBeam);
             end if
 
         end if
 
         if (DFM == 2 .OR. DFM == 3) then
 
-            if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE) then
+            if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams%PrimarySourceType/=iEI_POINTSOURCECLOUD) then
                 call PrimarySourcetoField(cBeamDFM);
-            else
+            elseif (cModelParams%PrimarySourceType==iEI_PLANEWAVE) then
                 call PlanewaveField(cBeamDFM);
+			elseif(cModelParams%PrimarySourceType==iEI_POINTSOURCECLOUD) then
+				call PointSourceCloudField(cBeam);
             end if
 
         end if
@@ -2379,11 +2390,13 @@
 				    end if
 
 				end if
-
+			
 
 				! Test whether there is a NaN in cBeam - indication of an error,
 				! no use to continue the program
 				call test_isnan(cBeam)
+				if (iIter == cModelParams%Numiterations(1+iBeam)-1) call StoreField(cBeam,"BeamSol0")
+				
 	    	end do
     	 end if
         !-----------------------------------------------------------

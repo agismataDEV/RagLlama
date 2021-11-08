@@ -622,8 +622,8 @@
 
     ! Logical acts give -1 if TRUE and 0 if FALSE
     dSinc = 0.0D0
-    ! If the argument is 0 then change it to 1D-30 in order to avoid 0/0
-    dSinc = dsin(dArg+EPSILON(1.0D0))/(dArg+EPSILON(1.0D0))
+    ! If the argument is 0 then change it to 1D-30/1D-30 in order to avoid 0/0 = 1
+    dSinc = dsin(dArg+EPSILON(1.0D0))/real(dArg+EPSILON(1.0D0),dp)
    
     END FUNCTION dSinc
 

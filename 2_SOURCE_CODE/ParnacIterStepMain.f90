@@ -520,6 +520,71 @@
     call SWStop(cswLinStep);
 
     END SUBROUTINE PlanewaveField
+    
+    SUBROUTINE PointSourceCloudField(cSpace)
+
+    ! =============================================================================
+    !
+    !   Programmer: Koos Huijssen
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   1.0     090505  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine PlanewaveField computes the primary field solution in the
+    !   form of a plane wave running through the space in the positive z-direction
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   cSpace   io   type(space)  Space structure for which the primary field
+    !                              solution is to be obtained
+    !
+    type(Space), intent(inout)::                cSpace;
+
+    ! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    !   acTemp       char   Temporary char array for output log messages
+    !
+    character(LEN = 1024)::			acTemp;
+
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   log file entries
+    ! =============================================================================
+    call PrintToLog("PointSourceCloudField",1)
+    call GridDistr0CreateEmpty(cSpace%cGrid);
+
+    ! Test whether we have the right input, otherwise quit immediately
+    if (cSpace%iSpaceIdentifier /= iSI_FIELD) then
+        write (acTemp, '("Error occurred during the execution of PointSourceCloudField, aborting program")');
+        call PrintToLog(acTemp, -1);
+        write (acTemp, '("the space provided as input is not a FIELD.")');
+        call PrintToLog(acTemp, -1);
+        stop
+    end if
+    
+    call SwStartAndCount(cswLinStep);
+    call PointSourceCloudOperator(cSpace)
+    cSpace%iSpaceIdentifier = iSI_CONTRASTSOURCE;
+	call test_isnan(cSpace)
+    call ContrastSourcetoField(cSpace, cSpace, .false.)
+    
+    ! Deinitialize
+    call SWStop(cswLinStep);
+
+    END SUBROUTINE PointSourceCloudField
 
     SUBROUTINE FieldtoContrastSource(cSpace,iContrastID,cInhomContrast)
 
@@ -1374,6 +1439,116 @@
     call PrintToLog("Free buffer", 3)
 
     END SUBROUTINE LoadField
+	
+	SUBROUTINE LoadField_FF(cSpace,acStoredFieldName)
+
+    ! =============================================================================
+    !
+    !   Programmer: Koos Huijssen
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   1.0     090505  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine LoadField loads the field from a temporary file in the temp
+    !   dir to a given space. The data array is in Distr. 0, it is assumed
+    !   that all other information in the space is correct. The storing was done in
+    !   a blockwise fashion.
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   cSpace             io   type(space)  Space to which the data array needs
+    !                                        to be loaded.
+    !   acStoredFieldName  io   char         Filename of the temp storage file.
+    !
+    type(Space), intent(inout)::            cSpace
+    character(*), intent(in):: acStoredFieldName
+
+    ! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    !   iErr            i8b    Error number
+    !   iLi             i8b    Loop counter over the blocks to load
+    !   iLast           i8b    Index of the last full block
+    !   iBlockL         i8b    Size of the blocks
+    !   parBuffer       dp     Temporary buffer for a block load
+    !   acFilename      char   Total filename including path and suffix
+    !   acTemp          char   Temporary char array for output log messages
+    !
+    integer(i8b)::                          iErr
+    integer(i8b)::                          iLi, iLast;
+    integer(i8b), parameter::               iBlockL                = 2**28;
+    real(dp), allocatable::                  parBuffer(:);
+    character(len=1024)::                   acFileName
+    character(len=1024)::                   acTemp;
+
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   log file entries and loading of the data array from temporary file
+    !
+    ! *****************************************************************************
+    !
+    !   SUBROUTINES/FUNCTIONS CALLED
+    !
+    !   SwStartAndCount
+    !   PrintToLog
+    !   int2str
+    !   SWStop
+    !
+    ! =============================================================================
+
+    call PrintToLog("LoadField",1)
+
+    if (cSpace%cGrid%iDistr /= 0) then
+        write (acTemp, '("Error occurred during the execution of LoadField, aborting program")');
+        call PrintToLog(acTemp, -1);
+        write (acTemp, '("the grid provided as input is not in distribution 0, but in distribution ", I3, "")') cSpace%cGrid%iDistr;
+        call PrintToLog(acTemp, -1);
+        stop
+    end if
+
+    ! We read the original values and put them in cSpace
+    allocate(parBuffer(iBlockL));
+   	iMemAllocated=iMemAllocated +  PRODUCT(SHAPE(parBuffer)) * dpS
+   	
+    call PrintToLog("Buffer allocated", 3)
+    call PrintToLog('Read Stored field from disk', 2);
+    call SwStartAndCount(cswDiskAcces)
+    acFileName        = trim(sOutputDir)//acStoredFieldName//int2str(cSpace%cGrid%iProcID);
+    open (unit=iExportUNIT,file=trim(acFileName),status="OLD",form="UNFORMATTED",iostat=iErr)
+    if(iErr/=0) then
+        write(acTemp,"('Error in LoadField, file ',A,' does not exist')") trim(acStoredFieldName)
+        call PrintToLog(acTemp,-1)
+        stop
+    end if
+    iLast = int(cSpace%cGrid%iD0LocSize/iBlockL);
+    do iLi = 0, iLast-1
+        read (unit=iExportUNIT, iostat=iErr) parBuffer;
+        cSpace%cGrid%parD0(1+iLi*iBlockL:(iLi+1)*iBlockL) = parBuffer
+    end do
+    read (unit=iExportUNIT, iostat=iErr) parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL);
+    cSpace%cGrid%parD0(1+iLast*iBlockL:cSpace%cGrid%iD0LocSize) = parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL)
+    close (unit=iExportUNIT);
+    call SWStop(cswDiskAcces)
+
+    call SWStop(cswDisk)
+   	iMemAllocated=iMemAllocated -  PRODUCT(SHAPE(parBuffer)) * dpS
+
+    deallocate(parBuffer);
+    call PrintToLog("Free buffer", 3)
+
+    END SUBROUTINE LoadField_FF
 
     SUBROUTINE AddStoredtoField(cSpace,acStoredFieldName)
 
@@ -3213,27 +3388,22 @@
     ! =============================================================================
 
     if(cSpace%cGrid%iDistr==0) then
-        do iLi=1,cSpace%cGrid%iD0LocSize
-            if (.not.(cSpace%cGrid%ParD0(iLi)<1E100_dp)) then
+            if (.not. ALL(cSpace%cGrid%ParD0<1E100_dp)) then
                 !write (acTemp, '("Error: NaN or very large number encountered!!!" ,I3," - Processor checking in.")') cSpace.cGrid.iProcID; call PrintToLog(acTemp, 0);
                 call PrintToLog("Error: NaN or very large number encountered!!!", 1)
                 stop
             end if
-        end do
     elseif(cSpace%cGrid%iDistr==1) then
-        do iLi=1,cSpace%cGrid%iD1LocSize
-            if (.not.(real(cSpace%cGrid%PacD1(iLi),dp)<1E100_dp)) then
+        
+            if (.not. ALL(real(cSpace%cGrid%PacD1,dp)<1E100_dp) .OR. .NOT.  ALL(dimag(cSpace%cGrid%PacD1)<1E100_dp) ) then
                 call PrintToLog("Error: NaN or very large number encountered!!!",1)
                 stop
             end if
-        end do
     elseif(cSpace%cGrid%iDistr==2) then
-        do iLi=1,cSpace%cGrid%iD2LocSize
-            if (.not.(real(cSpace%cGrid%PacD2(iLi),dp)<1E100_dp)) then
+            if (.not. ALL(real(cSpace%cGrid%PacD2,dp)<1E100_dp) .OR. .NOT.  ALL(dimag(cSpace%cGrid%PacD2)<1E100_dp)) then
                 call PrintToLog("Error: NaN or very large number encountered!!!",1)
                 stop
             end if
-        end do
     end if
 
     END SUBROUTINE test_isnan
