@@ -1,6 +1,6 @@
 #!/bin/bash
  
-#SBATCH --job-name=2_MONO_test_lin_5E5_2
+#SBATCH --job-name=2_MONO_1E3PS_2E4MBs_A78_LongPulse
 #SBATCH --partition=general
 #SBATCH --qos=long
 #SBATCH --nodes=1
@@ -8,8 +8,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=500G
 #SBATCH --time=40:00:00
-#SBATCH --output=../7_RESULTS/test_lin_5E5_2/INCS_test_lin_5E5_2.out
-#SBATCH --error=../7_RESULTS/test_lin_5E5_2/INCS_test_lin_5E5_2.err
+#SBATCH --output=../7_RESULTS/1E3PS_2E4MBs_A78_LongPulse/INCS_1E3PS_2E4MBs_A78_LongPulse.out
+#SBATCH --error=../7_RESULTS/1E3PS_2E4MBs_A78_LongPulse/INCS_1E3PS_2E4MBs_A78_LongPulse.err
 ##SBATCH --exclusive
  
 module use /opt/insy/modulefiles
@@ -28,4 +28,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../3_COMPILED_FILES/INCS_Agis_test_lin_5E5_2 TESTNeumann_Phased_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test_lin_5E5_2
+srun ../3_COMPILED_FILES/INCS_Agis_1E3PS_2E4MBs_A78_LongPulse TESTNeumann_PointSourceCloud_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/1E3PS_2E4MBs_A78_LongPulse

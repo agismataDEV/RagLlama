@@ -23,7 +23,7 @@
 %
 % ***********************************************************************************************************
 
-function [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble)
+function [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,name,MarkerStyle)
 
 %%
 disp('Ploting the microbubble cluster...')
@@ -46,19 +46,19 @@ if (Bubble.N >0 )
         rotate(s,[0 1 0], -90)
     end
     %     [ y x z]
-    p=plot3(Bubble.LocGlob(:,3),Bubble.LocGlob(:,1),Bubble.LocGlob(:,2),'o','MarkerSize',5/(log10(Bubble.N)+1));
+    p=plot3(Bubble.LocGlob(:,3),Bubble.LocGlob(:,1),Bubble.LocGlob(:,2),MarkerStyle,'MarkerSize',5/(log10(Bubble.N)+1));
     if (strcmp(file.plot_colour,'gray')); s.FaceColor =[ 192 192 192]/255; p.MarkerEdgeColor = sscanf('404040','%2x%2x%2x',[1 3])/255 ;  end
     
     % Simplified visualization of transducer with 8 elements
     El = 8;
     y_trans(1,1)=domain.par{1}(1);
     y_trans(1,2)=domain.par{1}(1) + (domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
-    for i = 1:El
-        plot3(Z(1,1)*ones(5,1) ,[y_trans(i,1) y_trans(i,1) y_trans(i,2) y_trans(i,2) y_trans(i,1)]', ...
-            [domain.par{2}(1) domain.par{2}(end) domain.par{2}(end) domain.par{2}(1) domain.par{2}(1)]'+ 0.1*(domain.par{2}(end)-domain.par{2}(1))*[1 -1 -1 1 1]', 'k')
-        y_trans(i+1,1) = y_trans(i,2) +0.2*(domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
-        y_trans(i+1,2) = y_trans(i+1,1) + (domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
-    end
+%     for i = 1:El
+%         plot3(Z(1,1)*ones(5,1) ,[y_trans(i,1) y_trans(i,1) y_trans(i,2) y_trans(i,2) y_trans(i,1)]', ...
+%             [domain.par{2}(1) domain.par{2}(end) domain.par{2}(end) domain.par{2}(1) domain.par{2}(1)]'+ 0.1*(domain.par{2}(end)-domain.par{2}(1))*[1 -1 -1 1 1]', 'k')
+%         y_trans(i+1,1) = y_trans(i,2) +0.2*(domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
+%         y_trans(i+1,2) = y_trans(i+1,1) + (domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
+%     end
     view(-37.5,30)
     
     xlim([min(domain.par{3}) max(domain.par{3})])
@@ -82,7 +82,7 @@ if (Bubble.N >0 )
     [Z,X] = meshgrid(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)});
     s=surf([Z(1,1) Z(1,end) Z(1,1) Z(end,1)] , [X(1,1) X(1,end) X(1,1) X(end,1)],dslice.pos(dslice.num)*ones(4,4),...
         'EdgeColor','black', 'FaceAlpha' ,0.6);
-    p = plot3(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),'o','MarkerSize',5/(log10(Bubble.N)+1));
+    p = plot3(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',5/(log10(Bubble.N)+1) );
     if (strcmp(file.plot_colour,'gray')); s.FaceColor =[ 192 192 192]/255; p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
     view(-37.5,30)
     
@@ -98,7 +98,7 @@ if (Bubble.N >0 )
     y = ylabel(dslice.ylabel);
     set(y, 'Position',get(y, 'Position').*[1,1,1],'Rotation',-21)
     zlabel(dslice.zlabel)
-    title('Microbubble Cluster Focused Region')
+    title([name,' Cluster Focused Region'])
     grid on
     hold off;
     
@@ -107,7 +107,7 @@ if (Bubble.N >0 )
     subplot(2,3,3)
     
     hold on;
-    p=plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(1)),'o','MarkerSize',5/(log10(Bubble.N)+1));
+    p=plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',5/(log10(Bubble.N)+1) );
     
     % Create dimensions that encloses the microbubble cluster but includes the
     % slice of the domain stored in the output file
@@ -135,7 +135,7 @@ if (Bubble.N >0 )
     %====================== 2D Side View of Focused Region ==========================
     subplot(2,3,[4 5])
     hold on;
-    p = plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'o','MarkerSize',5/(log10(Bubble.N)+1));
+    p = plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),MarkerStyle,'MarkerSize',5/(log10(Bubble.N)+1) );
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
     
     xlim(round(10*[min(domain.par{domain.dimval(3)}) max(domain.par{domain.dimval(3)})])/10)
@@ -152,7 +152,7 @@ if (Bubble.N >0 )
     %====================== Z-Y Side View of Focused Region ==========================
     subplot(2,3,6)
     hold on;
-    p = plot(Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),'o','MarkerSize',5/(log10(Bubble.N)+1));
+    p = plot(Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',5/(log10(Bubble.N)+1) );
     
     r = rectangle('Position',[floor(10*(domain.min_dim(domain.dimval(2))-domain.dxpar))/10 dslice.pos(dslice.num)-rect_w  ...
         ceil(10*(domain.max_dim(domain.dimval(2))+domain.dxpar-(domain.min_dim(domain.dimval(2))-domain.dxpar)+domain.dxpar))/10 rect_w],...
@@ -182,7 +182,7 @@ if (Bubble.N >0 )
     integerPart=deblank(integerPart(1:(end-1)));
     integerPart = integerPart(end:-1:1);
     
-    sgtitle(['Microbubble Cluster of ',integerPart,' Bubble(s) per ',num2str(round(Bubble.Volume*1e-3,2)),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
+    sgtitle([name,' Cluster of ',integerPart,' Bubble(s) per ',num2str(round(Bubble.Volume*1e-3,2)),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
     
     % set(gcf, 'Color', 'w');
     set(gca, 'Color', 'none'); % Sets axes background

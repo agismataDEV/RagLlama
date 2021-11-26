@@ -46,26 +46,27 @@ Bubble.mindist           = 20e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 4;
+domain.beamiterations       = 1;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
 domain.strides              = [1 1 1 1];
 domain.offsets              = [0 0 0 0];
+domain.symmetry             = 0;
 
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1E7_MBs_9FNYQ';
 file.dirname             = '../test_2';
 file.contrast_name       = 'ContrastSrc';
-file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
+file.scatterer           = 'active';         % 'active','passive_lin', 'passive_nonlin'
 
 file.plot_contrast       = 'yes';            % 'yes' or 'no'
 file.plot_attenslices    = 'no';
 file.plot_converr        = 'no';
 file.plot_colour         = 'viridis';          % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
-file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
+file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'yes'; end
 file.load_contrast_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
@@ -129,7 +130,7 @@ domain.start(3)    = output.start(4);
 domain.tstart      = domain.TXYstart(1)+domain.TXYoff(1,1);
 domain.xsource     = (output.start(2)+(0:size(plin.data,2)-1))*domain.dxpar;
 domain.ysource     = (output.start(3)+(0:size(plin.data,3)-1))*domain.dypar;
-domain.Fnyq  = 1/(domain.dtpar*2)/medium.freq0;
+domain.Fnyq        = 1/(domain.dtpar*2)/medium.freq0;
 
 %% generate axes for focal plane
 domain.TXYstarts=domain.TXYstart+min(domain.TXYoff);
@@ -157,7 +158,11 @@ if strcmp(file.plot_contrast,'yes')
     pnl.contrastdata        = squeeze(output.data);
     
 end
-
+if (domain.symmetry~=0) 
+    domain.par{domain.symmetry} = [-flip(domain.par{domain.dimval(domain.symmetry)}(2:end)) domain.par{domain.dimval(domain.symmetry)}]; 
+    plin.data  = [flip(plin.data(:,(2:end),:) ,domain.symmetry)  plin.data];
+    pnl.data  = [flip(pnl.data(:,(2:end),:) ,domain.symmetry)  pnl.data];
+end
 
 %% CREATE SAVE FOLDER
 file.savedir             = ['../Images/meeting_',num2str(yyyymmdd(datetime('today'))),'/',dslice.savedim(dslice.num),'_',num2str(dslice.pos(dslice.num))];

@@ -1,4 +1,4 @@
-MODULE ParnacBubbleContrast
+MODULE ParnacPointSourceCloud
 
   ! =============================================================================
   !
@@ -50,11 +50,14 @@ MODULE ParnacBubbleContrast
   USE ParnacTransformFilter, ONLY : &
        TransformT, TransformTInv, &
        TransformT_sml, TransformTInv_sml, &
-       dTaperingWindow, INTERP1DFREQ, GREENS1DFREQ
+       dTaperingWindow, INTERP1DFREQ, GREENS1DFREQ, &
+       FFilterSpatial1D
   USE ParnacParamInit, ONLY :  BubbleInit
   USE ParnacOutput, ONLY : ExportSlice
   USE SpecialFun, ONLY : &
        dSinc,INTERP1D, INTERP3D, LINSPACE, FIND_CLOSEST_DIVISOR
+  USE ParnacDataMap, ONLY : &
+       MapVt,MapVtInv
   USE ORDERPACK    
   USE RP
   USE ParnacContrastFunctions, ONLY: NonlinContrastOperator_Ali
@@ -74,7 +77,7 @@ MODULE ParnacBubbleContrast
   !                                  for nonlinear microbubbles
   ! =============================================================================
   !
-CONTAINS
+  CONTAINS
 
   SUBROUTINE BubbleContrastOperator(cSpace)
 
@@ -170,14 +173,14 @@ CONTAINS
     integer						::		i_loc, log_isnan
     integer						::		Bubble_disps(cSpace%cGrid%iProcN),Bubble_locdisps(cSpace%cGrid%iProcN),Bubble_condisps(cSpace%cGrid%iProcN), Bubble_count(cSpace%cGrid%iProcN)
 
-    character(len = 1024)		::  	actemp, sBubbleDir, MPI_FILENAME
+    character(len = 1024)		::  	actemp, MPI_FILENAME
 
     integer(i8b),allocatable	::  	arBufferXYZ(:,:), BubbleID(:), tempbuffer(:) , NeighbGPIndex(:)
     real(dp),allocatable		::  	dBubbleContrast(:), dBubbleLocationN(:,:) , DATA_TO_WRITE(:)
     real(dp),allocatable		::		temploc(:), tempcon(:), temp_globloc(:), LocPres(:,:)
 
     ! Parameters for Rayleigh - Plesset Solver
-    integer(i8b),parameter		::  	n_pad = 4 , OS_Factor = 1
+    integer(i8b),parameter		::  	n_pad = 4 , OS_Factor = 1 
 
     real(dp)		 			::  	RealPressure(OS_Factor * cSpace%iDimT)	, RealTime(cSpace%iDimT)						
     real(dp)             		::  	RealPressurePad(cSpace%iDimT *n_pad)  	, RealTimePad(cSpace%iDimT *n_pad)	,  RealTimePadOut(cSpace%iDimT *n_pad)
@@ -248,9 +251,8 @@ CONTAINS
     ! =============================================================================
     call BubbleInit()
 
-    sBubbleDir = 'Bubbles/'
-    INQUIRE(FILE=trim(trim(sOutputDir)//trim(sBubbleDir)),EXIST =exists_loc)
-    if (.NOT. exists_loc) result = MAKEDIRQQ(trim(trim(sOutputDir)//trim(sBubbleDir)))
+    INQUIRE(FILE=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)),EXIST =exists_loc)
+    if (.NOT. exists_loc) result = MAKEDIRQQ(trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)))
 
     write(acTemp,"('BubbleContrastOperator')");    call PrintToLog(acTemp,2)
     !**************************************** INITIALIZE VALUES **********************************************
@@ -260,13 +262,13 @@ CONTAINS
     iDimZ   = cSpace%iDimZ   !z dimensions
 
     iDimW   = iDimT/2 + 1
-    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor λ in [mm]
+    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams%freq0;           ! Normalization factor λ in [mm]
     dK_c = pi / cSpace%dDx
 
     ibDimT   = OS_Factor * cSpace%iDimT ! This should not be changed because ibDimT is Integer
 
     !Allocate for memory management
-    ALLOCATE(arBufferXYZ(cSpace.cGrid.iD0LocN,3))
+    ALLOCATE(arBufferXYZ(cSpace%cGrid%iD0LocN,3))
     ALLOCATE(temploc(BubbleParams%N*3), BubbleID(BubbleParams%N),temp_globloc(3+cSpace%iDimT))
     ALLOCATE(dBubbleLocationN(BubbleParams%N,3) )
 
@@ -284,7 +286,7 @@ CONTAINS
     !**************************************** CREATE BUBBLE CLUSTER / LOAD BUBBLE PARAMETERS **********************************************
 
     !!This is only for iBeam =1!! I should change this
-    INQUIRE(FILE=trim(trim(sOutputDir)//trim(sBubbleDir)//'Bubble_Location'//int2str(0)),EXIST =exists_loc)
+    INQUIRE(FILE=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//'Bubble_Location'//int2str(0)),EXIST =exists_loc)
     ! If the file for the first iteration exists , then just load the file from the location
     ! See later for more information about the process of loading
     if (.NOT. exists_loc) then
@@ -293,11 +295,11 @@ CONTAINS
        ! Generate the cluster and save result on slices defined in input file
        call RNDGeneratePSCloud(cSpace,BubbleAsPointScatterer,dBubbleLocationN, Domain_Range)
        call SaveExtraBubbleSlices(cSpace, dBubbleLocationN, Domain_Range)
-
        write(acTemp,"('No. of Bubbles consisting the cluster: ', I<INT(log10(real(BubbleParams%N,dp)))+1>, ' in a volume of ', F5.3, ' [mL].')") BubbleParams%N, PRODUCT(maxval(dBubbleLocationN,1)-minval(dBubbleLocationN,1))*dLambdaMM**3*1.0D-3;    call PrintToLog(acTemp,2);
+	
     else
        ! Load each Bubble's Position 
-       open (11, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('Bubble_Location')//int2str(0)), status='OLD')
+       open (11, file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//trim('Bubble_Location')//int2str(0)), status='OLD')
        do iBubble= 1 ,BubbleParams%N
           read(11, *) dBubbleLocationN(iBubble,1),dBubbleLocationN(iBubble,2),dBubbleLocationN(iBubble,3)
        end do
@@ -318,10 +320,10 @@ CONTAINS
     endif
 
     !********************************************* START OF TAPPERING *********************************************************
-    if (cModelParams.UseSupportTapering .EQV. .true.) then
-       !    use tapering of the field at start and end to prevent wraparound leakage
-       !    build tapering window, the first two periods and the last two periods are tapered
-       !    in the contrast source
+    if (cModelParams%UseSupportTapering .EQV. .true.) then
+          ! use tapering of the field at start and end to prevent wraparound leakage
+          ! build tapering window, the first two periods and the last two periods are tapered
+          ! in the contrast source
        dLeftBand = 2.0_dp
        dRightBand = 2.0_dp
        dTaperSupportWindow=dTaperingWindow(cSpace%iDimT,cSpace%dDt,dLeftBand,dRightBand)
@@ -369,9 +371,9 @@ CONTAINS
 
        ! Determine current location in global grid
        ! Compare the global coordinates with the scatterer location
-       dGlobXYZ(1) = (iBeamIndex(1) + iBeamOffsetX(cSpace,iBeamIndex(3))) * cSpace.dDx
-       dGlobXYZ(2) = (iBeamIndex(2) + iBeamOffsetY(cSpace,iBeamIndex(3))) * cSpace.dDx
-       dGlobXYZ(3) = (iBeamIndex(3) ) * cSpace.dDx 
+       dGlobXYZ(1) = (iBeamIndex(1) + iBeamOffsetX(cSpace,iBeamIndex(3))) * cSpace%dDx
+       dGlobXYZ(2) = (iBeamIndex(2) + iBeamOffsetY(cSpace,iBeamIndex(3))) * cSpace%dDx
+       dGlobXYZ(3) = (iBeamIndex(3) ) * cSpace%dDx 
 
        dRadius(1) = sqrt(sum((dGlobXYZ-dBubbleLocationN(iBubble,:))**2)) 
 
@@ -389,9 +391,9 @@ CONTAINS
              if (XYZ_i1(i)>=0 .AND. XYZ_i1(i)<cSpace%cGrid%iD0LocN) then
 
                 RealPressure_i1(i,:)= cSpace%cGrid%parD0(1 +XYZ_i1(i)*iDimT: (XYZ_i1(i)+1)*iDimT)
-                GlobalPos(i,1) = (arBufferXYZ(XYZ_i1(i)+1,1) + iBeamOffsetX(cSpace,arBufferXYZ(XYZ_i1(i)+1,3))) * cSpace.dDx
-                GlobalPos(i,2) = (arBufferXYZ(XYZ_i1(i)+1,2) + iBeamOffsetY(cSpace,arBufferXYZ(XYZ_i1(i)+1,3))) * cSpace.dDx
-                GlobalPos(i,3) = (arBufferXYZ(XYZ_i1(i)+1,3) ) * cSpace.dDx 
+                GlobalPos(i,1) = (arBufferXYZ(XYZ_i1(i)+1,1) + iBeamOffsetX(cSpace,arBufferXYZ(XYZ_i1(i)+1,3))) * cSpace%dDx
+                GlobalPos(i,2) = (arBufferXYZ(XYZ_i1(i)+1,2) + iBeamOffsetY(cSpace,arBufferXYZ(XYZ_i1(i)+1,3))) * cSpace%dDx
+                GlobalPos(i,3) = (arBufferXYZ(XYZ_i1(i)+1,3) ) * cSpace%dDx 
                 temp_globloc(1:3) = GlobalPos(i,:)
                 temp_globloc(4:iDimT+3) = RealPressure_i1(i,:)	
 
@@ -436,8 +438,6 @@ CONTAINS
     RealTimePad = 1D-30
     call linspace(RealTimePad, RealTime(1), RealTime(size(RealTime,1)), iDimT*n_pad)
 
-    ALLOCATE(BubbleParams%P_driv(iDimT*n_pad),BubbleParams%T_driv(iDimT*n_pad))
-
     i_loc = 1
     do iBubble =  1,BubbleParams%N
        ! Determine Beam Index of the point source
@@ -454,9 +454,9 @@ CONTAINS
           RealPressure = cSpace%cGrid%parD0(1+XYZIndex*iDimT: (XYZIndex+1)*iDimT);   ! Array buffer with length size of iDimT for every XYZ position
 
           ! Determine current location in global grid
-          dGlobXYZ(1) = (iBeamIndex(1)  + iBeamOffsetX(cSpace,iBeamIndex(3))) * cSpace.dDx
-          dGlobXYZ(2) = (iBeamIndex(2)  + iBeamOffsetY(cSpace,iBeamIndex(3))) * cSpace.dDx
-          dGlobXYZ(3) = (iBeamIndex(3)  ) * cSpace.dDx
+          dGlobXYZ(1) = (iBeamIndex(1)  + iBeamOffsetX(cSpace,iBeamIndex(3))) * cSpace%dDx
+          dGlobXYZ(2) = (iBeamIndex(2)  + iBeamOffsetY(cSpace,iBeamIndex(3))) * cSpace%dDx
+          dGlobXYZ(3) = (iBeamIndex(3)  ) * cSpace%dDx
 
           ! Compare the global coordinates with the scatterer location
           dRadius(1) = sqrt(sum((dGlobXYZ-dBubbleLocationN(iBubble,:))**2))
@@ -497,9 +497,9 @@ CONTAINS
                 iTargetIndex(3) = nint(GlobalPos(i,3)/cSpace%dDx) 
                 iTargetIndex(1) = nint(GlobalPos(i,1)/cSpace%dDx) - iBeamOffsetX(cSpace,iBeamIndex(3))
                 iTargetIndex(2) = nint(GlobalPos(i,2)/cSpace%dDx) - iBeamOffsetY(cSpace,iBeamIndex(3))
-
+ 
                 call GREENS1DFREQ( RealPressure_Own(i,:) , RealPressure_Own(i,:), cSpace ,iTargetIndex,diff(i,:))
-                ! write(*,*) "==================================="
+                ! write(*,*) "===================================" 
                 ! write(*,*) iTargetIndex - iBeamIndex
                 ! write(*,*) RealPressure_Own(i,:)
                 RealPressure_i1(i,:) = RealPressure_i1(i,:) - RealPressure_Own(i,:)
@@ -518,43 +518,38 @@ CONTAINS
           RealPressurePad = 0.0D0;
 
           ! You can use INTERP1DFREQ (frequency interpolation) instead, but this is more accurate and efficient
-          ! call INTERP1D( RealTime, RealPressure, RealTimePad, RealPressurePad)  
-          call INTERP1DFREQ(RealPressure,RealPressurePad, cSpace,0)
+          call INTERP1D( RealTime, RealPressure, RealTimePad, RealPressurePad)  
+          ! call INTERP1DFREQ(RealPressure,RealPressurePad, cSpace,0)
 
-          ! Open File 
-          ! open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
-          ! write(7,*) iBubble
-          ! write(7,*) RealTime, RealPressure,RealTimePad,RealPressurePad
-          ! close(7) 
- 
           ! Marmottant solver ( ODE Solver) , Result is V_dd_Pad (volume acceleration) and RealTimePadOut which is the updated time values 
           call RP_SOLVER(RealPressurePad, RealTimePad, iDimT * n_pad, iBubble, V_dd_Pad , RealTimePadOut)
-
+		  
           ! Return to the initial dimensions!
-          call INTERP1DFREQ(V_dd_Pad, V_dd_norm, cSpace,0)
-          ! call INTERP1D( RealTimePadOut, V_dd_Pad, RealTime, V_dd_norm)
+          ! call INTERP1DFREQ(V_dd_Pad, V_dd_norm, cSpace,0)
+          call INTERP1D( RealTimePadOut, V_dd_Pad, RealTime, V_dd_norm)
 		  
 		  ! Check to see if results are realistic
-		  if ( .NOT. ALL(ABS(V_dd_norm)<1E100_dp)) then ! Check Nan , Large values or Infinity
-				write(acTemp,"('Error in ODE SOLVER in V_dd_pad , Bubble No. ', I7, ' .')") iBubble
-				call PrintToLog(acTemp,1) 
-				open (7, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('output_file_pressure')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
+		  !*************************** CHANGED THIS with addition of V_dd_pad
+		  ! if ( .NOT. ALL(ABS(V_dd_norm)<1E100_dp) .OR. .NOT. ALL(ABS(V_dd_pad)<1E100_dp)) then ! Check Nan , Large values or Infinity
+				! write(acTemp,"('Error in ODE SOLVER in V_dd_pad , Bubble No. ', I7, ' .')") iBubble
+				! call PrintToLog(acTemp,1) 
+				  open (7, file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//trim('output_file_pressure')//int2str(cModelParams%iIter)//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
 				  write(7,*) iBubble
 				  write(7,*) RealTime, RealPressure,RealTimePad,RealPressurePad
 				  close(7) 
-				  open (8, file=trim(trim(sOutputDir)//trim(sBubbleDir)//trim('v_dd_norm')//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
-				  write(8,*) V_dd_norm,V_dd_pad
+				  open (8, file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//trim('v_dd_norm')//int2str(cModelParams%iIter)//int2str(cSpace%cGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')				
+				  write(8,*) RealTime,V_dd_norm,RealTimePadOut,V_dd_pad
 				  close(8)
-				call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
-		  endif
+				! call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
+		  ! endif
            
 		  ! V_dd_norm = 0.0D0; 
-          ! BubbleParams%R0(iBubble) = 1D-4       
+          ! BubbleParams%R0(iBubble) = 1D-4      
 
           ! Normalize by freq based on the order of the spectral derivative
           call LinScatterer(RealPressure , RealPressure, cSpace, 4.0/3.0*pi*BubbleParams%R0(iBubble)**3/cMediumParams%c0**2*cModelParams%freq0**2, 2 )
           ! call NonLinScatterer(RealPressure, RealPressure, cSpace, 1.0D-23*cModelParams%freq0**2, 2, 2 )
-          tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT) = cMediumParams.rho0*V_dd_norm + RealPressure;
+          tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT) = cMediumParams%rho0*V_dd_norm + RealPressure;
 
           ! Multiply the volume acceleration with density so the units change to kg/s^2 , which do not include distance inside
           temploc(3*i_loc-2:3*i_loc) = [dBubbleLocationN(iBubble,1),dBubbleLocationN(iBubble,2),dBubbleLocationN(iBubble,3)] 
@@ -564,7 +559,6 @@ CONTAINS
        endif
     enddo
 
-    DEALLOCATE(BubbleParams%P_driv,BubbleParams%T_driv)
     ! Deallocate to save memory
     if (ALLOCATED(LocPres)) then
        iMemAllocated=iMemAllocated - PRODUCT(SHAPE(LocPres)) * dpS
@@ -759,15 +753,15 @@ CONTAINS
     PointCloud = PointSourceType
     if (cSpace%cGrid%iProcID==0) then
 
-       dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor 
+       dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams%freq0;           ! Normalization factor 
        !unnormalized values of the resized Space
-       Domain_Range(:,1) = (PointCloud%ClusterDimsRatio(:,1) * (cSpace%iDimX-1) * cSpace.dDx + cSpace%iStartX*cSpace%dDx)* dLambdaMM  
-       Domain_Range(:,2) = (PointCloud%ClusterDimsRatio(:,2) * (cSpace%iDimY-1) * cSpace.dDx + cSpace%iStartY*cSpace%dDx)* dLambdaMM
-       Domain_Range(:,3) = (PointCloud%ClusterDimsRatio(:,3) * (cSpace%iDimZ-1) * cSpace.dDx + cSpace%iStartZ*cSpace%dDx)* dLambdaMM
+       Domain_Range(:,1) = (PointCloud%ClusterDimsRatio(:,1) * (cSpace%iDimX-1) * cSpace%dDx + cSpace%iStartX*cSpace%dDx)* dLambdaMM  
+       Domain_Range(:,2) = (PointCloud%ClusterDimsRatio(:,2) * (cSpace%iDimY-1) * cSpace%dDx + cSpace%iStartY*cSpace%dDx)* dLambdaMM
+       Domain_Range(:,3) = (PointCloud%ClusterDimsRatio(:,3) * (cSpace%iDimZ-1) * cSpace%dDx + cSpace%iStartZ*cSpace%dDx)* dLambdaMM
        MinDist = PointCloud%MinInBetweenDist*1e+3
 
        if (minval(Domain_Range(1,:) - (/cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ/)*cSpace%dDx*dLambdaMM) < 0.0D0  .OR. &
-            maxval(Domain_Range(2,:) - (/cSpace.iDimX,cSpace%iDimY,cSpace%iDimZ/) * cSpace.dDx*dLambdaMM) >= 0.0D0 )then
+            maxval(Domain_Range(2,:) - (/cSpace%iDimX,cSpace%iDimY,cSpace%iDimZ/) * cSpace%dDx*dLambdaMM) >= 0.0D0 )then
           write(acTemp,"('Error in GeneratePSCloud, Domain out of boundaries')")
           call PrintToLog(acTemp,-1)
           call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
@@ -863,9 +857,9 @@ CONTAINS
        dBubbleLocationN = dBubbleLocationN + EPSILON(1.0D0) ! This is added because when the scatterer is exactly positioned at a gridpoint , the code is stucked
 
        if (minval( (/ minval(dBubbleLocationN,1),&
-            (cSpace%iDimX-1) * cSpace.dDx - maxval(dBubbleLocationN(:,1),1), &
-            (cSpace%iDimY-1) * cSpace.dDx - maxval(dBubbleLocationN(:,2),1), &
-            (cSpace%iDimZ-1) * cSpace.dDx - maxval(dBubbleLocationN(:,3),1) /)) <= 0) then
+            (cSpace%iDimX-1) * cSpace%dDx - maxval(dBubbleLocationN(:,1),1), &
+            (cSpace%iDimY-1) * cSpace%dDx - maxval(dBubbleLocationN(:,2),1), &
+            (cSpace%iDimZ-1) * cSpace%dDx - maxval(dBubbleLocationN(:,3),1) /)) <= 0) then
           write(acTemp,"('Error in GeneratePSCloud, Bubble positioned outside domain boundaries')")
           call PrintToLog(acTemp,-1)
           call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
@@ -970,16 +964,16 @@ CONTAINS
     ALLOCATE(Bubble_count(INT(MultFactor*PointCloud%N,8)), BubbleID(INT(MultFactor*PointCloud%N,8)))
     ALLOCATE(randpos(INT(PointCloud%N*MultFactor,8),3) , RadFactor(INT(PointCloud%N*MultFactor)))
     
-    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor 
+    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams%freq0;           ! Normalization factor 
     !unnormalized values of the resized Space
-    Domain_Range(:,1) = (PointCloud%ClusterDimsRatio(:,1) * (cSpace%iDimX-1) * cSpace.dDx + cSpace%iStartX*cSpace%dDx)* dLambdaMM  
-    Domain_Range(:,2) = (PointCloud%ClusterDimsRatio(:,2) * (cSpace%iDimY-1) * cSpace.dDx + cSpace%iStartY*cSpace%dDx)* dLambdaMM
-    Domain_Range(:,3) = (PointCloud%ClusterDimsRatio(:,3) * (cSpace%iDimZ-1) * cSpace.dDx + cSpace%iStartZ*cSpace%dDx)* dLambdaMM
+    Domain_Range(:,1) = (PointCloud%ClusterDimsRatio(:,1) * (cSpace%iDimX-1) * cSpace%dDx + cSpace%iStartX*cSpace%dDx)* dLambdaMM  
+    Domain_Range(:,2) = (PointCloud%ClusterDimsRatio(:,2) * (cSpace%iDimY-1) * cSpace%dDx + cSpace%iStartY*cSpace%dDx)* dLambdaMM
+    Domain_Range(:,3) = (PointCloud%ClusterDimsRatio(:,3) * (cSpace%iDimZ-1) * cSpace%dDx + cSpace%iStartZ*cSpace%dDx)* dLambdaMM
 
     RadFactor(1:PointCloud%N) = PointCloud%MinInBetweenDist/PointCloud%R0*1.0D+3
 
     if (minval(Domain_Range(1,:) - (/cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ/)*cSpace%dDx*dLambdaMM) < 0.0D0  .OR. &
-         maxval(Domain_Range(2,:) - (/cSpace.iDimX,cSpace%iDimY,cSpace%iDimZ/) * cSpace.dDx*dLambdaMM) >= 0.0D0 )then
+         maxval(Domain_Range(2,:) - (/cSpace%iDimX,cSpace%iDimY,cSpace%iDimZ/) * cSpace%dDx*dLambdaMM) >= 0.0D0 )then
        write(acTemp,"('Error in GeneratePSCloud, Domain out of boundaries')")
        call PrintToLog(acTemp,-1)
        call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
@@ -996,8 +990,8 @@ CONTAINS
     Geom_Series(1) = S- sum(Geom_Series)
 
     !=================================================== RANDOM LOCATION OF SCATTERERS =====================================
-    call RANDOM_SEED(PUT = [(1, i = 1,10*PointCloud%N*3)])  ! Random but the same at each run of INCS
-    ! call RANDOM_SEED() ! Fully random , even at each run of INCS
+    ! call RANDOM_SEED(PUT = [(1, i = 1,10*PointCloud%N*3)])  ! Random but the same at each run of INCS
+    call RANDOM_SEED() ! Fully random , even at each run of INCS
     call RANDOM_NUMBER(randpos)
     randpos(:,1) = randpos(:,1)*(Domain_Range(2,1)-Domain_Range(1,1)) + Domain_Range(1,1)
     randpos(:,2) = randpos(:,2)*(Domain_Range(2,2)-Domain_Range(1,2)) + Domain_Range(1,2)
@@ -1066,8 +1060,8 @@ CONTAINS
        BubbleIdx = S-MaxBubbles
        do while (iBubble < MaxBubbles+1)
           if (i==0) then
-             ! call RANDOM_SEED()
-             call RANDOM_SEED(PUT = [(1, i = 1,10*PointCloud%N*3)]*i)
+             call RANDOM_SEED()
+             ! call RANDOM_SEED(PUT = [(1, i = 1,10*PointCloud%N*3)]*i)
              call RANDOM_NUMBER(randpos)
              randpos(:,1) = randpos(:,1)*(Domain_Range(2,1)-Domain_Range(1,1)) + Domain_Range(1,1)
              randpos(:,2) = randpos(:,2)*(Domain_Range(2,2)-Domain_Range(1,2)) + Domain_Range(1,2)
@@ -1092,7 +1086,7 @@ CONTAINS
     endif
     ! ================================================================================================================================
  
-    ! dBubbleLocationN(1,:)=  (/0.653823529411765 ,   0.0726470588235294 ,    5.81176470588235/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
+    ! dBubbleLocationN(1,:)=  (/0.653823529411765 ,   0.0726470588235294 ,    2.17941176470588/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
     ! dBubbleLocationN(1,:)=  (/0.599338235294118 ,   0.108970588235294 ,    5.17610294117647/) ! At a gridpoint 
     ! dBubbleLocationN(2,:)=  (/0.572095587323694 ,   0.0726470588235294 ,    3.148860381070307/) ! Βetween gridpoints  
     ! dBubbleLocationN(1,:)=  (/0.576333333333333  ,   0.0823333333333333  ,    5.187/)  ! Middle of gridpoints 
@@ -1111,9 +1105,9 @@ CONTAINS
     call MPI_BCAST(PointCloud%R0,PointCloud%N,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,iErr)
 
     if (minval( (/ minval(dBubbleLocationN,1),&
-         (cSpace%iDimX-1) * cSpace.dDx - maxval(dBubbleLocationN(:,1),1), &
-         (cSpace%iDimY-1) * cSpace.dDx - maxval(dBubbleLocationN(:,2),1), &
-         (cSpace%iDimZ-1) * cSpace.dDx - maxval(dBubbleLocationN(:,3),1) /)) <= 0) then
+         (cSpace%iDimX-1) * cSpace%dDx - maxval(dBubbleLocationN(:,1),1), &
+         (cSpace%iDimY-1) * cSpace%dDx - maxval(dBubbleLocationN(:,2),1), &
+         (cSpace%iDimZ-1) * cSpace%dDx - maxval(dBubbleLocationN(:,3),1) /)) <= 0) then
        write(acTemp,"('Error in GeneratePSCloud, Bubble positioned outside domain boundaries')")
        call PrintToLog(acTemp,-1)
        call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
@@ -1210,7 +1204,7 @@ CONTAINS
     !    integer(i8b)			::		count51(BubbleParams%N/cSpace%cGrid%iProcN),count61(size(count51,1)),count91(size(count51,1)),count101(size(count51,1)) , length(4)
     !    real(dp)		     	:: 		diff(BubbleParams%N),dLambdaMM
     !    
-    !    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor 
+    !    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams%freq0;           ! Normalization factor 
     !	count5=0; count6=0;count9=0;count10=0;
     !	count51=0; count61=0;count91=0;count101=0;
     !	do iBubble =  1,BubbleParams%N/cSpace%cGrid%iProcN
@@ -1379,7 +1373,7 @@ CONTAINS
     iDimY  	 = cSpace%iDimY
     iDimZ  	 = cSpace%iDimZ
 
-    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor λ in [mm]
+    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams%freq0;           ! Normalization factor λ in [mm]
     dK_c = pi /cSpace%dDx    
 
     ! At this point, the normalized location of the gridpoints of interest are calculated
@@ -1391,9 +1385,9 @@ CONTAINS
        ! This is the way to compute them and in this order. This is important because later they will be used
        ! for the computation of the total scattered pressure and they should be placed in this order
        do i = 0, GridPointsNum-1
-          dGlobBXYZ(1+i,1) = (cSpace%cGrid%aiD0Loc(i+1,1) + iBeamOffsetX(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace.dDx
-          dGlobBXYZ(1+i,2) = (cSpace%cGrid%aiD0Loc(i+1,2) + iBeamOffsetY(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace.dDx
-          dGlobBXYZ(1+i,3) = (cSpace%cGrid%aiD0Loc(i+1,3) ) * cSpace.dDx  
+          dGlobBXYZ(1+i,1) = (cSpace%cGrid%aiD0Loc(i+1,1) + iBeamOffsetX(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace%dDx
+          dGlobBXYZ(1+i,2) = (cSpace%cGrid%aiD0Loc(i+1,2) + iBeamOffsetY(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace%dDx
+          dGlobBXYZ(1+i,3) = (cSpace%cGrid%aiD0Loc(i+1,3) ) * cSpace%dDx  
        enddo
        BLayer=2000; 
     else 
@@ -1452,7 +1446,7 @@ CONTAINS
     ! the number of cores, the time is divided. In this way we have the same number of computations per processor and every processor 
     ! takes part in the computations
     P_scattered_Total = 1.0D-30;
-	if (.NOT. ALL(ABS(dBubbleContrast)<1E100_dp) ) call PrintToLog("Error: P_scattered !!!", 1)
+	if (.NOT. ALL(ABS(dBubbleContrast)<1E100_dp) ) call PrintToLog("Error: dBubbleContrast !!!", 1)
 
     do iBubble = 1,B_Div ! This is the loop for the number of layers of the bubbles     
        ! Calculate the spatial signature in the point source definition for every scatterer
@@ -1881,7 +1875,7 @@ CONTAINS
 
     ExtraSliceNum  =  BubbleParams%ClusterSlicesN
     allslicexyzdim =  BubbleParams%ClusterSliceDim
-    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor 
+    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams%freq0;           ! Normalization factor 
 
     if (ExtraSliceNum == 0) then 
        write(acTemp,"('0 Slices were chosen in the input file')") 
@@ -1951,17 +1945,17 @@ CONTAINS
              call ExportSlice(trim(filename), "p0", cSpace, &
                   (/ 0_i8b, cModelParams%xyzsliceindex(cModelParams%Numslices-i+1), 0_i8b,0_i8b /), &
                   (/ cSpace%iDimT, 1_i8b, cSpace%iDimY, cSpace%iDimZ /), &
-                  cModelParams.xyzsliceindex, cSpace%iDimX, .true.);
+                  cModelParams%xyzsliceindex, cSpace%iDimX, .true.);
           elseif (cModelParams%xyzslicedim(cModelParams%Numslices-i+1)=='y') then
              call ExportSlice(trim(filename), "p0", cSpace, &
                   (/ 0_i8b, 0_i8b, cModelParams%xyzsliceindex(cModelParams%Numslices-i+1), 0_i8b /), &
                   (/ cSpace%iDimT, cSpace%iDimX, 1_i8b, cSpace%iDimZ /), &
-                  cModelParams.xyzsliceindex, cSpace%iDimY, .true.);
+                  cModelParams%xyzsliceindex, cSpace%iDimY, .true.);
           elseif (cModelParams%xyzslicedim(cModelParams%Numslices-i+1)=='z') then
              call ExportSlice(trim(filename), "p0", cSpace, &
                   (/ 0_i8b, 0_i8b, 0_i8b, cModelParams%xyzsliceindex(cModelParams%Numslices-i+1) /), &
                   (/ cSpace%iDimT, cSpace%iDimX, cSpace%iDimY, 1_i8b /), &
-                  cModelParams.xyzsliceindex, cSpace%iDimZ, .true.);
+                  cModelParams%xyzsliceindex, cSpace%iDimZ, .true.);
           end if
        enddo
     endif
@@ -2057,7 +2051,7 @@ CONTAINS
     USE MPI
     ! ===============================================================================================
     !
-    !   Programmer: Agisilaos Matalliotakis // Date : 200212
+    !   Programmer: Agisilaos Matalliotakis // Date : 211108
     !
     !   Language: Fortran 90
     !
@@ -2100,13 +2094,14 @@ CONTAINS
     integer 	         		::  	iErr
     character(len = 1024)		::  	actemp
     real(dp)             		:: 		dLambdaMM, Domain_Range(2,3)
-    integer(i8b)         		:: 		iDimT, i
+    integer(i8b)         		:: 		iDimT, i, iPS
 
     real(dp),allocatable		::  	dPointSourceContrast(:), dProtonLocationN(:,:) 
 
     !Filtering and windowing parameters 
     integer(i8b)				::		iDimW, ibDimW, iStart
     real(dp)					::		dTaperSupportWindow(cSpace%iDimT), dTaperMaxFreqWindow(cSpace%iDimT), dLeftBand, dRightBand
+    LOGICAL(lgt)            	::  	exists, exists_loc, result
 
     ! *****************************************************************************
     !
@@ -2133,11 +2128,14 @@ CONTAINS
     !
     ! =============================================================================
     write(acTemp,"('CloudPointSourceOperator')");    call PrintToLog(acTemp,2)
+	call BubbleInit()
+    INQUIRE(FILE=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)),EXIST =exists_loc)
+    if (.NOT. exists_loc) result = MAKEDIRQQ(trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)))
     !**************************************** INITIALIZE VALUES **********************************************
     iDimT   = cSpace%iDimT   !t dimensions
 
     iDimW   = iDimT/2 + 1
-    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams.freq0;           ! Normalization factor λ in [mm]
+    dLambdaMM = (cMediumParams.c0*1.0D3) /cModelParams%freq0;           ! Normalization factor λ in [mm]
     
     !Allocate for memory management
     ALLOCATE(dProtonLocationN(PointSourceCloudParams%N,3) )
@@ -2151,35 +2149,35 @@ CONTAINS
     !**************************************** CREATE POINT SOURCE CLUSTER / LOAD  POINT SOURCE PARAMETERS **********************************************
 
     write(acTemp,"('Randomly Position the protons in the domain') ");    call PrintToLog(acTemp,2)
-
+	
     ! Generate the cluster and save result on slices defined in input file
     call RNDGeneratePSCloud(cSpace,PointSourceCloudParams,dProtonLocationN, Domain_Range)
     
     write(acTemp,"('No. of Protons consisting the cluster: ', I<INT(log10(real(BubbleParams%N,dp)))+1>, ' in a volume of ', F5.3, ' [mL].')") PointSourceCloudParams%N, PRODUCT(maxval(dProtonLocationN,1)-minval(dProtonLocationN,1))*dLambdaMM**3*1.0D-3;    call PrintToLog(acTemp,2);
 
-    !********************************************* START OF TAPPERING *********************************************************
-    if (cModelParams.UseSupportTapering .EQV. .true.) then
-       !    use tapering of the field at start and end to prevent wraparound leakage
-       !    build tapering window, the first two periods and the last two periods are tapered
-       !    in the contrast source
-       dLeftBand = 2.0_dp
-       dRightBand = 2.0_dp
-       dTaperSupportWindow=dTaperingWindow(cSpace%iDimT,cSpace%dDt,dLeftBand,dRightBand)
-       cSpace%cGrid%parD0= cSpace%cGrid%parD0 * (/SPREAD(dTaperSupportWindow,2,cSpace%cGrid%iD0LocN)/)
-    end if
+	if (cSpace%cGrid%iProcID <=0) then
+
+       ! Save each Bubble's Position 
+       open (11, file=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)//'PS_Location'//int2str(cSpace%cGrid%iProcID)), status='NEW')
+       do iPS= 1 ,PointSourceCloudParams%N
+          write(11, *) dProtonLocationN(iPS,1),dProtonLocationN(iPS,2),dProtonLocationN(iPS,3)
+       end do
+       close(11) 
+	endif
+	
+    write(acTemp,"('Calculate the time signature of the point source ')");    call PrintToLog(acTemp,2)    
+    call DeltaPulse(cSpace, PointSourceCloudParams%PointSourceAmplitude, INT(2*cModelParams%Fnyq * cSourceParams%Tdelay,8) , dPointSourceContrast , 'bipolar')
+
+    ! Tappering 
+    dPointSourceContrast = dPointSourceContrast * dTaperingWindow(cSpace%iDimT,cSpace%dDt,2.0_dp,2.0_dp)
 
     !****************************************************** CALCULATE PRESSURE FIELD **********************************************
-    write(acTemp,"('Calculate the time signature of the point source ')");    call PrintToLog(acTemp,2)    
-    call DeltaPulse(cSpace, PointSourceCloudParams%PointSourceAmplitude, INT(2*cModelParams%Fnyq * cSourceParams%Tpulse,8) , dPointSourceContrast)
-
     ! Iniatilize pressure field with 0
     ! Iterate through each bubble and find the pressure field in the whole domain
     ! Add each field to the previous to find the total pressure distribution in the grid
 	cSpace%cGrid%parD0 = 1.0D-20
     write(acTemp,"('Calculate pressure field due to the Bubble Cloud')");    call PrintToLog(acTemp,2)
     call CalculateCloudMonoEnergeticPressure(cSpace, dProtonLocationN, dPointSourceContrast)
-
-    call MPI_BARRIER(MPI_COMM_WORLD, iErr);
     iMemAllocated=iMemAllocated - (PRODUCT(SHAPE(dProtonLocationN)) ) * dpS 
 
     DEALLOCATE(dProtonLocationN)
@@ -2189,11 +2187,11 @@ CONTAINS
 
   END SUBROUTINE PointSourceCloudOperator
     
-  SUBROUTINE DeltaPulse(cSpace, PointSourceAmplitude, Tindex, dPointSourceContrast)
+  SUBROUTINE DeltaPulse(cSpace, PointSourceAmplitude, Tindex, dPointSourceContrast,signal_type)
 
     ! =============================================================================
     !
-    !   Programmer: Agisilaos Matalliotakis
+    !   Programmer: Agisilaos Matalliotakis // Date : 211108
     !
     !   Language: Fortran 90
     !
@@ -2222,6 +2220,8 @@ CONTAINS
     real(dp), intent(in) 				:: 		PointSourceAmplitude
     integer(i8b), intent(in)            ::      Tindex
     type(Space), intent(in) 			:: 		cSpace
+    character(len=*), intent(in)				::  	signal_type
+	
 
 
     ! *****************************************************************************
@@ -2232,10 +2232,14 @@ CONTAINS
     !   dK_c_t   			 dp   cutoff frequency for time variable
     !   i       		    i8b   Loop variable
     !   iDimT               i8b   The length of the discrete time vector
+    !   DistFromPS           dp   Distance from PS
     !
 
     integer(i8b)					    ::	        iDimT, i
     real(dp) 							::			dK_c_t, RealTime(cSpace%iDimT)
+    real(dp)                            ::          DistFromPS
+    complex(dpc)                        ::          fdPointSourceContrast(1:cSpace%iDimT/2+1)
+    complex(dpc)                        ::          fshapeinPS(cSpace%iDimT,1),fshapeoutPS(cSpace%iDimT,1)
 
     ! *****************************************************************************
     !
@@ -2256,15 +2260,32 @@ CONTAINS
     RealTime = [(i , i=cSpace%iStartT,iDimT-1+cSpace%iStartT)] * cSpace%dDt   ! Array with the real time unnormalized 
     dK_c_t = pi /cSpace%dDt
     
-    dPointSourceContrast = PointSourceAmplitude * dSinc(dK_c_t*( RealTime - Tindex * cSpace%dDt ) ) 
-    
+    ! Because the source amplitude is defined at 1 [um] distance, it should be adjusted with the description of the point source
+    ! The peak value is A @ the location of the scatterer, so in order to find A, we need to compute A/(4*pi*1E-6) = PointSourceAmplitude 
+    DistFromPS = PointSourceCloudParams%Dist_Amplitude;
+	
+	if (signal_type=='delta') then
+		dPointSourceContrast = PointSourceAmplitude * dSinc(dK_c_t*( RealTime - Tindex * cSpace%dDt ) )  * (4*pi*DistFromPS)
+	elseif (signal_type == 'bipolar') then
+		dPointSourceContrast= PointSourceAmplitude*exp(-((RealTime-iDimT/2*cSpace%dDt + 2*cSourceParams%Tdelay)/&
+							 (cSourceParams%Twidth/2.0_dp))**cSourceParams%power)& 
+							 * sin(-two_pi*(RealTime-cSourceParams%Tdelay)) * (1.0_dp + dsign(1.0_dp,RealTime))/2.0_dp* (4*pi*DistFromPS)
+	elseif (signal_type == 'gaussian') then
+		dPointSourceContrast= PointSourceAmplitude*exp(-((RealTime-cSourceParams%Tdelay)/&
+                         (cSourceParams%Twidth/2.0_dp))**cSourceParams%power)& 
+                         * sin(two_pi*(RealTime-cSourceParams%Tdelay)) * (1.0_dp + dsign(1.0_dp,RealTime))/2.0_dp* (4*pi*DistFromPS)
+	endif
+    ! fshapeinPS(:,1) = dPointSourceContrast;
+    ! call FFilterSpatial1D(fshapeinPS,fshapeoutPS,cSpace%dDt,1,dK_c_t)
+    ! dPointSourceContrast = real(fshapeoutPS(:,1))
+                         
   END SUBROUTINE DeltaPulse
   
   SUBROUTINE CalculateCloudMonoEnergeticPressure(cSpace, dPointSourceLocationN, dPointSourceContrast)
 
     ! =============================================================================
     !
-    !   Programmer: Agisilaos Matalliotakis // Date : 201128
+    !   Programmer: Agisilaos Matalliotakis // Date : 211108
     !
     !   Language: Fortran 90
     !
@@ -2341,7 +2362,7 @@ CONTAINS
     !05	  Do the matrix multiplication based on the space points for calculation    
     !
     ! =============================================================================
-
+	
     iDimT    = cSpace%iDimT
     iDimX  	 = cSpace%iDimX
     iDimY  	 = cSpace%iDimY
@@ -2355,9 +2376,9 @@ CONTAINS
        ! This is the way to compute them and in this order. This is important because later they will be used
        ! for the computation of the total scattered pressure and they should be placed in this order
        do i = 0, GridPointsNum-1
-          dGlobBXYZ(1+i,1) = (cSpace%cGrid%aiD0Loc(i+1,1) + iBeamOffsetX(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace.dDx
-          dGlobBXYZ(1+i,2) = (cSpace%cGrid%aiD0Loc(i+1,2) + iBeamOffsetY(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace.dDx
-          dGlobBXYZ(1+i,3) = (cSpace%cGrid%aiD0Loc(i+1,3) ) * cSpace.dDx  
+          dGlobBXYZ(1+i,1) = (cSpace%cGrid%aiD0Loc(i+1,1) + iBeamOffsetX(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace%dDx
+          dGlobBXYZ(1+i,2) = (cSpace%cGrid%aiD0Loc(i+1,2) + iBeamOffsetY(cSpace,cSpace%cGrid%aiD0Loc(i+1,3))) * cSpace%dDx
+          dGlobBXYZ(1+i,3) = (cSpace%cGrid%aiD0Loc(i+1,3) ) * cSpace%dDx  
        enddo
     BLayer=2000; 
     M = iDimT ; N = GridPointsNum; K =BLayer
@@ -2401,8 +2422,9 @@ CONTAINS
 	
     iMemAllocated=iMemAllocated - PRODUCT(SHAPE(dGlobBXYZ)) * dpS
     DEALLOCATE(dGlobBXYZ)
-    
+    ! call MapVt(cSpace)
     cSpace%cGrid%parD0 = RESHAPE(P_Scattered * (cModelParams%freq0/cMediumParams%c0),(/M*N/)) ! This correction is because they are point sources
+    ! call MapVtInv(cSpace)
     DEALLOCATE(P_Scattered)	
     iMemAllocated=iMemAllocated - ( PRODUCT(SHAPE(P_scattered)) )*  sizeof(P_scattered(1,1))
        
@@ -2410,5 +2432,5 @@ CONTAINS
 
   END SUBROUTINE CalculateCloudMonoEnergeticPressure
 
-END MODULE ParnacBubbleContrast
+END MODULE ParnacPointSourceCloud
 

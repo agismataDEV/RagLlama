@@ -61,7 +61,7 @@ options  = odeset('RelTol', 1e-12, 'AbsTol', [1e-8 1e-8]', 'Refine', 1);
 R = interp1(T_m,R_m,t_p_driv);
 % R=R_m;
 % p_driv_interp = interp1(t_p_driv,p_driv,T_m);
-par.sigma_R = (R(:,1)<par.R_b)*0 + (R(:,1)>par.R_r)*par.sigma_w + (R(:,1)<=par.R_r).*(R(:,1)>=par.R_b).*par.chi.*(R(:,1).^2./par.R_b.^2-1) ;
+par.sigma_R = (R(:,1)<par.R_b)*0 + (R(:,1)>par.R_r)*par.sigma_w + (R(:,1)<=par.R_r & R(:,1)>=par.R_b).*par.chi.*(R(:,1).^2./par.R_b.^2-1) ;
 P_elas =  2*par.sigma_R./R(:,1) ;
 P_vis  =  4*par.S_vis.*R(:,2)./R(:,1).^2 ;
 P_gas  = (par.P_g0.*(par.R0./R(:,1)).^(3*par.gamma).*(1-3*par.gamma*R(:,2)/par.c)-par.P0-p_driv'-4*par.mu*R(:,2)./R(:,1) - P_elas-P_vis) ;

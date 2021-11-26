@@ -343,7 +343,8 @@ MODULE ParnacParamDef
     integer(i8b)   		  ::  	N
     real(dp)  			  ::  	ClusterDimsRatio(2,3)
     real(dp)  			  ::  	MinInBetweenDist
-    real(dp)  			  ::  	PointSourceAmplitude    
+    real(dp)  			  ::  	PointSourceAmplitude 
+    real(dp)  			  ::  	Dist_Amplitude   
     real(dp),allocatable  ::    R0(:) 
 
     end type PointSourceCloudInput

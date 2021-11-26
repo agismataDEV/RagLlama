@@ -52,13 +52,17 @@
     USE ParnacDataMap, ONLY : &
         MapVt, MapVtInv
     USE ParnacContrastFunctions, ONLY : &
-        NonlinearKappaOperatorDXAli,NonlinearKappaOperatorDYAli,NonlinearKappaOperatorDZAli, NonlinContrastOperator, NonlinearKappaOperatorDirectionDXAli,NonlinearKappaOperatorDirectionDYAli,NonlinearKappaOperatorDirectionDZAli, NonlinearKappaOperatorLinDXAli,NonlinearKappaOperatorLinDYAli,NonlinearKappaOperatorLinDZAli, NonlinContrastOperator_Ali, Theta2CG_Ali ,ConversionCG_Ali, NonlinContrastOperatorlin_Ali, NonlinContrastOperatorCG_Ali, &
-        InhomContrastOperator, InhomContrastOperator_Ali
+        NonlinearKappaOperatorDXAli,NonlinearKappaOperatorDYAli,NonlinearKappaOperatorDZAli, &
+        NonlinContrastOperator, NonlinearKappaOperatorDirectionDXAli, &
+        NonlinearKappaOperatorDirectionDYAli,NonlinearKappaOperatorDirectionDZAli, &
+        NonlinearKappaOperatorLinDXAli,NonlinearKappaOperatorLinDYAli,NonlinearKappaOperatorLinDZAli, &
+        NonlinContrastOperator_Ali, Theta2CG_Ali ,ConversionCG_Ali, NonlinContrastOperatorlin_Ali, &
+        NonlinContrastOperatorCG_Ali, InhomContrastOperator, InhomContrastOperator_Ali
     USE ParnacConvolution, ONLY : &
         ConvolutionGreen,ConvolutionGreenConj
-   USE ParnacTransformFilter, ONLY : &
-       TransformT, TransformTInv, TransformT_sml, TransformTInv_sml, &
-       TransformXYZ, TransformXYZInv, TransformXYZ_sml, TransformXYZInv_sml, &
+    USE ParnacTransformFilter, ONLY : &
+        TransformT, TransformTInv, TransformT_sml, TransformTInv_sml, &
+        TransformXYZ, TransformXYZInv, TransformXYZ_sml, TransformXYZInv_sml, &
         FFilterSpaceSpatial3D, dTaperingWindow
     USE ParnacDataRedist, ONLY : &
         ReorderDistr0ToDistr1, ReorderDistr1ToDistr0, &
@@ -67,7 +71,7 @@
         BeamDerivativeZ
     USE ParnacOutput, ONLY : &
         ExportSlice, ExportArray
-	USE ParnacBubbleContrast
+	USE ParnacPointSourceCloud
     ! *****************************************************************************
     !
     !   GLOBAL DECLARATIONS
@@ -475,7 +479,7 @@
     ! 2) Transform source pulse in time
     call PrintToLog("Convert the source from distribution 0 to 1", 3)
     call ReorderDistr0ToDistr1(cSource%cGrid);
-    call MapVt(cSource)
+call MapVt(cSource)
     call PrintToLog("Compute the Fourier Transform with respect to the T-axis", 3)
     !print *, size( cSource%cGrid%pacD1(:))
     !print *, "Punto di Interesse 1"
@@ -525,7 +529,7 @@
 
     ! =============================================================================
     !
-    !   Programmer: Koos Huijssen
+    !   Programmer: Agisilaos Matalliotakis // Date : 211108
     !
     !   Language: Fortran 90
     !
@@ -537,8 +541,8 @@
     !
     !   DESCRIPTION
     !
-    !   The subroutine PlanewaveField computes the primary field solution in the
-    !   form of a plane wave running through the space in the positive z-direction
+    !   The subroutine PointSourceCloudField computes the primary field solution 
+    !   generated from a cloud of point sources, having the same amplitude.
     !
     ! *****************************************************************************
     !
@@ -576,6 +580,7 @@
     end if
     
     call SwStartAndCount(cswLinStep);
+    
     call PointSourceCloudOperator(cSpace)
     cSpace%iSpaceIdentifier = iSI_CONTRASTSOURCE;
 	call test_isnan(cSpace)

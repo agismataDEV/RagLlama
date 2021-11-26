@@ -11,7 +11,7 @@ echo $OUT_FILE
 echo $ERR_FILE
 
 cd ../2_SOURCE_CODE/
-rm ../3_COMPILED_FILES/INCS_Agis_*
+#rm ../3_COMPILED_FILES/INCS_Agis_*
 make 
 cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER}
 
@@ -42,7 +42,7 @@ echo "#SBATCH --qos=short"          				 															>> job_INCS_short
 echo "#SBATCH --nodes=1"           					 															>> job_INCS_short
 echo "#SBATCH --ntasks-per-node=56" 				 															>> job_INCS_short
 echo "#SBATCH --cpus-per-task=1"    				 															>> job_INCS_short
-echo "#SBATCH --mem=300G"           				 															>> job_INCS_short
+echo "#SBATCH --mem=500G"           				 															>> job_INCS_short
 echo "#SBATCH --time=04:00:00"      				 															>> job_INCS_short
 echo "#SBATCH --output=$OUT_FILE" 					 															>> job_INCS_short
 echo "#SBATCH --error=$ERR_FILE"     				 															>> job_INCS_short

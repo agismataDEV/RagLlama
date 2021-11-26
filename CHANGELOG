@@ -48,3 +48,22 @@ BubbleContrast.f90  - CalculateCloudMonoEnergeticPressure : Added proceedure for
 This function does not take into account the size of the point sources 
 BubbleContrast.f90  - DeltaPulse: Delta Pulse generator for the time signature of the proton sources
 The MATLAB files were readjusted for the (non) time coming time frame and automatic parameters
+
+
+=============================================================================================================
+26/11/2021 
+=============================================================================================================
+BubbleContrast.f90  - ParnacPointSourceCloud: Renamed for a more general case and update to more correct 
+function
+ParnacContrastFunctions	: 		Added an updated proceeedure for computing Lagrangian density.
+An update for the input file to include this option is still missing
+ParnacIterStepMain		: 		Added a function for generate a primary source field from a point source cloud.
+An update is missing for the inclusion of Lagrangian density in FieldToContrast
+ParnacTransformDef		: 		A variable for 1D FFT transformation for complex arrays is included
+ParnacRedist - Distr2FillYMirroredXYZBlock : A function for the case of symmetric field was introduced
+This is used for the computation of Lagrangian density
+ParnacIdentifier 		:		Updated in order to include the variables for PointSourceCloud . Later an inclusion
+for Lagrangian should be introduced
+ParnacParamInit			: 		Inclusion of parameters for the case of pointsourcecloud
+
+MATLAB Files			: Update in order to include the point source cloud and the number of mbs automatically

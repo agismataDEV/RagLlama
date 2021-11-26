@@ -417,34 +417,6 @@ SUBROUTINE GridInitTransforms(cSpace)
 				cFFTWtestarray,					&
 				 FFTW_ESTIMATE);
 
-	call dfftw_plan_guru_dft_r2c(pcGrid%cTransforms%iPlanTransformT_lrg,		&
-				1, 						&
-				int((/ 2*cModelParams.PPW*pcGrid%iD0TL  /)),			&	! We take the length of the T-axis in distribution 0 
-				int((/ pcGrid%iD1TS   /)), 			&	! That is about half the total length of reals in dist. 1
-				int((/ pcGrid%iD1TS   /)), 			&	! in complex, we have floor(iD0TL/2)+1 numbers
-				1,						&	! however, pacD1 is larger, dim in T is iD1TL = iD0TL+1
-				int((/ pcGrid%iD1LocN /)),			&
-				int((/ 2*pcGrid%iD1TL /)),			&	!this factor two is merely because of storing real values in complex variables
-				int((/ pcGrid%iD1TL   /)),			&
-				cFFTWtestarray,					&
-				cFFTWtestarray,					&
-				FFTW_ESTIMATE);
-
-!KH For periodical T, change here..
-	call dfftw_plan_guru_dft_c2r(pcGrid%cTransforms%iPlanTransformT_lrg_inv,	&
-				1, 								&
-				int((/ 2*cModelParams%PPW*pcGrid%iD0TL /)), 			&
-				int((/ pcGrid%iD1TS   /)),			&
-				int((/ pcGrid%iD1TS   /)),			&
-				1,								&
-				int((/ pcGrid%iD1LocN /)),			&
-				int((/ pcGrid%iD1TL   /)),			&
-				int((/ 2*pcGrid%iD1TL /)),			&
-				cFFTWtestarray,					&
-				cFFTWtestarray,					&
-				 FFTW_ESTIMATE);
-
-
     ! Forward and inverse FFT's on the spatial dimensions, employing smaller
     ! axes than normal - used in the inhomogeneity contrast operator
 

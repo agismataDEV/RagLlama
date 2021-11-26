@@ -184,7 +184,7 @@ SUBROUTINE DerivLookupInit(iFDOrder, iMinOrder, cDerivLookup, bSecondOrder)
 ! 
 	integer(i8b)::                  iOrder, iInd, iW, iLOrder, iLeft, iRight, iMid
 	real(dp)::                      arPoints(iFDOrder+1)
-	real(dp)::                      arWeights(iFDOrder+1,3)
+	real(dp)::                      arWeights(iFDOrder+1,4) ! A.M Changed this from 3 to 4 in order to work for 2nd derivative too
 	integer(i8b)::					iCurFDOrder;
 
 ! *****************************************************************************
@@ -211,7 +211,7 @@ SUBROUTINE DerivLookupInit(iFDOrder, iMinOrder, cDerivLookup, bSecondOrder)
 
 	! Initialize the data
 	allocate(cDerivLookup.arWeights(iFDOrder, iFDOrder+1, iFDOrder+1));
-	allocate(cDerivLookup.aiPoints(iFDOrder, iFDOrder+1, 3));
+	allocate(cDerivLookup.aiPoints(iFDOrder, iFDOrder+1, 3)); 
 	cDerivLookup.arWeights=0.0_dp
 	cDerivLookup.aiPoints=0
 
@@ -483,7 +483,8 @@ SUBROUTINE DerivativeComplex(acIn, acOut, iLength, rDelta, arWeights, aiPoints)
 !   arWeights   i   dp   Array containing the weights of the stencils
 !   aiPoints    i   i8b  Array containing the positions of the stencils
 !
-	complex(dpc), intent(inout)::	acIn(:), acOut(:);
+	complex(dpc), intent(in)::	acIn(:)
+	complex(dpc), intent(inout)::	 acOut(:);
 	integer(i8b), intent(in)::	iLength;
 	real(dp), intent(in) ::			rDelta
 	real(dp), intent(in)::	arWeights(:, :, :)

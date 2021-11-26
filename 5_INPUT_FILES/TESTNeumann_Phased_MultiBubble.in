@@ -132,9 +132,9 @@ none
 1.070000E+000   	*** kappa	 = Gas polytropic exponent
 0.400000E+000		*** chi		 = Shell elasticity  
 OP					*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
-time_and_radius		*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
+Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius','Minnaert_and_radius'
 ****
-5E+5		  		*** No. of Bubbles consisting the cluster
+1E+6		  		*** No. of Bubbles consisting the cluster
 *** monodisperse, Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	

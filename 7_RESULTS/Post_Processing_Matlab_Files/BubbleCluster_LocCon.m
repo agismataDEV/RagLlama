@@ -24,7 +24,7 @@
 % ***********************************************************************************************************
 
 
-function [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble)
+function [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,name)
 %%
 disp(' ')
 Bubble.N = 1;
@@ -32,18 +32,19 @@ disp('Loading the microbubble cluster location and contrast ...')
 Bubble.LocFile  = zeros(2*Bubble.N,3);
 
 % Load the bubbles' location from file
-[Bubble.LocNorm,Bubble.N]  = LoadContrastParams(Bubble,file,'Bubble_Location', Bubble.LocFile , 'yes', 'r',1);
+[Bubble.LocNorm,Bubble.N]  = LoadContrastParams(Bubble,file,[name,'_Location'], Bubble.LocFile , 'yes', 'r',1);
 if Bubble.N>0
     % Load the bubbles' contrast source term value
     Bubble.ConFile  = zeros(2*Bubble.N,domain.tdimpar);
-    Bubble.Contrast = LoadContrastParams(Bubble,file,'Bubble_Contrast', Bubble.ConFile , file.load_contrast_from_file, 'rb');
+    Bubble.Contrast = LoadContrastParams(Bubble,file,[name,'_Contrast'], Bubble.ConFile , file.load_contrast_from_file, 'rb');
     % Load the bubbles' radius value
     Bubble.RadFile  = zeros(2*Bubble.N,1);
-    Bubble.Radius   = LoadContrastParams(Bubble,file,'Bubble_Radius'  , Bubble.RadFile , file.load_radius_from_file);
+    Bubble.Radius   = LoadContrastParams(Bubble,file,[name,'_Radius']  , Bubble.RadFile , file.load_radius_from_file);
     
     % Find Location of each microbubble
     Bubble.Loc = Bubble.LocNorm*medium.dLambdaNN;
     
+    Bubble.LocGlob  = zeros(Bubble.N,3);
     Bubble.LocGlob(:,1) = Bubble.Loc(:,1) + (domain.TXYstart(2)+domain.TXYoff(1,2)) * domain.dxpar;
     Bubble.LocGlob(:,2) = Bubble.Loc(:,2) + (domain.TXYstart(3)+domain.TXYoff(1,3)) * domain.dypar;
     Bubble.LocGlob(:,3) = Bubble.Loc(:,3) + domain.start(3)*domain.dzpar;

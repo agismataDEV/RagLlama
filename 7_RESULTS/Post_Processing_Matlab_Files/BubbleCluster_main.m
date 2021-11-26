@@ -9,18 +9,20 @@ for slicenum1 = [2]%[12,3,4,5,6]
     clc
     %% Initialize parameters for all the significant variables
     [medium,domain,dslice,file,plin,pnl,Bubble] = BubbleCluster_Init(slicenum1);
-    
-    %% Bubble Location and Pressure
-    [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble);
+    %%
+%     %% Bubble Location and Pressure
+    [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');
+    PS=Bubble ; [PS] = BubbleCluster_LocCon(medium,domain,file,PS,'PS');
     %%  Bubble Cluster Positions
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble);
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','o');
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx');
     
     %% PlayMovies
     Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble)
     %% CREATING MATRICES FOR NONLINEAR AND CONTRAST DATA
     [pnl,plin] = BubbleCluster_ConPlot(medium,domain,dslice,file,plin,pnl,Bubble);
-    atten(dslice.num,:) = pnl.attenuation(dslice.num,:);
-    atten_fund(dslice.num,:) = pnl.attenuation_fund(dslice.num,:);
+%     atten(dslice.num,:) = pnl.attenuation(dslice.num,:);
+%     atten_fund(dslice.num,:) = pnl.attenuation_fund(dslice.num,:);
     %% Compare Analytic solution with simulation results
     BubbleCluster_Compare_individually(medium,domain,dslice,file,plin,pnl,Bubble);
     %% Plot residuals

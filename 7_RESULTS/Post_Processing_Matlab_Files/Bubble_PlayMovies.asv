@@ -24,15 +24,15 @@ if (strcmp(file.play_movies,'yes'))
     
     sizeP = size(plin.data);
         Linear_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
-%     Scatter_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
-    %     Total_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
+    Scatter_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
+        Total_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
     %%
     if (domain.dimval(1) ==1 || domain.dimval(1)==2)   % For X and Y , the domain should be moved in order to get a nice movie
         %         Scatter_Field=round(ifft(fft(reshape(pnl.contrastdata,sizeP(1)*sizeP(2),sizeP(3))',[],2).* exp(-2i*pi/10*[1:sizeP(3)]),[],2))
         for k=1:sizeP(3)
                         Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(plin.data(:,:,k)));
-%             Scatter_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.contrastdata(:,:,k)));
-            %             Total_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.data(:,:,k)));
+            Scatter_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.contrastdata(:,:,k)));
+                        Total_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.data(:,:,k)));
         end
         
         i_end = sizeP(1)+sizeP(3); % For X And Y the plot is a moving window at each Z position
@@ -50,7 +50,7 @@ if (strcmp(file.play_movies,'yes'))
     
     dBVALUES = 50;
     plot_value = 20*log10(abs(pnl.data));
-    if (domain.a_t) ;plot_value = Linear_Field;end
+    if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
@@ -70,9 +70,11 @@ if (strcmp(file.play_movies,'yes'))
         rectangle(ax,'Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',2)
     elseif (Bubble.N <=5 && Bubble.N > 0)
         plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
+%         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
+%         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
     end
     
-    title_txt = 'Scattered Pressure Field, t_i = ';
+    title_txt = 'Scatter Pressure Field, t_i = ';
 %     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
     %     if (sum(sum(sum(plot_value==Total_Field)))==numel(plot_value)) ;title_txt = 'Total Pressure Field, t_i = ';end
     title(ax,[title_txt,num2str(1)])
@@ -100,10 +102,10 @@ if (strcmp(file.play_movies,'yes'))
         set(ax.Title,'String',[title_txt,num2str(i)])
         set(p,'XData',domain.par{domain.dimval(3)},'YData',domain.par{domain.dimval(2)},'CData',squeeze(plot_value(i,:,:)))
         drawnow
-        if (strcmp(file.save_movies,'yes'))
-            F(i) = getframe(gcf);
-            writeVideo(mov,F(i));
-        end
+%         if (strcmp(file.save_movies,'yes'))
+%             F(i) = getframe(gcf);
+%             writeVideo(mov,F(i));
+%         end
         %         pause(0.01)
         
         
