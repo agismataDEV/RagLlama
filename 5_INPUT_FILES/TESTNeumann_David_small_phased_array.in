@@ -77,9 +77,9 @@ phasedarray
 1.00000E+30	*** Focus z
 1.00000E+30	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-td_150deg_left.dat
+td_210deg_x.dat
 ***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_150deg_left.dat
+apod_210deg_x.dat
 ***************************
 ***  Switches  		***
 ***************************

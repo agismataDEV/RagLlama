@@ -80,7 +80,7 @@ MODULE FDWEIGHT
 !                 On return, the element C(J,K) contains the weight to be
 !                 applied at point X(J) when the K-th derivative is 
 !                 approximated by a stencil extending over X(0),X(1),...,X(N).
-!
+! 
       REAL*8  XI
       REAL*8  X
       INTEGER N
@@ -108,7 +108,7 @@ MODULE FDWEIGHT
       REAL*8 C4
       REAL*8 C5
 
-      INTEGER I
+      INTEGER I 
       INTEGER J
       INTEGER K
       INTEGER MN

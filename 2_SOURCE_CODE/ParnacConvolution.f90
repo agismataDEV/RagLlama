@@ -1040,7 +1040,7 @@ SUBROUTINE ComputeConvolution(cSpaceS, cGridS, cSpaceD, cGridD)
 
 					if (iYBlocks==1) then
 
-						!Y symmetry: fill cSliceS with a mirrored version of pcSpaceS
+						! Y symmetry: fill cSliceS with a mirrored version of pcSpaceS
 						! BEFORE pcSpaceD is written (it could be the same space...)
 						call PrintToLog("Obtain Mirrored Source slice", 4)
 						call Distr2ObtainYMirroredXYZBlock(cGridS, cSliceS%cGrid,  iOmega)
@@ -1051,7 +1051,7 @@ SUBROUTINE ComputeConvolution(cSpaceS, cGridS, cSpaceD, cGridD)
 
 					else
 
-						!add result to cSpaceD
+						! add result to cSpaceD
 						call Distr2AddToXYZBlock(cSliceD%cGrid, cGridD, iOmega)
 						! reset iStartY parameter of cSliceS to normal
 						cSliceS%iStartY=0

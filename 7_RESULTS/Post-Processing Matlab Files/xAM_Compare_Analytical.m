@@ -3,7 +3,7 @@ load('../Results_for_separate_Variables/phi.mat')
 %%
 clear an
 an.medium.freq0         = 15E6;
-an.medium.Fnyq          = 4;
+an.medium.Fnyq          = 3;
 an.medium.rho0          = 1060;
 an.medium.c0            = 1480;
 an.medium.kappa0        = 2*pi*an.medium.freq0/an.medium.c0;
@@ -14,12 +14,13 @@ an.domain.tpar          = [0:an.domain.dims(1)-1]*an.domain.dtpar;
 
 an.domain.dxpar         = an.domain.dtpar*an.medium.c0;
 an.domain.zpar          = [0:an.domain.dims(3)-1]*an.domain.dxpar;
-an.domain.xstart        =  -105;
-an.domain.xpar          = (an.domain.xstart+(0:an.domain.dims(2)-1))*an.domain.dxpar*1E3;%an.domain.xpar = domain.par{1};
+an.domain.xstart        =  -an.domain.dims(2)/2;
+an.domain.xpar          = (an.domain.xstart+(0:an.domain.dims(2)-1))*an.domain.dxpar;%an.domain.xpar = domain.par{1};
 an.depth                = 200;
 
 an.domain.beam          = 0;
-an.file.dirname         = '../David_210deg_x_Lagrangian_Only';
+an.file.dirname         = file.dirname
+% an.file.dirname         = '../David_210deg_x_Lagrangian_Only';
 an.file.focalplanename  = [ 'y' int2string_ICS(2) ];
 %% Symbolics
 syms t z 
@@ -52,26 +53,26 @@ an.nabla_t_sq           = double(subs(subs(an.nabla_t_sq_expr  , z, an.domain.zp
 %%  ====================================================== P ======================================================
 
 pnl.an.filename     = [an.file.dirname '/' 'TESTNeumann' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.p]              = FieldLoad(an.filename,'yes');
+[sim.p]              = FieldLoad(an.filename);
 Frequency(domain, sim.p, an.p , an.depth, sim.title);
 
 %%  ====================================================== PHI ======================================================
 
 pnl.an.filename     = [an.file.dirname '/' 'phi_fourier' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.phi]            = FieldLoad(an.filename,'yes');
+[sim.phi]            = FieldLoad(an.filename);
 [an.FreqRange,sim.FreqSpect,an.FreqSpect] = Frequency(phi, sim.phi, an.phi, an.depth, '\phi as a function of time' );
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% SIMPLIFIED %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%  ====================================================== PHI_SQ ======================================================
 
 an.filename        = [an.file.dirname '/' 'phi_sq_fourier' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.phi_sq]        = FieldLoad(an.filename,'yes');
+[sim.phi_sq]        = FieldLoad(an.filename);
 Frequency(domain, sim.phi_sq,real(an.phi_sq),an.depth, sim.title);
 
 %% ====================================================== Time Derivative of (phi)^2 ============================================================
 
 an.filename        = [an.file.dirname '/' 'Time_Deriv' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.lapl_t]        = FieldLoad(an.filename,'yes');
+[sim.lapl_t]        = FieldLoad(an.filename);
 % phi.td_an = real(double(subs(an.lapl_t_expr,t,an.domain.tpar)));
 % phi.td_an(isnan(phi.td_an))=0;
 Frequency(domain, sim.lapl_t,real(an.lapl_t)/an.medium.freq0^2,an.depth, sim.title);
@@ -80,13 +81,13 @@ Frequency(domain, sim.lapl_t,real(an.lapl_t)/an.medium.freq0^2,an.depth, sim.tit
 %%  ====================================================== Nabla^2 of (phi)^2 ======================================================
 
 an.filename        = [an.file.dirname '/' 'Z_Component' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.lapl_x]        = FieldLoad(an.filename,'yes');
+[sim.lapl_x]        = FieldLoad(an.filename);
 Frequency(domain,sim.lapl_x,real(an.lapl_x),an.depth, sim.title);
 
 %% ====================================================== Lagrangian ======================================================
 
 an.filename        = [an.file.dirname '/' 'Lagrangian' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.lagrangian]    = FieldLoad(an.filename,'yes');
+[sim.lagrangian]    = FieldLoad(an.filename);
 an.lagrangian = real(an.lapl_t/an.medium.freq0^2 - an.lapl_x);
 an.lagrangian(isnan(an.lagrangian))=0;
 [an.FreqRange,sim.FreqSpect,an.FreqSpect] = Frequency(domain, sim.lagrangian,an.lagrangian,an.depth, sim.title);
@@ -95,7 +96,7 @@ an.lagrangian(isnan(an.lagrangian))=0;
 %%  ======================================================(Time Derivative of phi)^2 ======================================================
 
 an.filename        = [an.file.dirname '/' 'Time_Deriv' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.nabla_t_sq]    = FieldLoad(an.filename,'yes');
+[sim.nabla_t_sq]    = FieldLoad(an.filename);
 % an.nabla_t_sq = real(double(subs(an.nabla_t_sq_expr,t,an.domain.tpar)));
 % an.nabla_t_sq(isnan(an.nabla_t_sq))=0;
 [an.FreqRange,sim.FreqSpect,an.FreqSpect] = Frequency(domain, sim.nabla_t_sq,an.nabla_t_sq,an.depth, sim.title);
@@ -103,46 +104,31 @@ an.filename        = [an.file.dirname '/' 'Time_Deriv' int2string_ICS(1) '_' an.
 %% ====================================================== (Nabla of phi ) ^2 ======================================================
 
 an.filename        = [an.file.dirname '/' 'Z_Component' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.nabla_x_sq]    = FieldLoad(an.filename,'yes');
+[sim.nabla_x_sq]    = FieldLoad(an.filename);
 Frequency(domain, sim.nabla_x_sq,real(an.nabla_x_sq),an.depth, sim.title);
 
 %% ====================================================== Lagrangian ======================================================
 
 an.filename        = [an.file.dirname '/' 'Lagrangian' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-[sim.lagrangian]    = FieldLoad(an.filename,'yes');
+[sim.lagrangian]    = FieldLoad(an.filename);
 an.lagrangian       = real(an.nabla_t_sq - an.nabla_x_sq);
 an.lagrangian(isnan(an.lagrangian))=0;
 [an.FreqRange,sim.FreqSpect,an.FreqSpect] = Frequency(an, sim.lagrangian, an.lagrangian, an.depth, sim.title);
 
 %% PLOT RANDOM variables
-sim.title = 'Source term due to Lagrangian, X-wave @ 21 deg ';
+sim.title = ['Lagrangian, X-wave @ 21 deg, Focused'];
 
-an.filename        = [an.file.dirname '/' 'Lagrangian' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
-% [sim.rnd_var]       = FieldLoad(an.filename,'yes');
-[~]       = FieldLoad(an.filename,'no');
-an.rnd_var          = sim.rnd_var*0;
+an.filename        = [an.file.dirname '/' 'LagrangianPressure' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
+[sim.rnd_var]       = FieldLoad(an.filename);
+an.rnd_var          = sim.rnd_var(:,1,1)*0;-(plin.data(:,105,an.depth)).^2/medium.c0^2/medium.rho0/2;
 [an.FreqRange,sim.FreqSpect,an.FreqSpect] = Frequency(an, sim.rnd_var, an.rnd_var, an.depth, sim.title);
 GENERATE_MAP(an, sim.rnd_var, sim.title);
 
-% max_an.depth = max(max(max(sim.lagrangian(:,round(an.domain.dims(2)/2+1),:)))
-OSFactor = 5;
-figure('WindowState','maximized'); hold on; grid on;
-plot((0:size(sim.lagrangian,1)*OSFactor-1)*an.domain.dtpar*OSFactor*1E6,resampleSINC(squeeze(sim.rnd_var(:,round(an.domain.dims(2)/2+1),148))',OSFactor),'LineWidth',1)
-xlabel('Time [usec]')
-set(gcf,'Color','white')
-set(gca,'FontSize',20)
-ylabel('Source Term due to Lagrangian [Pa/m^2]')
-title(['Lagrangian @ 21 deg, z = ', num2str(an.domain.zpar(148)) , ' [mm]']) 
-
 %% ------------------------------------------------------ GENERAL FUNCTIONS -------------------------------------------------------------------------
-function [fourier] = FieldLoad(filename,reload)
-fourier = 0 ;
-if (strcmp(reload,'yes'))
+function [fourier] = FieldLoad(filename)
+
 output_nonl         = load_ICS_slice(filename);
 fourier             = squeeze(output_nonl.data);
-else
-    disp('Output variabel is 0. If there is need for update, change "reload" variable') 
-end
 
 end
 
@@ -168,19 +154,21 @@ legend('fourier','an')
 xlabel('Frequency [MHz]')
 ylabel('Amplitude [dB]')
 ylim([-80 0])
-title(title_var)
+title([title_var , ' @  Z = ', num2str(depth), '[mm]'])
 
 set(gca,'FontSize',15)
 set(gcf,'Color','white')
 
+OSFactor = 5;
+an.domain.tpar_OS = (0:size(an_var,1)*OSFactor-1)*an.domain.dtpar/OSFactor;
 figure('WindowState','maximized');hold on; grid on;
 title('grad phi computed via different methods')
-plot(an.domain.tpar*1E6,                           sim_var(:,size(sim_var,2)/2,depth))
-plot(an.domain.tpar*1E6+depth*an.domain.dtpar*1E6, an_var(:,size(sim_var,2)/2,depth))
+plot(an.domain.tpar_OS *1E6,                           resampleSINC(sim_var(:,size(sim_var,2)/2,depth)',OSFactor))
+plot(an.domain.tpar_OS *1E6, resampleSINC(an_var',OSFactor))
 legend('fourier','an')
 xlabel('Time [usec]')
 ylabel('phi [m^2/sec]')
-title(title_var)
+title([title_var , ' @  Z = ', num2str(depth), '[mm]'])
 
 set(gca,'FontSize',15)
 set(gcf,'Color','white')
@@ -191,7 +179,7 @@ function GENERATE_MAP(an, sim_var, title_var)
 %==================================================== UNFOCUSED
 figure('WindowState','maximized');
 length_z = 1;
-imagesc(an.domain.zpar(length_z:an.domain.dims(3) -length_z),an.domain.xpar,squeeze(max(abs(sim_var(:,:,length_z:end-length_z)))));
+imagesc(an.domain.zpar(length_z:an.domain.dims(3) -length_z)*1E3,an.domain.xpar*1E3,squeeze(max(abs(sim_var(:,:,length_z:end-length_z)))));
 
 xlabel('Z [mm]' )
 ylabel('X [mm]' )
@@ -203,8 +191,8 @@ set(gca,'FontSize',20)
 set(gcf,'Color','white')
 %==================================================== FOCUSED
 figure('WindowState','maximized')
-length_z = 50;
-imagesc(an.domain.zpar(length_z:an.domain.dims(3) -length_z),an.domain.xpar,squeeze(max(abs(sim_var(:,:,length_z:end-length_z)))));
+length_z = 100;
+imagesc(an.domain.zpar(length_z:an.domain.dims(3) -length_z)*1E3,an.domain.xpar*1E3,squeeze(max(abs(sim_var(:,:,length_z:end-length_z)))));
 
 xlabel('Z [mm]' )
 ylabel('X [mm]' )

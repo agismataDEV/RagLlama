@@ -18,7 +18,7 @@
 3.210000E+000		*** Lx in [mm]
 1.001000E+000		*** Ly in [mm]
 8.000000E+001		*** Lt in [cycles]
-0.000000E+000		*** Sz in [mm]	(Start of the field)
+-1.000000E+000		*** Sz in [mm]	(Start of the field)
 0.700000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
@@ -39,7 +39,7 @@ nonlin
 1		*** Switch: Use Anti-Aliasing in contrast source evaluation
 1		*** Switch: Use Support Tapering in contrast source evaluation	
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
-1		*** Switch: Use Symmetry in the Y axis
+0		*** Switch: Use Symmetry in the Y axis
 1		*** Number of beams in which the total field is split
 2		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"

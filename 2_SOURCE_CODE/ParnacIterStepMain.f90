@@ -59,8 +59,7 @@
 		NonlinearKappaOperatorLinDYAli,NonlinearKappaOperatorLinDZAli, &
 		NonlinContrastOperator_Ali, Theta2CG_Ali ,ConversionCG_Ali, &
 		NonlinContrastOperatorlin_Ali, NonlinContrastOperatorCG_Ali, &
-        InhomContrastOperator, InhomContrastOperator_Ali, LagrangianDensity_Ali, &
-		LagrangianDensity_Ali_Eff, LagrangianDensity_Simpl_Ali
+        InhomContrastOperator, InhomContrastOperator_Ali, LagrangianDensity_Ali, LagrangianDensity_Simpl_Ali
     USE ParnacConvolution, ONLY : &
         ConvolutionGreen,ConvolutionGreenConj
    USE ParnacTransformFilter, ONLY : &
@@ -618,10 +617,9 @@
         case (iCI_NONLINKAPPADZ)
             call NonlinearKappaOperatorDZAli(cSpace);
         case (iCI_NONLIN)
-			! call LagrangianDensity_Ali(cSpace)
-			! call LagrangianDensity_Ali_Eff(cSpace)
+			call LagrangianDensity_Ali(cSpace)
 			! call LagrangianDensity_Simpl_Ali(cSpace)
-            call NonlinContrastOperator_Ali(cSpace);  
+            ! call NonlinContrastOperator_Ali(cSpace);  
         case(iCI_BUBBLE)                                                                    ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
@@ -630,10 +628,9 @@
     else
         select case (iContrastID)
         case (iCI_NONLIN)
-			! call LagrangianDensity_Ali(cSpace)
-			! call LagrangianDensity_Ali_Eff(cSpace)
+			call LagrangianDensity_Ali(cSpace)
 			! call LagrangianDensity_Simpl_Ali(cSpace)
-            call NonlinContrastOperator_Ali(cSpace);
+            ! call NonlinContrastOperator_Ali(cSpace);
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator(cSpace,cInhomContrast);
         case(iCI_BUBBLE)                                                                   ! A.M Added 29/01/2020

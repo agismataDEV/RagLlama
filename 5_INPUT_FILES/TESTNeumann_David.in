@@ -39,7 +39,7 @@ nonlin
 1		*** Switch: Use Anti-Aliasing in contrast source evaluation
 1		*** Switch: Use Support Tapering in contrast source evaluation	
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
-1		*** Switch: Use Symmetry in the Y axis
+0		*** Switch: Use Symmetry in the Y axis
 1		*** Number of beams in which the total field is split
 2		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"

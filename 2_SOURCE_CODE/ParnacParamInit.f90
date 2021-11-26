@@ -572,7 +572,6 @@
 		    read(iImportUNIT,*)
 		    if (trim(acTemp)=='cylindrical') then
 		        cSourceParams%srcshapetype = iHI_CYLINDRICAL
-		        !print *, "Acciaaaaaaa"
 		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.radius
 		        errstatus = errstatus + readstatus
 		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.radfocus

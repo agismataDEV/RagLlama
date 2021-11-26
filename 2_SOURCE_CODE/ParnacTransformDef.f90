@@ -40,6 +40,7 @@ MODULE ParnacTransformDef
 
 	type Transforms
 		!Standard transforms, used in the convolution operator
+		integer(i8b) ::			iPlanTransform1D, iPlanTransform1D_inv
 		integer(i8b) ::			iPlanTransformT, iPlanTransformT_inv		
 		integer(i8b) ::			iPlanTransformXY, iPlanTransformXY_inv
 		integer(i8b) ::			iPlanTransformXYZ, iPlanTransformXYZ_inv

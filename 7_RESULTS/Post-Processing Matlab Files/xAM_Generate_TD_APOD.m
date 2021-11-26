@@ -1,7 +1,7 @@
 %% Phased Array Specs
 % clear all;
 % close all;
-for i_theta = [210]
+for i_theta = [21]
 location = '';
 % mkdir('../../5_Input_Files/', location)
 c0 = 1480;
@@ -27,9 +27,9 @@ save(td_filename, 'size_td','td_x','-ASCII', '-DOUBLE')
 apod_x_filename = ['../../5_Input_Files/APOD/', location,'apod_' num2str(i_theta*10) 'deg_x.dat'];
 % If even , all ones, if odd, the middle is silenced
 % apod_x = [ones(floor(arr.N_el/2),1); zeros(arr.N_el - 2*floor(arr.N_el/2),1) ; ones(floor(arr.N_el/2),1)];
-% apod_x = [tukeywin(arr.N_el/2,0.5); tukeywin(arr.N_el/2,0.5)];
+apod_x = [tukeywin(arr.N_el/2,0.5); tukeywin(arr.N_el/2,0.5)];
 
-apod_x = [tukeywin(arr.N_el,0.5)];
+% apod_x = [tukeywin(arr.N_el,0.5)];
 % apod_x = [hanning(32); hanning(32)];
 size_apod = size(apod_x);
 save(apod_x_filename, 'size_apod','apod_x','-ASCII', '-DOUBLE')

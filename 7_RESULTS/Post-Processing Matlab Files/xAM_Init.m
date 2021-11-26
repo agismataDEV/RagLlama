@@ -47,7 +47,7 @@ Bubble.mindist           = 10e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 1;
+domain.beamiterations       = 0;
 domain.ibeam                = 0;
 domain.Fnyq                 = 3.5;
 domain.PPW_t                = 2;
@@ -57,7 +57,7 @@ domain.symmetry             = 0;
 
 %% File Parameters
 file.lin_name            = 'TESTNeumann';
-file.dirname             = '../David_210deg_x_Lagrangian_Only';
+file.dirname             = '../David_210deg_x_Lagr_Only_2';
 file.dirname_left        = '../David_150deg_left_high_amp';
 file.dirname_right       = '../David_150deg_left_high_amp';
 file.rootname            = 'TESTNeumann';

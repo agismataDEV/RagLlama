@@ -272,7 +272,7 @@ for i = 1:i_end
     
 %     pnl_harmi = eval(['pnl.harm_' name{i}  num2str(k)])*1E-3;
 %     pnl_harmi= eval(['pnl.diff_' name{i}  num2str(k)])*1E-3;
-    pnl_harmi = pnl.diff_mnl11;
+    pnl_harmi = plin.nd;
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
     
     dBVALUES=max(max(pnl_harmi))/1.2;
