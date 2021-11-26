@@ -420,7 +420,29 @@
     else if(trim(acTemp)=='dtqsource') then
         cModelParams.PrimarySourceType=iEI_DTQSOURCE	!dQ/dt source from measured signature or in FieldII fashion
     else if(trim(acTemp)=='planewave') then
-        cModelParams.PrimarySourceType=iEI_PLANEWAVE	!Plane wave primary field solution
+        cModelParams.PrimarySourceType=iEI_PLANEWAVE	!Plane wave primary field solutionelse if(trim(acTemp)=='planewave') then
+    else if(trim(acTemp)=='pointsourcecloud') then
+        cModelParams.PrimarySourceType=iEI_POINTSOURCECLOUD	!Point Source Cloud
+        read(iImportUNIT,*)
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%N
+		ALLOCATE(PointSourceCloudParams%R0(PointSourceCloudParams%N))
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%PointSourceAmplitude
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%Dist_Amplitude
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%R0
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%ClusterDimsRatio(:,1)
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%ClusterDimsRatio(:,2)
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%ClusterDimsRatio(:,3)
+		read(iImportUNIT,*,IOSTAT = readstatus) PointSourceCloudParams%MinInBetweenDist
+    else if(trim(acTemp)=='filename') then
+		read(iImportUNIT,*)
+        read(iImportUNIT,*,IOSTAT = readstatus) acTemp
+        errstatus = errstatus + readstatus
+        call remove_CR(acTemp)
+        cModelParams.PrimarySourceType=iEI_LOADFIELD	
+		cModelParams.FieldFilename = acTemp
+		do i = 1,3
+            read(iImportUNIT,*,IOSTAT = readstatus) cModelParams.xyzfielddim(i,:)
+		enddo
     else
         cModelParams.PrimarySourceType=0 ! Doesn't exist
     end if
@@ -511,142 +533,145 @@
             errstatus = errstatus + readstatus
         end do
     end if
+	
+	if (cModelParams.PrimarySourceType/=iEI_LOADFIELD) then
+		!read source input filename
+		read(iImportUNIT,*)
+		read(iImportUNIT,*)
+		read(iImportUNIT,*)
+		read(iImportUNIT,*)
+		read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.srcfilename
+		call remove_CR(cSourceParams.srcfilename)
+		errstatus = errstatus + readstatus
 
-    !read source input filename
-    read(iImportUNIT,*)
-    read(iImportUNIT,*)
-    read(iImportUNIT,*)
-    read(iImportUNIT,*)
-    read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.srcfilename
-    call remove_CR(cSourceParams.srcfilename)
-    errstatus = errstatus + readstatus
+		if(trim(cSourceParams.srcfilename)=='none') then
+			! read source signature parameters
+			read(iImportUNIT,*)
+			read(iImportUNIT,*,IOSTAT = readstatus) acTemp
+			call remove_CR(acTemp)
+			errstatus = errstatus + readstatus
+			if (trim(acTemp)=='gaussian') then
+				cSourceParams.srcsigntype = iGI_GAUSSIAN
 
-    if(trim(cSourceParams.srcfilename)=='none') then
-        ! read source signature parameters
-        read(iImportUNIT,*)
-        read(iImportUNIT,*,IOSTAT = readstatus) acTemp
-        call remove_CR(acTemp)
-        errstatus = errstatus + readstatus
-        if (trim(acTemp)=='gaussian') then
-            cSourceParams.srcsigntype = iGI_GAUSSIAN
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Pstart
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tpulse
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*)
+				read(iImportUNIT,*)
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Twidth
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tdelay
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Power
+				errstatus = errstatus + readstatus
+			else if(trim(acTemp) == 'blackman') then
+				cSourceParams.srcsigntype = iGI_BLACKMAN
 
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Pstart
-            errstatus = errstatus + readstatus
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tpulse
-            errstatus = errstatus + readstatus
-            read(iImportUNIT,*)
-            read(iImportUNIT,*)
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Twidth
-            errstatus = errstatus + readstatus
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tdelay
-            errstatus = errstatus + readstatus
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Power
-            errstatus = errstatus + readstatus
-        else if(trim(acTemp) == 'blackman') then
-            cSourceParams.srcsigntype = iGI_BLACKMAN
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Pstart
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tpulse
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*)
+				read(iImportUNIT,*)
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tdelay
+				errstatus = errstatus + readstatus
+			else
+				! otherwise, assume that we have a filename
+				cSourceParams.srcsigntype = iGI_FILE
+				cSourceParams.srcsignfilename = acTemp
+			end if
 
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Pstart
-            errstatus = errstatus + readstatus
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tpulse
-            errstatus = errstatus + readstatus
-            read(iImportUNIT,*)
-            read(iImportUNIT,*)
-            read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tdelay
-            errstatus = errstatus + readstatus
-		else
-		    ! otherwise, assume that we have a filename
-		    cSourceParams.srcsigntype = iGI_FILE
-		    cSourceParams.srcsignfilename = acTemp
-		end if
+			if (cModelParams.PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams.PrimarySourceType/=iEI_POINTSOURCECLOUD) then
+				!read source shape parameters
+				read(iImportUNIT,*)
+				read(iImportUNIT,*,IOSTAT = readstatus) acTemp
+				call remove_CR(acTemp)
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*)
+				read(iImportUNIT,*)
+				read(iImportUNIT,*)
+				read(iImportUNIT,*)
+				read(iImportUNIT,*)
+				if (trim(acTemp)=='cylindrical') then
+					cSourceParams%srcshapetype = iHI_CYLINDRICAL
+					!print *, "Acciaaaaaaa"
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.radius
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.radfocus
+					errstatus = errstatus + readstatus
+				else if (trim(acTemp)=='rectangular') then
+					cSourceParams%srcshapetype = iHI_RECTANGULAR
 
-		if (cModelParams.PrimarySourceType/=iEI_PLANEWAVE) then
-		    !read source shape parameters
-		    read(iImportUNIT,*)
-		    read(iImportUNIT,*,IOSTAT = readstatus) acTemp
-		    call remove_CR(acTemp)
-		    errstatus = errstatus + readstatus
-		    read(iImportUNIT,*)
-		    read(iImportUNIT,*)
-		    read(iImportUNIT,*)
-		    read(iImportUNIT,*)
-		    read(iImportUNIT,*)
-		    if (trim(acTemp)=='cylindrical') then
-		        cSourceParams%srcshapetype = iHI_CYLINDRICAL
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.radius
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.radfocus
-		        errstatus = errstatus + readstatus
-		    else if (trim(acTemp)=='rectangular') then
-		        cSourceParams%srcshapetype = iHI_RECTANGULAR
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.rectwidth
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.rectheight
+					errstatus = errstatus + readstatus
+				else if (trim(acTemp)=='triangular') then
+					cSourceParams%srcshapetype = iHI_TRIANGULAR
 
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.rectwidth
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.rectheight
-		        errstatus = errstatus + readstatus
-		    else if (trim(acTemp)=='triangular') then
-		        cSourceParams%srcshapetype = iHI_TRIANGULAR
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.triangedge
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.triangxcenter
+					errstatus = errstatus + readstatus
+				else if (trim(acTemp)=='pointsource') then
+					cSourceParams%srcshapetype = iHI_POINTSOURCE
 
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.triangedge
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.triangxcenter
-		        errstatus = errstatus + readstatus
-		    else if (trim(acTemp)=='pointsource') then
-		        cSourceParams%srcshapetype = iHI_POINTSOURCE
+				else if (trim(acTemp)=='phasedarray') then
+					cSourceParams%srcshapetype = iHI_PHASEDARRAY
 
-		    else if (trim(acTemp)=='phasedarray') then
-		        cSourceParams%srcshapetype = iHI_PHASEDARRAY
-
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.numel
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.elwidth
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.elheight
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.kerf
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.focusx
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.focusz
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.elevationfocusz
-		        errstatus = errstatus + readstatus
-		        read(iImportUNIT,*)
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.td_filename
-		        errstatus = errstatus + readstatus
-		        call remove_CR(cSourceParams.td_filename)
-		        read(iImportUNIT,*)
-		        read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.phaseapodfilename
-		        errstatus = errstatus + readstatus
-		        call remove_CR(cSourceParams.phaseapodfilename)
-		        !KH					else if (trim(acTemp)=='matrixarray') then
-		        !KH						cSourceParams%srcshapetype = iHI_MATRIXARRAY
-		        !KH
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matnumelx
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matnumely
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matelwidth
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matelheight
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matkerfx
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matkerfy
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matfocusx
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matfocusy
-		        !KH						errstatus = errstatus + readstatus
-		        !KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matfocusz
-		        !KH						errstatus = errstatus + readstatus
-		        !KH!				        read(iImportUNIT,*)
-		        !KH!						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.phaseapodfilename
-		        !KH!						errstatus = errstatus + readstatus
-		        !KH!						call remove_CR(cSourceParams.phaseapodfilename)
-		    else
-		        cSourceParams%srcshapetype = 0	!Doesn't exist
-		    end if
-		end if
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.numel
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.elwidth
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.elheight
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.kerf
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.focusx
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.focusz
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.elevationfocusz
+					errstatus = errstatus + readstatus
+					read(iImportUNIT,*)
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.td_filename
+					errstatus = errstatus + readstatus
+					call remove_CR(cSourceParams.td_filename)
+					read(iImportUNIT,*)
+					read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.phaseapodfilename
+					errstatus = errstatus + readstatus
+					call remove_CR(cSourceParams.phaseapodfilename)
+					!KH					else if (trim(acTemp)=='matrixarray') then
+					!KH						cSourceParams%srcshapetype = iHI_MATRIXARRAY
+					!KH
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matnumelx
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matnumely
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matelwidth
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matelheight
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matkerfx
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matkerfy
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matfocusx
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matfocusy
+					!KH						errstatus = errstatus + readstatus
+					!KH						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matfocusz
+					!KH						errstatus = errstatus + readstatus
+					!KH!				        read(iImportUNIT,*)
+					!KH!						read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.phaseapodfilename
+					!KH!						errstatus = errstatus + readstatus
+					!KH!						call remove_CR(cSourceParams.phaseapodfilename)
+				else
+					cSourceParams%srcshapetype = 0	!Doesn't exist
+				end if
+			end if
+		end if 
 		! L.d. 09-05-2012 Extension of the input informations
 		read(iImportUNIT,*)
 		read(iImportUNIT,*)
@@ -703,8 +728,8 @@
 			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%Solver_Normalize
 			read(iImportUNIT,*)
 				    	
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%BubbleN
-			ALLOCATE(BubbleParams%R0(BubbleParams%BubbleN))
+			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%N
+			ALLOCATE(BubbleParams%R0(BubbleParams%N))
 			read(iImportUNIT,*)
 			read(iImportUNIT,*)
 			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%Distribution
@@ -717,7 +742,7 @@
 				!CALL RANDOM_NUMBER(BubbleParams%R0)
 				!BubbleParams%R0 = BubbleParams%R0*BubbleParams%PDRange(2) + (1-BubbleParams%R0)*BubbleParams%PDRange(1)
 				errstatus = vslnewstream( STREAM2, VSL_BRNG_MCG31, 1 )
-				errstatus = vdrnggamma( VSL_RNG_METHOD_GAMMA_GNORM_ACCURATE, STREAM2, INT(BubbleParams%BubbleN), BubbleParams%R0 , 1.2D0, 0.0D0, 1.0D0 )
+				errstatus = vdrnggamma( VSL_RNG_METHOD_GAMMA_GNORM_ACCURATE, STREAM2, INT(BubbleParams%N), BubbleParams%R0 , 1.2D0, 0.0D0, 1.0D0 )
 				BubbleParams%R0 = (BubbleParams%R0-MINVAL(BubbleParams%R0))
 				BubbleParams%R0 = BubbleParams%R0/MAXVAL(BubbleParams%R0)*(BubbleParams%PDRange(2)-BubbleParams%PDRange(1))+BubbleParams%PDRange(1)
 			endif
@@ -859,7 +884,7 @@
             write (*, "('Source signature file ',A)") trim(cSourceParams.srcsignfilename)
         end if
         write ( *, '(" ")')
-        if (cModelParams.PrimarySourceType/=iEI_PLANEWAVE) then
+        if (cModelParams.PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams.PrimarySourceType/=iEI_POINTSOURCECLOUD) then
             ! source shape parameters
             write ( *, '(" SrcShapeType: ",I2)') cSourceParams.srcshapetype
             if (cSourceParams.srcshapetype == iHI_CYLINDRICAL) then
@@ -972,7 +997,7 @@
             elseif (trim(BubbleParams%Distribution) == 'polydisperse') then
 	    		write ( *, '(" Radius Range:	     ",E10.3,E10.3)') MINVAL(BubbleParams%R0),MAXVAL(BubbleParams%R0)
                 endif
-                write ( *, '(" No. of Bubbles:       ",I<int(log10(real(BubbleParams%BubbleN,dp))+1)>)'  ) BubbleParams%BubbleN
+                write ( *, '(" No. of Bubbles:       ",I<int(log10(real(BubbleParams%N,dp))+1)>)'  ) BubbleParams%N
                 write ( *, '(" [X_Bmin X_Bmax]/ Lx:  ",E10.3,E10.3)') BubbleParams%ClusterDimsRatio(:,1)
                 write ( *, '(" [Y_Bmin Y_Bmax]/ Ly:  ",E10.3,E10.3)') BubbleParams%ClusterDimsRatio(:,2)
                 write ( *, '(" [Z_Bmin Z_Bmax]/ Lz:  ",E10.3,E10.3)') BubbleParams%ClusterDimsRatio(:,3)
@@ -1065,7 +1090,7 @@
             write(*,"('Error, source signature type is not recognized')")
             stop
         end if
-        if (cModelParams.PrimarySourceType/=iEI_PLANEWAVE) then
+        if (cModelParams.PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams.PrimarySourceType/=iEI_POINTSOURCECLOUD) then
             if(cSourceParams.srcshapetype == 0) then
                 write(*,"('Error, source shape type is not recognized')")
                 stop
@@ -2238,7 +2263,7 @@
 	
     !------------ Experimental Values
     BubbleParams.coeff_fit =(/ -326138851.8775966167449951171875Q0, 3329551876.01073455810546875Q0, -15287331213.0629024505615234375Q0, 41570311455.0132293701171875Q0, -74140077882.8638153076171875Q0, 90617932686.12164306640625Q0, -76870588777.044830322265625Q0, 44688537547.7557373046875Q0, -17039124392.086650848388671875Q0, 3847686270.230488300323486328125Q0, -390758718.15616351366043090820312Q0 /)
-    BubbleParams.A0c  = 0.0_dp;
+    BubbleParams.A0c  = 0.0Q0;
     END SUBROUTINE BubbleInit
 
     END MODULE ParnacParamInit

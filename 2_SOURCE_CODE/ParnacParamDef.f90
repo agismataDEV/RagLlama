@@ -97,6 +97,8 @@ MODULE ParnacParamDef
 		logical(lgt) :: UseAntiAliasing	   !Employ an anti-aliasing procedure in the contrast sources
 		logical(lgt) :: UseSupportTapering !Taper the support at beginning and end 
 		logical(lgt) :: UseFreqTapering !Taper the frequency at the end
+		character(LEN=128) :: FieldFilename
+		real(dp) :: xyzfielddim(3,2)	!Which dimension: x, y, z or t
 
 		!Beams, iterations, save slices
 		integer(i8b) :: numbeams						!Number of sub-beams in which to split the z-dimension
@@ -262,7 +264,7 @@ MODULE ParnacParamDef
     character(len = 1024)	::  sBubbleDir 
     character(len = 1024)	::  GridPointsPressure 
     !--------------Cluster Parameters--------------
-    integer(i8b)   		  ::  	BubbleN
+    integer(i8b)   		  ::  	N
     real(dp)  			  ::  	ClusterDimsRatio(2,3)
     character(LEN=128)	  ::	Distribution  
     real(dp)  			  ::  	MinInBetweenDist
@@ -300,5 +302,54 @@ MODULE ParnacParamDef
     end type BubbleInput
     
     type(BubbleInput) :: BubbleParams
+	
+	type PointSourceCloudInput
+
+    ! =============================================================================
+    !
+    !   Programmer: Koos Huijssen
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   1.0     090505  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine remove_CR replaces any Carriage Return symbols (ASCII code
+    !   13) by a space. This is necessary to prevent a mismatch between Fortran
+    !   and C (or Fortran and Windows) line ending types.
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   string   io   char   string to be processed
+    !
+    
+
+    ! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    !
+    !   lenstring   i4b   length of the string
+    !   i           i4b   temporary variable
+    
+    !--------------Proton Cluster Parameters--------------
+    integer(i8b)   		  ::  	N
+    real(dp)  			  ::  	ClusterDimsRatio(2,3)
+    real(dp)  			  ::  	MinInBetweenDist
+    real(dp)  			  ::  	PointSourceAmplitude 
+    real(dp)  			  ::  	Dist_Amplitude   
+    real(dp),allocatable  ::    R0(:) 
+
+    end type PointSourceCloudInput
+    
+    type(PointSourceCloudInput) :: PointSourceCloudParams
+
 
 END MODULE ParnacParamDef

@@ -73,7 +73,7 @@
         BeamDerivativeZ
     USE ParnacOutput, ONLY : &
         ExportSlice, ExportArray
-	USE ParnacBubbleContrast
+	USE ParnacPointSourceCloud
     ! *****************************************************************************
     !
     !   GLOBAL DECLARATIONS
@@ -526,6 +526,72 @@
     call SWStop(cswLinStep);
 
     END SUBROUTINE PlanewaveField
+
+    SUBROUTINE PointSourceCloudField(cSpace)
+
+    ! =============================================================================
+    !
+    !   Programmer: Agisilaos Matalliotakis // Date : 211108
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   1.0     090505  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine PointSourceCloudField computes the primary field solution 
+    !   generated from a cloud of point sources, having the same amplitude.
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   cSpace   io   type(space)  Space structure for which the primary field
+    !                              solution is to be obtained
+    !
+    type(Space), intent(inout)::                cSpace;
+
+    ! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    !   acTemp       char   Temporary char array for output log messages
+    !
+    character(LEN = 1024)::			acTemp;
+
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   log file entries
+    ! =============================================================================
+    call PrintToLog("PointSourceCloudField",1)
+    call GridDistr0CreateEmpty(cSpace%cGrid);
+
+    ! Test whether we have the right input, otherwise quit immediately
+    if (cSpace%iSpaceIdentifier /= iSI_FIELD) then
+        write (acTemp, '("Error occurred during the execution of PointSourceCloudField, aborting program")');
+        call PrintToLog(acTemp, -1);
+        write (acTemp, '("the space provided as input is not a FIELD.")');
+        call PrintToLog(acTemp, -1);
+        stop
+    end if
+    
+    call SwStartAndCount(cswLinStep);
+    
+    call PointSourceCloudOperator(cSpace)
+    cSpace%iSpaceIdentifier = iSI_CONTRASTSOURCE;
+	call test_isnan(cSpace)
+    call ContrastSourcetoField(cSpace, cSpace, .false.)
+    
+    ! Deinitialize
+    call SWStop(cswLinStep);
+
+    END SUBROUTINE PointSourceCloudField
 
     SUBROUTINE FieldtoContrastSource(cSpace,iContrastID,cInhomContrast)
 
