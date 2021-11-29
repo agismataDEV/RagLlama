@@ -37,7 +37,7 @@ MODULE ParnacDataRedist
 !
 !   MODULES USED
 !
-	USE Types
+	USE Types 
     USE Constants
 	USE ParnacGeneral
 	USE ParnacDataDef
@@ -59,7 +59,7 @@ MODULE ParnacDataRedist
 
 IMPLICIT NONE
 
-  	include 'fftw3-mpi.f03'
+  	! include 'fftw3-mpi.f03'
 ! *****************************************************************************
 !
 !   CONTAINED SUBROUTINES AND FUNCTIONS
@@ -967,6 +967,10 @@ SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
 	write (acTemp, '("Distr2FillYMirroredXYZBlock")');	call PrintToLog(acTemp, 4);
 	
 	call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockObtain);
+	! First we initialize the block to zero
+	do iL = 0, cGridD%ID2XL*cGridD%ID2YL*cGridD%ID2ZL-1
+		cGridD%pacD2(1+iL)	= 0;
+	end do
 	
 	! Copy cSpaceS to cSpaceD on the positions starting from X/Y/Z beam index (0,0,0)
 	! But mirror the source indices in the Y dimension
@@ -975,8 +979,12 @@ SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
 	do iLX = 0, cGridS%iD2XL-1
 		do iLY = 0, cGridS%iD2YL-1
 			do iLZ = 0, cGridS%iD2ZL-1
+				iIndS= 1 + iOmega * cGridS%iD2IS + iLX * cGridS%iD2XS + (cGridS%iD2YL-1-iLY) * cGridS%iD2YS + iLZ * cGridS%iD2ZS
+				iIndD= 1 + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
+				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
+				
 				iIndS= 1 + iOmega * cGridS%iD2IS + iLX * cGridS%iD2XS + iLY * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iLX * cGridD%iD2XS + (cGridD%iD2YL-1-iLY) * cGridD%iD2YS + iLZ * cGridD%iD2ZS
+				iIndD= 1 + iLX * cGridD%iD2XS + (iLY + cGridS%iD2YL-1) * cGridD%iD2YS + iLZ * cGridD%iD2ZS
 				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
 			end do
 		end do
@@ -1066,6 +1074,91 @@ SUBROUTINE Distr2PutXYZBlock(cGridS, cGridD, iOmega)
 	
 	call SWStop(cswBlock); call SWStop(cswBlockPut);
 END SUBROUTINE Distr2PutXYZBlock
+
+SUBROUTINE Distr2PutYMirroredXYZBlock(cGridS, cGridD, iOmega)
+
+! =============================================================================
+!
+!   Programmer: Jasper de Koning / Koos Huijssen
+!
+!   Language: Fortran 90
+!
+!   Version Date    Comment
+!   ------- -----   -------
+!   1.0     090505  Original code (KH)
+!
+! *****************************************************************************
+!
+!   DESCRIPTION
+!
+!   The subroutine Distr2ObtainXYZBlock extracts an XYZ block at a specific
+!   frequency from a grid which has its data stored in Distr. 2. The XYZ block
+!   is stored in the first frequency in cGridD, and it is mirrored in the
+!   Y-dimension. The line Y=0 is also excluded from the copy. This subroutine
+!   is used to represent the contrast sources at the negative y-axis for a 
+!   problem that is symmetric in Y, and it is assumed that cGridS only stores
+!   values on the positive Y-axis starting at Y=0.
+!
+! *****************************************************************************
+!
+!   INPUT/OUTPUT PARAMETERS
+!
+!   cGridS   i   type(Grid)   The grid that contains the source data array
+!   cGridD   io  type(Grid)   The grid that will contain the XYZ block at exit
+!   iOmega   i    i8b         The frequency of the XYZ block
+!
+	type(Grid), intent(in)::		cGridS
+	type(Grid), intent(inout)::		cGridD
+	integer(i8b), intent(in) ::		iOmega;
+
+! *****************************************************************************
+! 
+!   LOCAL PARAMETERS      
+!
+!   iL       i8b   Loop counter over all XYZ-positions
+!   iLX      i8b   Loop counter over all X-positions
+!   iLY      i8b   Loop counter over all Y-positions
+!   iLZ      i8b   Loop counter over all Z-positions
+!   iIndS    i8b   Index to a position in the source array
+!   iIndD    i8b   Index to a position in the destination array
+!   acTemp   char  Temporary char array for output log messages
+!
+	integer(i8b) ::				iL, iLX, iLY, iLZ, iIndS, iIndD
+	character(LEN = 2048) ::		acTemp;
+	
+! *****************************************************************************
+!
+!   I/O
+!
+!   Log file entries 
+!   
+! *****************************************************************************
+!
+!   SUBROUTINES/FUNCTIONS CALLED
+!
+!   SWstartandcount
+!   SWstop
+!   PrintToLog
+!   
+! =============================================================================
+
+	write (acTemp, '("Distr2PutYMirroredXYZBlock")');	call PrintToLog(acTemp, 4);
+
+	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockPut);
+	! Copy cSpaceS starting from X/Y/Z beam index (0,0,0) to cSpaceD
+	do iLX = 0, cGridD%iD2XL-1
+		do iLY = 0, cGridD%iD2YL-1
+			do iLZ = 0, cGridD%iD2ZL-1				
+				iIndS= 1 + iLX * cGridS%iD2XS + (iLY + cGridD%iD2YL-1) * cGridS%iD2YS + iLZ * cGridS%iD2ZS
+				iIndD= 1 + iOmega * cGridD%iD2IS + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
+				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
+			end do
+		end do
+	end do
+	
+	call SWStop(cswBlock); call SWStop(cswBlockPut);
+
+END SUBROUTINE Distr2PutYMirroredXYZBlock
 
 SUBROUTINE Distr2AddToXYZBlock(cGridS, cGridD, iOmega)
 

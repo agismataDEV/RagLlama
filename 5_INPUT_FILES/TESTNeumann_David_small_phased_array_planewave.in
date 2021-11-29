@@ -17,9 +17,9 @@
 *************************************************
 3.210000E+000		*** Lx in [mm]
 1.001000E+000		*** Ly in [mm]
-8.000000E+001		*** Lt in [cycles]
+6.000000E+001		*** Lt in [cycles]
 -1.000000E+000		*** Sz in [mm]	(Start of the field)
-0.700000E+001		*** Lz in [mm]	(length of the field in z)
+0.400000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E-000		*** Thetat [rad]
@@ -31,7 +31,7 @@
 ************************************
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave"
 qsource
-*** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
+*** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob", "bubble", "lagrangian"
 nonlin
 30		*** Order of the Temporal Finite Difference schemes
 30		*** Order of the Spatial  Finite Difference schemes
@@ -39,7 +39,7 @@ nonlin
 1		*** Switch: Use Anti-Aliasing in contrast source evaluation
 1		*** Switch: Use Support Tapering in contrast source evaluation	
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
-0		*** Switch: Use Symmetry in the Y axis
+1		*** Switch: Use Symmetry in the Y axis
 1		*** Number of beams in which the total field is split
 2		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
@@ -75,9 +75,9 @@ phasedarray
 1.00000E+30	*** Focus z
 1.00000E+30	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-td_210deg_x.dat
+none
 ***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_210deg_x.dat
+apod_0deg_x.dat
 ***************************
 ***  Switches  		***
 ***************************

@@ -39,7 +39,7 @@ cd ../6_RUN/
 echo "#!/bin/bash" 									 															 > job_INCS_David
 echo " " 											 															>> job_INCS_David
 echo "#SBATCH --job-name=${OUTPUT_FOLDER_DAVID}" 	 																		>> job_INCS_David
-echo "#SBATCH --partition=general" 					 															>> job_INCS_David
+echo "#SBATCH --partition=imphys,general" 					 															>> job_INCS_David
 echo "#SBATCH --qos=short"          				 																>> job_INCS_David
 echo "#SBATCH --nodes=1"           					 															>> job_INCS_David
 echo "#SBATCH --ntasks-per-node=54" 				 															>> job_INCS_David

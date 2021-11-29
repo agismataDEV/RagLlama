@@ -1919,7 +1919,7 @@ SUBROUTINE InitGridDistrLookupTables(cSpace)
 		iMemAllocated=iMemAllocated + (PRODUCT(SHAPE(cSpace%cGrid%aiD0Loc)) ) * i4bS
         do i = 0, cSpace%cGrid%iD0LocN-1
                 ! We have i = x + y * iDimX + z * iDimX * iDimY
-				j        = i + (cSpace%cGrid%iProcID) * cSpace%cGrid%iD0LocN; !THIS CHANGED BY A.M 21/09/2020
+				j        = i + (cSpace%cGrid%iProcID) * cSpace%cGrid%iD0LocN; 
                 cSpace%cGrid%aiD0Loc(1+i, 1)        = mod(j, cSpace%iDimX);;
                 j         = (j - mod(j, cSpace%iDimX)) / cSpace%iDimX;
                 

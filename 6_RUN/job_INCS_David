@@ -1,15 +1,15 @@
 #!/bin/bash
  
-#SBATCH --job-name=David_210deg_x_Lagr_Only_NFL
-#SBATCH --partition=general
+#SBATCH --job-name=David_0deg_x_Sym
+#SBATCH --partition=imphys,general
 #SBATCH --qos=short
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=54
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=500G
 #SBATCH --time=04:00:00
-#SBATCH --output=../7_RESULTS/David_210deg_x_Lagr_Only_NFL/INCS_David_210deg_x_Lagr_Only_NFL.out
-#SBATCH --error=../7_RESULTS/David_210deg_x_Lagr_Only_NFL/INCS_David_210deg_x_Lagr_Only_NFL.err
+#SBATCH --output=../7_RESULTS/David_0deg_x_Sym/INCS_David_0deg_x_Sym.out
+#SBATCH --error=../7_RESULTS/David_0deg_x_Sym/INCS_David_0deg_x_Sym.err
 ##SBATCH --exclusive
  
 module use /opt/insy/modulefiles
@@ -28,4 +28,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../3_COMPILED_FILES/INCS_Agis_David_210deg_x_Lagr_Only_NFL TESTNeumann_David_small_phased_array_planewave.in TESTNeumann ../7_RESULTS/David_210deg_x_Lagr_Only_NFL ../7_RESULTS/David_210deg_x_Lagr_Only_NFL
+srun ../3_COMPILED_FILES/INCS_Agis_David_0deg_x_Sym TESTNeumann_David_small_phased_array_planewave.in TESTNeumann ../7_RESULTS/David_0deg_x_Sym ../7_RESULTS/David_0deg_x_Sym

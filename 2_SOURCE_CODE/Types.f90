@@ -1,6 +1,6 @@
 MODULE Types
 	
-    USE MPI
+    USE MPI_F08
     USE OMP_LIB
     
     IMPLICIT NONE

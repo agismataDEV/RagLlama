@@ -9,7 +9,7 @@ an.medium.c0            = 1480;
 an.medium.kappa0        = 2*pi*an.medium.freq0/an.medium.c0;
 
 an.domain.dtpar         = 1/(2*an.medium.Fnyq*an.medium.freq0);
-an.domain.dims          = size(plin.data);
+an.domain.dims          = size(sim.rnd_var);
 an.domain.tpar          = [0:an.domain.dims(1)-1]*an.domain.dtpar;
 
 an.domain.dxpar         = an.domain.dtpar*an.medium.c0;
@@ -19,7 +19,7 @@ an.domain.xpar          = (an.domain.xstart+(0:an.domain.dims(2)-1))*an.domain.d
 an.depth                = 200;
 
 an.domain.beam          = 0;
-an.file.dirname         = file.dirname
+an.file.dirname         = file.dirname;
 % an.file.dirname         = '../David_210deg_x_Lagrangian_Only';
 an.file.focalplanename  = [ 'y' int2string_ICS(2) ];
 %% Symbolics
@@ -118,7 +118,7 @@ an.lagrangian(isnan(an.lagrangian))=0;
 %% PLOT RANDOM variables
 sim.title = ['Lagrangian, X-wave @ 21 deg, Focused'];
 
-an.filename        = [an.file.dirname '/' 'LagrangianPressure' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
+an.filename        = [an.file.dirname '/' 'ContrastSrc' int2string_ICS(1) '_' an.file.focalplanename int2string_ICS(an.domain.beam)];
 [sim.rnd_var]       = FieldLoad(an.filename);
 an.rnd_var          = sim.rnd_var(:,1,1)*0;-(plin.data(:,105,an.depth)).^2/medium.c0^2/medium.rho0/2;
 [an.FreqRange,sim.FreqSpect,an.FreqSpect] = Frequency(an, sim.rnd_var, an.rnd_var, an.depth, sim.title);
@@ -191,8 +191,9 @@ set(gca,'FontSize',20)
 set(gcf,'Color','white')
 %==================================================== FOCUSED
 figure('WindowState','maximized')
-length_z = 100;
-imagesc(an.domain.zpar(length_z:an.domain.dims(3) -length_z)*1E3,an.domain.xpar*1E3,squeeze(max(abs(sim_var(:,:,length_z:end-length_z)))));
+start_z = 100;
+end_z = an.domain.dims(3)-20;
+imagesc(an.domain.zpar(start_z:end_z)*1E3,an.domain.xpar*1E3,squeeze(max(abs(sim_var(:,:,start_z:end_z)))));
 
 xlabel('Z [mm]' )
 ylabel('X [mm]' )

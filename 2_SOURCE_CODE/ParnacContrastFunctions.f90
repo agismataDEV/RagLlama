@@ -49,7 +49,8 @@ MODULE ParnacContrastFunctions
   ReorderDistr0ToDistr1,ReorderDistr1ToDistr0, &
   ReorderDistr1ToDistr2,ReorderDistr2ToDistr1, &
   Distr2ObtainXYZBlock, Distr2PutXYZBlock,  &
-  Distr2ObtainYMirroredXYZBlock,Distr2FillYMirroredXYZBlock
+  Distr2ObtainYMirroredXYZBlock,Distr2FillYMirroredXYZBlock, &
+  Distr2PutYMirroredXYZBlock
   USE ParnacDataSpaceInit, ONLY : &
   InitSpace, InitGrid, SpaceInfo, DestructSpace, &
   GridDistr0CreateEmpty, GridDistr0Deallocate, &
@@ -11112,16 +11113,12 @@ MODULE ParnacContrastFunctions
 	
     integer(i8b)                      			 :: wrap_error_padX , wrap_error_padY, wrap_error_padZ, wrap_error_padFD, wrap_error_pad_MirrorY
     
-    complex(dpc), allocatable                    :: arBuffer1x(:), arBuffer1xC(:), arBuffer2xC(:) , dKvectorX(:)
-    complex(dpc), allocatable                    :: arBuffer1y(:), arBuffer1yC(:), arBuffer2yC(:) , dKvectorY(:)
-    complex(dpc), allocatable                    :: arBuffer1z(:), arBuffer1zC(:), arBuffer2zC(:) , dKvectorZ(:)
+    complex(dpc), allocatable                    :: arBuffer(:) , dKvectorX(:), dKvectorY(:), dKvectorZ(:)
     
 	real(dp)    , allocatable  					 :: dKvectorRealX(:) , dKvectorRealY(:) , dKvectorRealZ(:)
 	real(dp)    , allocatable			         :: arBuffer1square(:),arBuffer2square(:)
     
-    complex(dpc), allocatable   		      	 :: arBuffer1XYZ(:), arBuffer1XYZC(:), arBuffer2XYZC(:) , dKVectorRealXYZ(:)
-    
-	complex(dpc), allocatable			         :: dMultFactor(:), arBufferTemp(:)
+    complex(dpc), allocatable   		      	 :: dKVectorRealXYZ(:), dMultFactor(:)
     
     real(dp), allocatable                        :: dTaperSupportWindow(:),dTaperMaxFreqWindow(:),dTaperMaxFreqWindowP(:)
     real(dp)                                     :: dLeftBand, dRightBand, dFFTFactor, dDOmega
@@ -11172,15 +11169,17 @@ MODULE ParnacContrastFunctions
     iDimZ   = phi%cGrid%iD2ZL   !z dimensions
     iDimW   = iDimT/2 + 1
     
+    ! Here I use these variables in order to extend the domain for the spatial derivative
+    ! Moreover I take into consideration the case where the Y symmetry is used in the domain
 	wrap_error_padX = 0 ; wrap_error_padY = 0 ; wrap_error_padZ = 0; wrap_error_pad_MirrorY = 0;
-	if (cSpace%bYSymm .EQV. .TRUE.)  wrap_error_pad_MirrorY = iDimY
+	if (cSpace%bYSymm .EQV. .TRUE.)  wrap_error_pad_MirrorY = iDimY-1
     iDimX_Wrap = iDimX + wrap_error_padX   ! This is because zero padding is needed in order for the fft to be correct
     iDimY_Wrap = iDimY + wrap_error_padY  + wrap_error_pad_MirrorY
     iDimZ_Wrap = iDimZ + wrap_error_padZ 
     
-	ALLOCATE( arBuffer1x(iDimX_Wrap), arBuffer1xC(iDimX_Wrap), arBuffer2xC(iDimX_Wrap) , dKvectorX(iDimX_Wrap), dKvectorRealX(iDimX_Wrap))
-	ALLOCATE( arBuffer1y(iDimY_Wrap), arBuffer1yC(iDimY_Wrap), arBuffer2yC(iDimY_Wrap) , dKvectorY(iDimY_Wrap), dKvectorRealY(iDimY_Wrap))
-	ALLOCATE( arBuffer1z(iDimZ_Wrap), arBuffer1zC(iDimZ_Wrap), arBuffer2zC(iDimZ_Wrap) , dKvectorZ(iDimZ_Wrap), dKvectorRealZ(iDimZ_Wrap))
+	ALLOCATE(  dKvectorX(iDimX_Wrap), dKvectorRealX(iDimX_Wrap))
+	ALLOCATE(  dKvectorY(iDimY_Wrap), dKvectorRealY(iDimY_Wrap))
+	ALLOCATE(  dKvectorZ(iDimZ_Wrap), dKvectorRealZ(iDimZ_Wrap))
     
     dKvectorRealX = 0.0D0;
     dKvectorRealY = 0.0D0;
@@ -11228,7 +11227,7 @@ MODULE ParnacContrastFunctions
     
     call TransformT_sml(pcGrid)  
     call TransformT_sml(phi%cGrid)  
-	
+	! Do this for both phi and cSpace in order to have the same dimensions 
 	!============================================================================================================================================
     call PrintToLog("Compute the velocity potential",2)
     if (cModelParams.UseFreqTapering .EQV. .true.) then
@@ -11280,30 +11279,33 @@ MODULE ParnacContrastFunctions
     
     call DerivLookupInit(cModelParams%FDXOrder, iFDMinOrder, cDerivLookup, .false.)
 	iStart = 0 ;
-    call dfftw_plan_dft_1d(cSpace%cGrid%cTransforms%iPlanTransform1D    , iDimX_Wrap, arBuffer1X , arBuffer2XC, fftw_forward , fftw_estimate)
-    call dfftw_plan_dft_1d(cSpace%cGrid%cTransforms%iPlanTransform1D_inv , iDimX_Wrap, arBuffer2XC, arBuffer1XC, fftw_backward, fftw_estimate)
-    
-	ALLOCATE( arBuffer1square(iDimX), arBuffer2square(iDimX), arBufferTemp(iDimX) )
+	ALLOCATE( arBuffer1square(iDimX_Wrap), arBuffer2square(iDimX_Wrap), arBuffer(iDimX_Wrap) )
+    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D     , iDimX_Wrap, arBuffer, arBuffer , fftw_forward , fftw_estimate)
+    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D_inv , iDimX_Wrap, arBuffer, arBuffer , fftw_backward, fftw_estimate)
 
+    ! SpatialDerivative_w_wo_Ali functions gives the option to choose between FFT and FD Scheme
+    ! Initially validation was tested and in order to be accurate, an agreement between those
+    ! methods should have been checked.
     do iIndex = 0,pcGrid%iD2LocSize/pcGrid%iD2XL-1
-       arBuffer1x = 0.0D0; 
-       arBuffer1x = phi%cGrid%pacD2(iStart+1:iStart+iDimX)
+       arBuffer = phi%cGrid%pacD2(iStart+1:iStart+iDimX)
        
-       call SpatialDerivative_w_wo_Ali(cSpace, phiSliceMirror, cDerivLookup, iDimX_Wrap, arBuffer1x, dKvectorX, .true., 1)
+        ! Each complex value stores two values of t, so we have to differentiate them both
+        ! As differentiation is a simple scalar multiplication and addition,
+        ! this happens automatically (real -> real, imag -> imag)
+       call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorX, .false., 1)
 	   
 	   arBuffer1square = real(pcGrid%pacD2(iStart+1:iStart+iDimX),dp)
 	   arBuffer2square = dimag(pcGrid%pacD2(iStart+1:iStart+iDimX))
-       arBufferTemp    = arBuffer1X
 	   
-       pcGrid%pacD2(iStart+1:iStart+iDimX) = -(arBuffer1square**2 + im * arBuffer2square**2) + (real(arBufferTemp,dp)**2 + im * dimag(arBufferTemp)**2)
+       pcGrid%pacD2(iStart+1:iStart+iDimX) = -(arBuffer1square**2 + im * arBuffer2square**2) + (real(arBuffer,dp)**2 + im * dimag(arBuffer)**2)
 	   
        iStart=iStart + phi%cGrid%iD2YS
     end do
-    call dfftw_destroy_plan(cSpace%cGrid%cTransforms%iPlanTransform1D )
-    call dfftw_destroy_plan(cSpace%cGrid%cTransforms%iPlanTransform1D_inv )
-	DEALLOCATE( arBufferTemp )
-	
-	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D )
+    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D_inv )
+	DEALLOCATE( arBuffer, arBuffer1square, arBuffer2square)
+    
+    call MPI_BARRIER(MPI_COMM_WORLD, iErr)
 	write(*,*) "X,",MAXVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
 	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
 	write(*,*) "X_MIN,",MINVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
@@ -11313,10 +11315,10 @@ MODULE ParnacContrastFunctions
 	
     call PrintToLog("Multiply the velocity potential with the ky",2)
     
-    call dfftw_plan_dft_1d(cSpace%cGrid%cTransforms%iPlanTransform1D     , iDimY_Wrap, arBuffer1y , arBuffer2yC, fftw_forward , fftw_estimate)
-    call dfftw_plan_dft_1d(cSpace%cGrid%cTransforms%iPlanTransform1D_inv , iDimY_Wrap, arBuffer2yC, arBuffer1yC, fftw_backward, fftw_estimate)
-    
-	ALLOCATE( arBufferTemp(iDimY) )
+	ALLOCATE(   arBuffer(iDimY_Wrap))
+    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D     , iDimY_Wrap, arBuffer, arBuffer , fftw_forward , fftw_estimate)
+    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D_inv , iDimY_Wrap, arBuffer, arBuffer , fftw_backward, fftw_estimate)
+    arBuffer = 0;
 	
     do iLt = 0, phi%cGrid%iD2LocN-1 ! This is the loop for time instants stored locally
 	
@@ -11328,14 +11330,13 @@ MODULE ParnacContrastFunctions
           
           ! Now we calculate dxk p^2 so that afterwards we can apply the derivative to this term
           do iIndex = 0,iDimZ-1 ! This is the loop for z points
-			 arBuffer1y = 0.0D0
-			 arBuffer1y   = phi%cGrid%pacD2( iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS)
-             
-             call SpatialDerivative_w_wo_Ali(cSpace, phiSliceMirror, cDerivLookup, iDimY_Wrap, arBuffer1y, dKvectorY, .true., 1)
-             
-			 arBufferTemp = arBuffer1y
+			 arBuffer(1:iDimY)   = phi%cGrid%pacD2( iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS)
+             if (cSpace%bYSymm == .true.) then;  arBuffer(iDimY+1:iDimY_Wrap) = arBuffer(2:iDimY); arBuffer(1:iDimY) = arBuffer(iDimY_Wrap:iDimY:-1); endif
+             call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorY, .false., 1)
+            
+             if (cSpace%bYSymm == .true.) arBuffer(1:iDimY) = arBuffer(iDimY:iDimY_Wrap) 
              pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS) = &
-			 pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS) + (real(arBufferTemp,dp)**2 + im * dimag(arBufferTemp)**2) 
+			 pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS) + (real(arBuffer(1:iDimY),dp)**2 + im * dimag(arBuffer(1:iDimY))**2) 
 														
              iStart		= iStart 	+	phi%cGrid%iD2ZS
              
@@ -11344,9 +11345,9 @@ MODULE ParnacContrastFunctions
           
        end do
 	enddo
-    call dfftw_destroy_plan(cSpace%cGrid%cTransforms%iPlanTransform1D )
-    call dfftw_destroy_plan(cSpace%cGrid%cTransforms%iPlanTransform1D_inv)
-	DEALLOCATE(arBufferTemp )
+    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D )
+    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D_inv)
+	DEALLOCATE( arBuffer )
 	
 	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
 	write(*,*) "Y,",MAXVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
@@ -11358,14 +11359,10 @@ MODULE ParnacContrastFunctions
     ! ! ! ============================= COMPUTE THE Z COMPONENT ============================================================
     call PrintToLog("Multiply the velocity potential with the kz",2) 	
       
-    call dfftw_plan_dft_1d(cSpace%cGrid%cTransforms%iPlanTransform1D     , iDimZ_Wrap, arBuffer1z , arBuffer2zC, fftw_forward , fftw_estimate + fftw_unaligned)
-    call dfftw_plan_dft_1d(cSpace%cGrid%cTransforms%iPlanTransform1D_inv , iDimZ_Wrap, arBuffer2zC, arBuffer1zC, fftw_backward, fftw_estimate + fftw_unaligned)
-    
-	ALLOCATE(   arBufferTemp(iDimZ))
-	
-	! Each complex value stores two values of t, so we have to differentiate them both
-	! As differentiation is a simple scalar multiplication and addition,
-	! this happens automatically (real -> real, imag -> imag)
+	ALLOCATE(   arBuffer(iDimZ_Wrap)  )
+    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D     , iDimZ_Wrap, arBuffer, arBuffer , fftw_forward , fftw_estimate + fftw_unaligned)
+    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D_inv , iDimZ_Wrap, arBuffer, arBuffer , fftw_backward, fftw_estimate + fftw_unaligned)
+    	
 	do iLt = 0, phi%cGrid%iD2LocN - 1! This is the loop for time instants stored locally
        
 	   ! This is the index that takes into account for the different starting point corresponding to a ginve time index   
@@ -11374,20 +11371,19 @@ MODULE ParnacContrastFunctions
         do iLx = 0, iDimX * iDimY - 1
             
           iStart  = 0 + iLx + Timestart  ! This is the index for all the possible x,y for the same z
-          arBuffer1z = 0.0D0
-          arBuffer1z = phi%cGrid%pacD2(iStart+1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS)
-          call SpatialDerivative_w_wo_Ali(cSpace, phiSliceMirror, cDerivLookup, iDimZ_Wrap, arBuffer1z, dKvectorZ, .true., 1)
-          
-		  arBufferTemp = arBuffer1z
+          arBuffer = phi%cGrid%pacD2(iStart+1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS)
+          ! Compute the 1st spatial derivative  in the z direction
+          call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorZ, .false., 1)
+            
           pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS)  = &
-		  pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS) + (real(arBufferTemp,dp)**2 + im * dimag(arBufferTemp)**2)
+		  pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS) + (real(arBuffer,dp)**2 + im * dimag(arBuffer)**2)
             
         end do   
 	enddo
-    call dfftw_destroy_plan(cSpace%cGrid%cTransforms%iPlanTransform1D )
-    call dfftw_destroy_plan(cSpace%cGrid%cTransforms%iPlanTransform1D_inv )
+    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D )
+    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D_inv )
+	DEALLOCATE( arBuffer )
     
-	DEALLOCATE( arBufferTemp )
 	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
 	write(*,*) "Lagrangian,",MAXVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
 	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
@@ -11509,21 +11505,34 @@ MODULE ParnacContrastFunctions
 			enddo
 		enddo
 	enddo 
+    
     call DerivLookupDestroy(cDerivLookup);  
     call DerivLookupInit(cModelParams%FDXOrder, iFDMinOrder, cDerivLookup, .true.)
-              
-    dFFTFactor	= 1.0D0/real(phiSliceMirror%cGrid%iD1GlobN,dp);	
+    
 	do iLt = 0, phi%cGrid%iD2LocN-1 ! This is the loop for time instants stored locally
 		
 		write (acTemp, '("Start iOmega ", I5 ," out of ", I5)') iLt,  phi%cGrid%iD2LocN-1
 		call PrintToLog(acTemp, 3);
 		call PrintToLog("Obtain Mirrored Field slice", 4)
-		call Distr2ObtainXYZBlock(phi%cGrid, phiSliceMirror%cGrid,  iLt)
-        if (cSpace%bYSymm .EQV. .TRUE.) call Distr2FillYMirroredXYZBlock(phi%cGrid, phiSliceMirror%cGrid,  iLt)
-        call SpatialDerivative_w_wo_Ali(cSpace, phiSliceMirror, cDerivLookup, phiSliceMirror%cGrid%iD1GlobN, phiSliceMirror%cGrid%pacD2, dKVectorRealXYZ, .false., 2)
+        ! If symmetry is used, the domain is only the half of the total, so a filling of the rest of the array should take place
+        if (cSpace%bYSymm .EQV. .TRUE.) then
+            call Distr2FillYMirroredXYZBlock(phi%cGrid, phiSliceMirror%cGrid,  iLt)
+        else
+            ! Implement this in order to fill the array with the values of the current domain
+            call Distr2ObtainXYZBlock(phi%cGrid, phiSliceMirror%cGrid,  iLt)
+        endif
         
+        ! Compute the 2nd spatial derivative either using FFT or with FD
+        call SpatialDerivative_w_wo_Ali(phiSliceMirror, cDerivLookup, arBuffer, dKVectorRealXYZ, .true., 2)
+         
         call PrintToLog("Put Field slice", 4)
-        call Distr2PutXYZBlock(phiSliceMirror%cGrid, phi%cGrid,  iLt)
+        ! Return the part of the array that is of interest to the initial phi space.
+         if (cSpace%bYSymm .EQV. .TRUE.) then
+            call Distr2PutYMirroredXYZBlock(phiSliceMirror%cGrid, phi%cGrid,  iLt)
+        else
+            ! Implement this in order to fill the array with the values of the current domain
+            call Distr2PutXYZBlock(phiSliceMirror%cGrid, phi%cGrid,  iLt)
+        endif
 	enddo
     call DerivLookupDestroy(cDerivLookup);
     call DestructSpace(phiSliceMirror)
@@ -11584,9 +11593,9 @@ MODULE ParnacContrastFunctions
 	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
 	
 	call DestructSpace(phi) 
-	DEALLOCATE( arBuffer1x, arBuffer1xC, arBuffer2xC , dKvectorX, dKvectorRealX)
-	DEALLOCATE( arBuffer1y, arBuffer1yC, arBuffer2yC , dKvectorY, dKvectorRealY)
-	DEALLOCATE( arBuffer1z, arBuffer1zC, arBuffer2zC , dKvectorZ, dKvectorRealZ)
+	DEALLOCATE( dKvectorX, dKvectorRealX)
+	DEALLOCATE( dKvectorY, dKvectorRealY)
+	DEALLOCATE( dKvectorZ, dKvectorRealZ)
     DEALLOCATE(dTaperSupportWindow,dTaperMaxFreqWindow,dMultFactor)
     
 	write(*,*) "pc, end",MAXVAL(pcGrid%parD0), cSpace%cGrid%iProcID
@@ -11626,7 +11635,7 @@ MODULE ParnacContrastFunctions
     
   END SUBROUTINE LagrangianDensity_Ali
 
-  SUBROUTINE SpatialDerivative_w_wo_Ali(cSpace, phiSliceMirror, cDerivLookup, iLenXYZ, arBuffer1, dKVectorXYZ, Alias, Order)
+  SUBROUTINE SpatialDerivative_w_wo_Ali(cSpace, cDerivLookup, arBuffer, dKVectorXYZ, Alias, Order)
   
     !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_plan_dft_1d_"        :: dfftw_plan_dft_1d
     !Commented for Linux  !DEC$ ATTRIBUTES DLLIMPORT, ALIAS: "dfftw_execute_"            :: dfftw_execute   
@@ -11659,11 +11668,10 @@ MODULE ParnacContrastFunctions
     !                              is determined
     !
     type(Space), target, intent(inout)          :: cSpace 
-	type(Space), intent(inout)                  :: phiSliceMirror
-    type(DerivLookup), intent(inout)            :: cDerivLookup
-    complex(dpc), intent(inout)                 :: arBuffer1(:) , dKVectorXYZ(:)
+    type(DerivLookup), intent(in)               :: cDerivLookup
+    complex(dpc), intent(inout)                 :: arBuffer(:) , dKVectorXYZ(:)
     logical(lgt), intent(in)                    :: Alias
-    integer(i8b)                                :: Order
+    integer(i8b), intent(in)                    :: Order
     
     
     ! *****************************************************************************
@@ -11679,38 +11687,33 @@ MODULE ParnacContrastFunctions
     !   arBuffer1           dp    Temporary buffer containing a spatial(x,y,z) trace
     !   arBuffer2           dp    Temporary buffer containing a spatial(x,y,z) trace
     !
-	
-    integer(i4b)                                 :: iErr;
-    character(len=1024)                          :: acTemp, filename
-	
-    integer(i8b)                                 :: iLenXYZ, iDimT, iDimW, iDimX_Wrap, iDimY_Wrap, iDimZ_Wrap
-    complex(dpc)                                 :: arBuffer2C(iLenXYZ), arBuffer1C(iLenXYZ)
+		
+    real(dp)                                     :: dFFTFactor
+    integer(i8b)                                 :: iLenXYZ
     
-    
-    real(dp)                                     :: dLeftBand, dRightBand, dFFTFactor, dDOmega
-    
-    
+    iLenXYZ = size(arBuffer) ; 
+    dFFTFactor	= 1.0D0/real(cSpace%cGrid%iD1GlobN,dp);	
     if (Alias) then
         if(Order == 1) then        
-            call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D,arBuffer1,arBuffer2C)
-            arBuffer2C = arBuffer2C * dKVectorXYZ / real(iLenXYZ,dp)
-            call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D_inv ,arBuffer2C,arBuffer1C)
+            call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D,arBuffer,arBuffer)
+            arBuffer = arBuffer * dKVectorXYZ / real(iLenXYZ,dp)
+            call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D_inv ,arBuffer,arBuffer)
         else
             call PrintToLog("Transform Field slice in XYZ", 4)
-            call TransformXYZ(phiSliceMirror%cGrid, .true.)
+            call TransformXYZ(cSpace%cGrid, .true.)
             call PrintToLog("Multiply Result with k vector", 4)
-            phiSliceMirror%cGrid%pacD2 = -dKVectorXYZ * phiSliceMirror%cGrid%pacD2 * dFFTFactor
+            cSpace%cGrid%pacD2 = -dKVectorXYZ * cSpace%cGrid%pacD2 * dFFTFactor
             call PrintToLog("Inverse transform Field slice in XYZ", 4)
-            call TransformXYZInv(phiSliceMirror%cGrid, .true.)
+            call TransformXYZInv(cSpace%cGrid, .true.)
         endif
     else
         if(Order == 1) then
-            call DerivativeComplex(arBuffer1/cMediumParams%c0,arBuffer1C,iLenXYZ, cSpace.dDx, cDerivLookup.arWeights, cDerivLookup.aiPoints)
+            call DerivativeComplex(arBuffer/cMediumParams%c0,arBuffer,iLenXYZ, cSpace.dDx, cDerivLookup.arWeights, cDerivLookup.aiPoints)
         else
-            call DerivativeComplex(phiSliceMirror%cGrid%pacD2/cMediumParams%c0**2,phiSliceMirror%cGrid%pacD2,phiSliceMirror%cGrid%iD1GlobN, cSpace.dDx**2, cDerivLookup.arWeights, cDerivLookup.aiPoints)
+            call DerivativeComplex(cSpace%cGrid%pacD2/cMediumParams%c0**2,cSpace%cGrid%pacD2,cSpace%cGrid%iD1GlobN, cSpace.dDx**2, cDerivLookup.arWeights, cDerivLookup.aiPoints)
         endif
     endif
-    arBuffer1 = arBuffer1C
+    
     END SUBROUTINE SpatialDerivative_w_wo_Ali
   
   SUBROUTINE LagrangianDensity_Simpl_Ali(cSpace)
@@ -12240,39 +12243,5 @@ MODULE ParnacContrastFunctions
     ! call DestructSpace(cSpaceTemp)
       
   END SUBROUTINE LagrangianDensity_Simpl_Ali
-  
-  
-	SUBROUTINE INTEGRATE(cSpace,FUNC,N,xmin,xmax,S)
-    type(Space), target, intent(inout)::	cSpace
-    integer(i8b),INTENT(IN) :: N 
-	REAL(dp),INTENT(IN) :: FUNC(:), xmax, xmin
-	REAL(dp), INTENT(OUT) :: S(size(FUNC))
-    real(dp)			 :: x(size(FUNC)), x_interp(N), dx, dx_interp, FUNC_INTERP(N), S_INTERP(N)
-    integer(i8b) :: i
-	
-	dx_interp = (xmax-xmin)*1.0D0/real(N-1)
-	
-	if (N .NE. size(FUNC,1)) then
-	
-		x_interp = [(xmin + dx*(i-1), i = 1,N)]
-		dx = (xmax-xmin)*1.0D0/real(cSpace%iDimT-1)
-		x = [(xmin + dx*(i-1), i = 1,cSpace%iDimT)]
-		call INTERP1D(x , FUNC, x_interp, FUNC_INTERP )
-        ! call INTERP1DFREQ(FUNC,FUNC_INTERP, cSpace,0)
-		s = 0.0_dp
-		do i=1,N
-			S_INTERP(i) = S_INTERP(i) - FUNC_INTERP(i)*dx_interp/cMediumParams%rho0
-		enddo
-		call INTERP1D(x_interp, S_INTERP, x, S )
-		
-	else
-	
-		S = 0.0_dp
-		do i=2,N
-			S(i) = S(i-1) - FUNC(i)*dx_interp/cMediumParams%rho0
-		enddo
-		
-	endif
-	
-	END SUBROUTINE 
+
   END MODULE ParnacContrastFunctions
