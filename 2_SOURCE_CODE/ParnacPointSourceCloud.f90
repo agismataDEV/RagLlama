@@ -369,6 +369,9 @@ CONTAINS
     ! This is to produce results on sufficient gridpoints to have accurate results. By increasing the size of p (even numbers) , the accuracy increases
     p = (/ (i, i=-INT(CEILING(size(p,1)*1.0D0/2)),INT(FLOOR(size(p,1)*1.0D0/2-1))) /) ; 
     NeighbGridPoints= RESHAPE( (/ ( ( ( p(i),p(j),p(l) , i=1,size(p,1)) , j =1,size(p,1)), l =1,size(p,1)) /) ,(/ size(p,1)**3,3 /),order=(/2,1/) )
+
+    call dfftw_plan_dft_r2c_1d(pcGrid%cTransforms%iPlanTransform1D     , iDimT, RealPressure , RealPressureC , fftw_estimate + fftw_unaligned)
+    call dfftw_plan_dft_c2r_1d(pcGrid%cTransforms%iPlanTransform1D_inv , iDimT, RealPressureC, RealPressure  , fftw_estimate + fftw_unaligned)
 	
     write(acTemp,"('Calculating Trilinear Interpolation') ");    call PrintToLog(acTemp,2)
     do iBubble =  1,BubbleParams%N
@@ -431,6 +434,79 @@ CONTAINS
           XYZ_i2 = iBeamIndexNGP(:,3)*iDimY*iDimX+iBeamIndexNGP(:,2)*iDimX+iBeamIndexNGP(:,1)
           NeighbGPIndex(i_neighbgp+1:i_neighbgp+size(p,1)**3) = XYZ_i2
           i_neighbgp = i_neighbgp + size(p,1)**3
+		  
+		  if (XYZIndex>=0 .AND. XYZIndex<pcGrid%iD0LocN) then
+			  ! Find the scatterer position and do inside if all the necessary actions because of spatial decomposition
+			  ! Place the Bubble in respect to i_loc for later use for storing its values to a file
+			  RealPressure = pcGrid%parD0(1+XYZIndex*iDimT: (XYZIndex+1)*iDimT);   ! Array buffer with length size of iDimT for every XYZ position
+			  
+				 do i = 1,size(ones,1)
+					! Save to temp_globloc which is a temporary buffer the position and pressure of the bubbles that are not positioned close to
+					! each processor's grid.
+					RealPressure_i1(i,:) = 1D-30;  GlobalPos(i,:) = 1D-30; temp_globloc = 1D-30;
+					temp_globloc = LocPres(i_loc,1+(3+iDimT)*(i-1):(3+iDimT)*i)
+
+					! If some bubble is positioned close to the boundaries, receive the sent message
+					if (maxval(ABS(temp_globloc(4:iDimT+3)))<1.0D-20 .OR. maxval(abs(dBubbleLocationN(iBubble,:) - temp_globloc(1:3) ))>size(trilin,1)/2*cSpace%dDx)then
+					   xyz_factor = floor(dBubbleLocationN(iBubble,:) - dGlobXYZ(:))+1.0D0/2.0D0 ;
+					   iBeamIndexN = iBeamIndex + ones(i,:) + int(xyz_factor+1.0D0/2.0D0)
+					   BubbleProc = (iBeamIndexN(3)*iDimY*iDimX+iBeamIndexN(2)*iDimX+iBeamIndexN(1))/pcGrid%iD0LocN
+					   call MPI_Recv(temp_globloc, ibDimT+3, MPI_DOUBLE_PRECISION, BubbleProc, INT((iBubble-1)*size(ones,1)+i),MPI_COMM_WORLD,iStat,iErr) ! IMprove with MPI_Irecv
+					endif
+
+					! Assign the values of the temp_globloc to the parameters that will be used for the interpolation
+					GlobalPos(i,:) = temp_globloc(1:3)
+					RealPressure_i1(i,:) =temp_globloc(4:iDimT+3)
+
+					! if Location is transferred in a correct way. If the difference with the bubble location is bigger than a space step,
+					! then it means that the transfer did not succeed.
+					log_isnan = sum(isnan(GlobalPos(i,:))*-1) + sum( isnan(RealPressure_i1(i,:))*-1)
+					if ( maxval(abs(dBubbleLocationN(iBubble,:) - GlobalPos(i,:))) > size(trilin,1)/2*cSpace%dDx .OR. maxval(ABS(RealPressure_i1(i,:)))<1E-20 .OR. log_isnan>0) then
+					   write(acTemp,"('Error in Trilinear Interpolation in Location , Bubble No. ', I7, ' Neighbouring ',I5, ' .')") iBubble, i
+					   call PrintToLog(acTemp,1) 
+					   write(*,*) "Exists : " , exists , XYZIndex ,pcGrid%iProcID, maxval(abs(dBubbleLocationN(iBubble,:) - GlobalPos(i,:))) > size(trilin,1)/2*cSpace%dDx, maxval(RealPressure_i1(i,:))<1D-20, log_isnan
+					   call MPI_Abort(MPI_COMM_WORLD, ErrCode ,iErr)
+					endif
+
+					RealPressure_Own(i,:) = 0.0D0;
+					diff(i,:) = dBubbleLocationN(iBubble,:) - GlobalPos(i,:)
+
+					iTargetIndex(3) = nint(GlobalPos(i,3)/cSpace%dDx) 
+					iTargetIndex(1) = nint(GlobalPos(i,1)/cSpace%dDx) - iBeamOffsetX(cSpace,iBeamIndex(3))
+					iTargetIndex(2) = nint(GlobalPos(i,2)/cSpace%dDx) - iBeamOffsetY(cSpace,iBeamIndex(3))
+					
+					if (exists_loc) call GREENS1DFREQ(tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT), RealPressure_Own(i,:), cSpace, iTargetIndex, diff(i,:))
+					RealPressure_Own(i,:) = RealPressure_Own(i,:) * (cModelParams%freq0/cMediumParams%c0) * (dK_c/pi)**3 
+					
+					! if ( MAXVAL(ABS(dBubbleLocationN(iBubble,:) - & 
+					! ( (/-0.0366470588235294 ,   -0.0366470588235294 ,    5.12194117647059/)/dLambdaMM  - (/cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ /)* cSpace%dDx))) < 1E-7) then! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
+					! write(*,*) "===================================" 
+					! write(*,*) iTargetIndex - iBeamIndex
+					! write(*,*) RealPressure_Own(i,:)	
+					! write(*,*) "===================================" 
+					! write(*,*) iTargetIndex - iBeamIndex
+					! write(*,*) RealPressure_i1(i,:)
+					! endif
+					RealPressure_i1(i,:) = RealPressure_i1(i,:) - RealPressure_Own(i,:)
+					! endif		  
+					! This is for the non-comoving time window. There should be a time shift 
+					if(cSpace%dTant ==0) RealPressure_i1(i,1:iDimT-(ones(i,3)+size(trilin,1)/2)) =  RealPressure_i1(i,1+ones(i,3)+size(trilin,1)/2:iDimT)
+				 enddo
+				 ! Do the 3D interpolation in order to acquire the pressure , RealPressureFinal    
+				 call INTERP3D(GlobalPos,RealPressure_i1,dBubbleLocationN(iBubble,:),Interp_PressureBL)
+				 RealPressure  = Interp_PressureBL
+				 
+				 ! This is for the non-comoving time window. There should be a time shift 
+				 if (cSpace%dTant==0) then
+					call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D,RealPressure,RealPressureC)
+					RealPressureC = RealPressureC * exp(-im*dMultFactor*diff(1,3))  / real(iDimT,dp)  !* dTaperingWindow(iDimT,1.0_dp/(2*iDimT*cSpace%dDt),0.0D0,0.1D0)
+					call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D_inv ,RealPressureC,RealPressure)
+				 endif
+
+			  tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT) = RealPressure;
+			  temploc(3*i_loc-2:3*i_loc) = [dBubbleLocationN(iBubble,1),dBubbleLocationN(iBubble,2),dBubbleLocationN(iBubble,3)] 
+			  BubbleID(i_loc) = iBubble  
+		 endif
        endif
 	   
     enddo
@@ -446,105 +522,6 @@ CONTAINS
 
     !************************************* 3D INTEPR  **************************************************
     call PrintToLog("Calculating Bubble Contrast",2)
-
-    call dfftw_plan_dft_r2c_1d(pcGrid%cTransforms%iPlanTransform1D     , iDimT, RealPressure , RealPressureC , fftw_estimate + fftw_unaligned)
-    call dfftw_plan_dft_c2r_1d(pcGrid%cTransforms%iPlanTransform1D_inv , iDimT, RealPressureC, RealPressure  , fftw_estimate + fftw_unaligned)
-    i_loc = 0
-	
-    do iBubble =  1,BubbleParams%N
-       ! Determine Beam Index of the point source
-       iBeamIndex(3) = nint(dBubbleLocationN(iBubble,3)/cSpace%dDx)
-       iBeamIndex(1) = nint(dBubbleLocationN(iBubble,1)/cSpace%dDx) - iBeamOffsetX(cSpace,iBeamIndex(3))
-       iBeamIndex(2) = nint(dBubbleLocationN(iBubble,2)/cSpace%dDx) - iBeamOffsetY(cSpace,iBeamIndex(3))
-
-       ! Find the Index in the pcGrid%aiD0Loc of the BubbleLocation
-       XYZIndex = iBeamIndex(3)*iDimY*iDimX+iBeamIndex(2)*iDimX+iBeamIndex(1)-pcGrid%iProcID * pcGrid%iD0LocN
-       ! Check if the cpu domain contains this scatterer
-       if (XYZIndex>=0 .AND. XYZIndex<pcGrid%iD0LocN) then
-		  i_loc = i_loc+1
-          ! Find the scatterer position and do inside if all the necessary actions because of spatial decomposition
-          ! Place the Bubble in respect to i_loc for later use for storing its values to a file
-          RealPressure = pcGrid%parD0(1+XYZIndex*iDimT: (XYZIndex+1)*iDimT);   ! Array buffer with length size of iDimT for every XYZ position
-
-          ! Determine current location in global grid
-          dGlobXYZ(1) = (iBeamIndex(1)  + iBeamOffsetX(cSpace,iBeamIndex(3))) * cSpace%dDx
-          dGlobXYZ(2) = (iBeamIndex(2)  + iBeamOffsetY(cSpace,iBeamIndex(3))) * cSpace%dDx
-          dGlobXYZ(3) = (iBeamIndex(3)  ) * cSpace%dDx
-
-          ! Compare the global coordinates with the scatterer location
-          dRadius(1) = sqrt(sum((dGlobXYZ-dBubbleLocationN(iBubble,:))**2))
-		  
-          if (dRadius(1)>1.0D-10) then 
-             do i = 1,size(ones,1)
-                ! Save to temp_globloc which is a temporary buffer the position and pressure of the bubbles that are not positioned close to
-                ! each processor's grid.
-                RealPressure_i1(i,:) = 1D-30;  GlobalPos(i,:) = 1D-30; temp_globloc = 1D-30;
-                temp_globloc = LocPres(i_loc,1+(3+iDimT)*(i-1):(3+iDimT)*i)
-
-                ! If some bubble is positioned close to the boundaries, receive the sent message
-                if (maxval(ABS(temp_globloc(4:iDimT+3)))<1.0D-20 .OR. maxval(abs(dBubbleLocationN(iBubble,:) - temp_globloc(1:3) ))>size(trilin,1)/2*cSpace%dDx)then
-                   xyz_factor = floor(dBubbleLocationN(iBubble,:) - dGlobXYZ(:))+1.0D0/2.0D0 ;
-                   iBeamIndexN = iBeamIndex + ones(i,:) + int(xyz_factor+1.0D0/2.0D0)
-                   BubbleProc = (iBeamIndexN(3)*iDimY*iDimX+iBeamIndexN(2)*iDimX+iBeamIndexN(1))/pcGrid%iD0LocN
-                   call MPI_Recv(temp_globloc, ibDimT+3, MPI_DOUBLE_PRECISION, BubbleProc, INT((iBubble-1)*size(ones,1)+i),MPI_COMM_WORLD,iStat,iErr) ! IMprove with MPI_Irecv
-                endif
-
-                ! Assign the values of the temp_globloc to the parameters that will be used for the interpolation
-                GlobalPos(i,:) = temp_globloc(1:3)
-                RealPressure_i1(i,:) =temp_globloc(4:iDimT+3)
-
-                ! if Location is transferred in a correct way. If the difference with the bubble location is bigger than a space step,
-                ! then it means that the transfer did not succeed.
-                log_isnan = sum(isnan(GlobalPos(i,:))*-1) + sum( isnan(RealPressure_i1(i,:))*-1)
-                if ( maxval(abs(dBubbleLocationN(iBubble,:) - GlobalPos(i,:))) > size(trilin,1)/2*cSpace%dDx .OR. maxval(ABS(RealPressure_i1(i,:)))<1E-20 .OR. log_isnan>0) then
-                   write(acTemp,"('Error in Trilinear Interpolation in Location , Bubble No. ', I7, ' Neighbouring ',I5, ' .')") iBubble, i
-                   call PrintToLog(acTemp,1) 
-                   write(*,*) "Exists : " , exists , XYZIndex ,pcGrid%iProcID, maxval(abs(dBubbleLocationN(iBubble,:) - GlobalPos(i,:))) > size(trilin,1)/2*cSpace%dDx, maxval(RealPressure_i1(i,:))<1D-20, log_isnan
-                   call MPI_Abort(MPI_COMM_WORLD, ErrCode ,iErr)
-                endif
-
-                RealPressure_Own(i,:) = 0.0D0;
-                diff(i,:) = dBubbleLocationN(iBubble,:) - GlobalPos(i,:)
- 
-                iTargetIndex(3) = nint(GlobalPos(i,3)/cSpace%dDx) 
-                iTargetIndex(1) = nint(GlobalPos(i,1)/cSpace%dDx) - iBeamOffsetX(cSpace,iBeamIndex(3))
-                iTargetIndex(2) = nint(GlobalPos(i,2)/cSpace%dDx) - iBeamOffsetY(cSpace,iBeamIndex(3))
-				
-                if (exists_loc) call GREENS1DFREQ(tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT), RealPressure_Own(i,:), cSpace, iTargetIndex, diff(i,:))
-				RealPressure_Own(i,:) = RealPressure_Own(i,:) * (cModelParams%freq0/cMediumParams%c0) * (dK_c/pi)**3 
-				
-                ! if ( MAXVAL(ABS(dBubbleLocationN(iBubble,:) - & 
-                ! ( (/-0.0366470588235294 ,   -0.0366470588235294 ,    5.12194117647059/)/dLambdaMM  - (/cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ /)* cSpace%dDx))) < 1E-7) then! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-                ! write(*,*) "===================================" 
-                ! write(*,*) iTargetIndex - iBeamIndex
-                ! write(*,*) RealPressure_Own(i,:)	
-                ! write(*,*) "===================================" 
-                ! write(*,*) iTargetIndex - iBeamIndex
-                ! write(*,*) RealPressure_i1(i,:)
-                ! endif
-                RealPressure_i1(i,:) = RealPressure_i1(i,:) - RealPressure_Own(i,:)
-                ! endif		  
-                ! This is for the non-comoving time window. There should be a time shift 
-                if(cSpace%dTant ==0) RealPressure_i1(i,1:iDimT-(ones(i,3)+size(trilin,1)/2)) =  RealPressure_i1(i,1+ones(i,3)+size(trilin,1)/2:iDimT)
-             enddo
-             ! Do the 3D interpolation in order to acquire the pressure , RealPressureFinal    
-             call INTERP3D(GlobalPos,RealPressure_i1,dBubbleLocationN(iBubble,:),Interp_PressureBL)
-             RealPressure  = Interp_PressureBL
-			 
-             ! This is for the non-comoving time window. There should be a time shift 
-             if (cSpace%dTant==0) then
-                call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D,RealPressure,RealPressureC)
-                RealPressureC = RealPressureC * exp(-im*dMultFactor*diff(1,3))  / real(iDimT,dp)  !* dTaperingWindow(iDimT,1.0_dp/(2*iDimT*cSpace%dDt),0.0D0,0.1D0)
-                call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D_inv ,RealPressureC,RealPressure)
-             endif
-          endif
-
-          tempcon(1+(i_loc-1)*iDimT:i_loc*iDimT) = RealPressure;
-          temploc(3*i_loc-2:3*i_loc) = [dBubbleLocationN(iBubble,1),dBubbleLocationN(iBubble,2),dBubbleLocationN(iBubble,3)] 
-          BubbleID(i_loc) = iBubble  
-       endif
-    enddo
-
     call dfftw_destroy_plan(pcGrid%cTransforms%iPlanTransform1D )
     call dfftw_destroy_plan(pcGrid%cTransforms%iPlanTransform1D_inv )
     ! Deallocate to save memory
