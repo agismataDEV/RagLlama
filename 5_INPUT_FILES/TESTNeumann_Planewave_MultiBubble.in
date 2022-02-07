@@ -121,7 +121,7 @@ gaussian
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-5.000000E+005	*** No. of Bubbles consisting the cluster
+5.000000E+003	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
@@ -132,7 +132,7 @@ monodisperse
 10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
-close
+all
 ***************************
 *** Residuals Directory ***
 ***************************

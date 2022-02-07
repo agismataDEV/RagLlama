@@ -2,7 +2,7 @@
 % clear all
 % fclose('all')
 % close all;
-for slicenum1 = [4]%[12,3,4,5,6]
+for slicenum1 = [2]%[12,3,4,5,6]
     
     clearvars -except slicenum1 atten atten_fund Loc Press_all Press_close
     %     close all

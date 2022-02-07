@@ -58,7 +58,7 @@ domain.symmetry             = 0;
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1MBs_Validation_sinc_all';
 file.dirname             = '../test/1E3PS_A78_2E4MBs';
-file.dirname             = '../test/PW_1LS';
+file.dirname             = '../test/PW_A1E5_5E3MBs_2';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 

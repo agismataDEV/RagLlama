@@ -222,18 +222,6 @@ if (Bubble.N <=10 && Bubble.N>0)
     omega       = [omega(omega>=0) omega(omega<0)];
     omega       = repmat(omega,Bubble.N,1);
     
-    Lx = domain.dimlen(1);
-    kx = [ 0: Lx/2 , (Lx/2+1 : Lx-1) - Lx]/Lx * 2 * pi * Fs / medium.c0;
-    kx       = repmat(kx,Bubble.N,1);
-    
-    Ly = domain.dimlen(2);
-    ky = [ 0: Ly/2 , (Ly/2+1 : Ly-1) - Ly]/Ly * 2 * pi * Fs / medium.c0;
-    ky       = repmat(ky,Bubble.N,1);
-    
-    Lz = domain.dimlen(3);
-    kz = [ 0: Lz/2 , (Lz/2+1 : Lz-1) - Lz]/Lz * 2 * pi * Fs / medium.c0;
-    kz       = repmat(kz,Bubble.N,1);
-    
     % This is only for the case of planewave. This is a time shift for the travelling of a planewave.
     Inc_Press = real(ifft(fft(Inc_Press,[],2).*exp(-1i*omega/medium.c0.*Bubble.LocGlob(:,3)*1E-3),[],2));
     % Make denser the matrix to increase accuracy
@@ -289,16 +277,15 @@ if (Bubble.N <=10 && Bubble.N>0)
 %     %
 %     m_init = idx1;
 %     k_init = idx3;
-%     m_init      =   69;49;77;
-%     m_end       =   m_init;
-%     k_init      =   70;11;58;
-%     k_end       =   k_init;
+    m_init      =   69;49;77;
+    m_end       =   m_init;
+    k_init      =   10;11;58;
+    k_end       =   k_init;
     %     %
     RRMS_ErrorG_semi_an = zeros(k_end,m_end);
     RRMS_ErrorG_an = zeros(k_end,m_end);
     for i = domain.beamiterations:domain.beamiterations
         TotalPress_lastiter      =   TotalPress;
-        %         if (i==domain.beamiterations) ; TotalPress_lastiter = Inc_Press; end
         ddpddt          =   fft(TotalPress_lastiter,[],2).*(1i*omega).^2 ; % What the scatterer understands
 %         syms t
 %         p_expr  = 1E4*exp( - ((t-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t-gauss_dl));
