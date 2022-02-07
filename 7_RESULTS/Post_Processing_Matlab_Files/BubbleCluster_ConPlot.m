@@ -76,7 +76,7 @@ for i = 1:i_end
         end
     
     %% PLOTS
-    disp(['Ploting the ', subplot_txt1,'...'])
+   disp(['Ploting the ', subplot_txt1,'...'])
     
 %     I = 20*log10(pnl.atten./plin.atten);
 %     pnl.attenuation(dslice.num,:) = [dslice.pos(dslice.num); mean(mean(I))/(dslice.pos(dslice.num) - min(Bubble.LocGlob(:,3)))*10];  % [mm] to [cm]
@@ -88,12 +88,13 @@ for i = 1:i_end
     set(gcf, 'Color', 'w');
     hold on
     
-    plot(domain.par{domain.dimval(3)},plin.fund(round(dims(1)/2)+1,:),'--','Color','black')
+    plin_plot  = plin.fund ; 20*log10(squeeze(max(abs(plin.data))));
+    plot(domain.par{domain.dimval(3)},plin_plot(round(dims(1)/2)+1,:),'--','Color','black')
     for i = 1: harmonics
         eval(['p=plot(domain.par{domain.dimval(3)},pnl.harm' num2str(i) '(round(dims(1)/2)+1,:));']);
         set(p,'Color',sscanf(colors{i}(2:end),'%2x%2x%2x',[1 3])/255,'LineWidth',1.5)
     end
-    xline(Bubble.LocRange(3,1),'--','LineWidth',3); xline(Bubble.LocRange(3,2),'--','LineWidth',3)
+%     xline(Bubble.LocRange(3,1),'--','LineWidth',3); xline(Bubble.LocRange(3,2),'--','LineWidth',3)
     grid on
     xlabel(dslice.xlabel)
     ylabel('Pressure [dB re 1 Pa] ')
@@ -111,9 +112,9 @@ for i = 1:i_end
     FontSize = 20;
     
     f2=figure('WindowState','maximized');
-    imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin.fund)
+    imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
     hold on;
-    caxis([max(max(plin.fund))-dBVALUES max(max(plin.fund))]+Add)
+    caxis([max(max(plin.fund))-dBVALUES max(max(plin_plot))]+Add)
     title('Linear Pressure Field')
     xlabel(dslice.xlabel )
     ylabel(dslice.ylabel )
@@ -127,9 +128,9 @@ for i = 1:i_end
     hold off;
     
     f4=figure('WindowState','maximized');
-    imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin.fund)
+    imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
     hold on;
-    caxis([max(max(plin.fund))-dBVALUES max(max(plin.fund))]+Add)
+    caxis([max(max(plin.fund))-dBVALUES max(max(plin_plot ))]+Add)
     if Bubble.N >6
         rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
     elseif Bubble.N>=1
@@ -147,7 +148,7 @@ for i = 1:i_end
     set(gca,'FontSize',FontSize);
     hold off;
     
-    caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
+%     caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
     for i = 1: harmonics
         if (i-4*floor((i-1)/4)==1); f3=figure('WindowState','maximized');end
         pnl_harmi = eval(['pnl.harm' num2str(i)]);

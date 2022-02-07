@@ -46,7 +46,7 @@ bubble
 all
 11	*** Number of slices to be stored
 y -1.482 
-y 0.0544852941176471
+y 0.0726470588235294
 y 1.37   
 y 0.108970588235294
 y 0.150970588235294
@@ -63,7 +63,7 @@ z 10.03
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-1.000000E+001		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+1.000000E+004		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
 1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
@@ -123,7 +123,7 @@ gaussian
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius		    *** Normalize , 'none', 'time', 'radius', 'freq0_and_radius', 'Minnaert_and_radius'
 ****
-1.000000E+000	*** No. of Bubbles consisting the cluster
+2.000000E+000	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	

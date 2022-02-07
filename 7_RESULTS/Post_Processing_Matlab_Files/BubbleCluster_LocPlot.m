@@ -53,12 +53,12 @@ if (Bubble.N >0 )
     El = 8;
     y_trans(1,1)=domain.par{1}(1);
     y_trans(1,2)=domain.par{1}(1) + (domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
-%     for i = 1:El
-%         plot3(Z(1,1)*ones(5,1) ,[y_trans(i,1) y_trans(i,1) y_trans(i,2) y_trans(i,2) y_trans(i,1)]', ...
-%             [domain.par{2}(1) domain.par{2}(end) domain.par{2}(end) domain.par{2}(1) domain.par{2}(1)]'+ 0.1*(domain.par{2}(end)-domain.par{2}(1))*[1 -1 -1 1 1]', 'k')
-%         y_trans(i+1,1) = y_trans(i,2) +0.2*(domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
-%         y_trans(i+1,2) = y_trans(i+1,1) + (domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
-%     end
+    for i = 1:El
+        plot3(Z(1,1)*ones(5,1) ,[y_trans(i,1) y_trans(i,1) y_trans(i,2) y_trans(i,2) y_trans(i,1)]', ...
+            [domain.par{2}(1) domain.par{2}(end) domain.par{2}(end) domain.par{2}(1) domain.par{2}(1)]'+ 0.1*(domain.par{2}(end)-domain.par{2}(1))*[1 -1 -1 1 1]', 'k')
+        y_trans(i+1,1) = y_trans(i,2) +0.2*(domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
+        y_trans(i+1,2) = y_trans(i+1,1) + (domain.par{1}(end)-domain.par{1}(1))/(El*1.2);
+    end
     view(-37.5,30)
     
     xlim([min(domain.par{3}) max(domain.par{3})])

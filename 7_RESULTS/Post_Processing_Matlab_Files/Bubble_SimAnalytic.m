@@ -45,6 +45,10 @@ par.chi = 0.5   ;                                     % [N/m] shell elasticity
 par.R_b = par.R0/sqrt(par.sigma_R0/par.chi+1);     % buckling radius
 par.R_r = par.R_b*sqrt(par.sigma_w/par.chi+1);       % upper limit radius after rupture
 
+par.f0 = 1/(2*pi*par.R0*sqrt(par.rho))*sqrt(3*par.gamma*par.P0+ (3*par.gamma-1)*2*par.sigma_R0/par.R0  + 4*par.chi/par.R0);
+par.omega = 3*par.P0*par.gamma/par.R0^2/par.rho+4*par.chi/par.R0^3/par.rho;
+par.delta = par.R0/par.c + 4*par.mu/(par.rho*par.R0^2*par.omega) + 4*par.S_vis/(par.rho*par.R0^3*par.omega);
+par.fresonance = par.f0*sqrt(1-par.delta^2/2)/1E6 ; %MHz
 %% ========================= Solve ODE with Marmottant ==================================================
 T_start = t_p_driv(1) ;
 T_end   = t_p_driv(end)   ;
@@ -53,7 +57,7 @@ Initial_Cond = [par.R0  ;  0 ]   ;  % initial radius R0 ; initial wall velocity 
 
 % Numerically solve the Rayleigh-Plesset with Marmottant using ode45-solver
 % Output: T_m=time, R_m=radius
-options  = odeset('RelTol', 1e-12, 'AbsTol', [1e-8 1e-8]', 'Refine', 1);
+options  = odeset('RelTol', 1e-12, 'AbsTol', [1e-10 1e-10]', 'Refine', 1);
 [T_m, R_m] = ode45 (@(t,R) Bubble_RPAnalytic(t, R, t_p_driv, p_driv, par), [T_start T_end], Initial_Cond, options);
 
 %% ==================== Compare with analytical solution ====================

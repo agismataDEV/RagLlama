@@ -17,12 +17,12 @@
 *************************************************
 1.000000E+001		*** Lx in [mm]
 0.500000E+001		*** Ly in [mm]
-4.000000E+001		*** Lt in [cycles]
+3.000000E+001		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
-1.500000E+001		*** Lz in [mm]	(length of the field in z)
+1.000000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
-1.570796E-000		*** Thetat [rad]
+1.570796E+000		*** Thetat [rad]
 1.700000E+006		*** freq0  = Fundamental frequency [Hz]
 6.00000E+0000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
@@ -41,17 +41,17 @@ bubble
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
 0		***	Switch: Use Symmetry in the Y axis
 1		*** Number of beams in which the total field is split
-2		*** Number of iterations of the first beam
+20		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 11	*** Number of slices to be stored
 y -1.482 
-y 0.0544852941176471
+y 0
 y 1.37   
+y -0.0726470588235294
 y 0.108970588235294
 y 0.150970588235294
 y 0.16566666667
-y -0.21
 x 0.57633333333333
 z 5.187
 z 8
@@ -63,7 +63,7 @@ z 10.03
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-1.000000E+001		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+1.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
 1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
@@ -123,7 +123,7 @@ gaussian
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius		    *** Normalize , 'none', 'time', 'radius', 'freq0_and_radius', 'Minnaert_and_radius'
 ****
-1.000000E+000	*** No. of Bubbles consisting the cluster
+1.000000E+000   *** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	

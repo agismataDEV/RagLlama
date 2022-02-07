@@ -42,7 +42,7 @@ medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
 medium.P0                  = 1.01E5  ;
 
 %% Bubble Parameters
-Bubble.mindist           = 20e-6;
+Bubble.mindist           = 10e-6;
 
 %% Domain Parameters
 
@@ -56,10 +56,11 @@ domain.symmetry             = 0;
 
 %% File Parameters
 file.rootname            = 'TESTNeumann';
-file.dirname             = '../1E7_MBs_9FNYQ';
-file.dirname             = '../test_2';
+file.dirname             = '../1MBs_Validation_sinc_all';
+file.dirname             = '../test/1E3PS_A78_2E4MBs';
+file.dirname             = '../test/PW_1LS';
 file.contrast_name       = 'ContrastSrc';
-file.scatterer           = 'active';         % 'active','passive_lin', 'passive_nonlin'
+file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 
 file.plot_contrast       = 'yes';            % 'yes' or 'no'
 file.plot_attenslices    = 'no';
@@ -149,7 +150,7 @@ output_nonl      = load_ICS_slice(pnl.filename);
 pnl.data       = squeeze(output_nonl.data);
 
 %% CONTRAST DATA WITHOUT ANY BUBBLES
-if strcmp(file.plot_contrast,'yes')
+if (strcmp(file.plot_contrast,'yes') && domain.beamiterations>0)
     pcon.filename       = [file.dirname '/' file.contrast_name int2string_ICS(domain.beamiterations) '_' file.focalplanename int2string_ICS(domain.ibeam)];
     i_start=1;
     if isempty(file.dirname) ;i_start = 2; end

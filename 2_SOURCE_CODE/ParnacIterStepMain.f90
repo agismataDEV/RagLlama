@@ -494,6 +494,7 @@ call MapVt(cSource)
     call GridDistr1CreateEmpty(cSpace%cGrid);
 
     dDiffT = (cSpace%iStartT - cSource%iStartT)*cSpace%dDt
+    
     do iLi = 0, cSpace%cGrid%iD0LocN-1
 
         !Z Position
@@ -1283,7 +1284,7 @@ call MapVt(cSource)
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**30;
+    integer(i8b), parameter::               iBlockL                = 2**28;
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
 
@@ -1404,7 +1405,7 @@ call MapVt(cSource)
     ! =============================================================================
 
     call PrintToLog("LoadField",1)
-
+	write(*,*) iBlockL
     if (cSpace%cGrid%iDistr /= 0) then
         write (acTemp, '("Error occurred during the execution of LoadField, aborting program")');
         call PrintToLog(acTemp, -1);
@@ -1524,6 +1525,7 @@ call MapVt(cSource)
     end if
 
     ! We read the original values and put them in cSpace
+	
     allocate(parBuffer(iBlockL));
    	iMemAllocated=iMemAllocated +  PRODUCT(SHAPE(parBuffer)) * dpS
    	

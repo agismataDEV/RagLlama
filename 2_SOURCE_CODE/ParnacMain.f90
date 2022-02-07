@@ -2257,7 +2257,7 @@
         !-----------------------------------------------------------     
         else      
         	do iIter=1, cModelParams%Numiterations(1+iBeam)-1
-
+			
 				call PrintToLog("***************************************************************",0)
 				write(acTemp,'("****** Neumann Scheme Calculate Iterative Beam estimate ",I3," for Beam ",I3," *****")') iIter,iBeam
 				call PrintToLog(acTemp,0)
@@ -2395,7 +2395,7 @@
 				! Test whether there is a NaN in cBeam - indication of an error,
 				! no use to continue the program
 				call test_isnan(cBeam)
-				if (iIter == cModelParams%Numiterations(1+iBeam)-1) call StoreField(cBeam,"BeamSol0")
+				! if (iIter == cModelParams%Numiterations(1+iBeam)-1) call StoreField(cBeam,"BeamSol0")
 				
 	    	end do
     	 end if

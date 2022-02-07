@@ -48,6 +48,6 @@ export MKL_NUM_THREADS=1
 export MKL_THREADING_LAYER=intel																		
 export MKL_DYNAMIC="FALSE" 																			
 export MKL_VERBOSE=1																					
-srun --job-name=2_MONO_$OUTPUT_FOLDER 	--partition=general --qos=short --output=$OUT_FILE --error=$ERR_FILE --mem=100G --time=04:00:00 ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER 
+srun --nodes=1 --ntasks=32 --job-name=2_MONO_$OUTPUT_FOLDER 	--partition=general --qos=short --output=$OUT_FILE --error=$ERR_FILE --mem=100G --time=04:00:00 ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER 
 sleep 5
 qstat -u agismatalliota 

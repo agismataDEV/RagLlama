@@ -1800,114 +1800,105 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     
     SUBROUTINE GREENS1DFREQ( InputVal , OutputVal, cSpace ,iTargetIndex,Bubble_diff)
 
-! =============================================================================
-!
-!   Programmer: Agisilaos Matalliotakis
-!
-!   Language: Fortran 90
-!
-!   Version Date    Comment
-!   ------- -----   -------
-!   1.0     200608  Original code (KH)
-!
-! *****************************************************************************
-!
-!   DESCRIPTION
-!
-!   The function INTERP1DFREQ returns a signal upsampled or downsampled 
-!   based on the input signal and the output length.
-!   If (InputLen > FinalLen) then decimate ( downsample)
-!   If (InputLen < FinalLen) then upsample
-!
-! *****************************************************************************
-!
-!   INPUT/OUTPUT PARAMETERS
-!
-!   InputVal         r   dp   a vector of the (time) values of the initial signal
-!   OutputLen        i   i8b    Length of output signal
-!   OutputVal        r   dp   a vector of OutputLen length of the  output signal
-!
+	! =============================================================================
+	!
+	!   Programmer: Agisilaos Matalliotakis
+	!
+	!   Language: Fortran 90
+	!
+	!   Version Date    Comment
+	!   ------- -----   -------
+	!   1.0     200608  Original code (KH)
+	!
+	! *****************************************************************************
+	!
+	!   DESCRIPTION
+	!
+	!   The function INTERP1DFREQ returns a signal upsampled or downsampled 
+	!   based on the input signal and the output length.
+	!   If (InputLen > FinalLen) then decimate ( downsample)
+	!   If (InputLen < FinalLen) then upsample
+	!
+	! *****************************************************************************
+	!
+	!   INPUT/OUTPUT PARAMETERS
+	!
+	!   InputVal         r   dp   a vector of the (time) values of the initial signal
+	!   OutputLen        i   i8b    Length of output signal
+	!   OutputVal        r   dp   a vector of OutputLen length of the  output signal
+	!
 	real(dp), intent(in) 		:: 		InputVal(:)
 	real(dp), intent(out) 		:: 		OutputVal(:)
-	type(Space), intent(in) 	:: 		cSpace
 	real(dp), intent(in)		::		Bubble_diff(3)
 	integer(i8b), intent(in)	::		iTargetIndex(3)
 	
+	type(Space), intent(in) 	:: 		cSpace
 	
-! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
-!
-!   InputValW       		dpc   Frequency components of input signal
-!   OutputValW     			dpc   Frequency components of output signal
-!   InputLen   				i8b   Length of Input Signal
-!   EvenOrOdd       		i8b   Variable, 0 if even or 1 if odd 
-!   iNumPlanTransform     	i8b   plan for FFT
-!   iNumPlanTransform_inv	i8b   plan for IFFT
-!   dTaperMaxFreqWindow     dp    Tapering of Max Frequency to remove artifact
-!   dLeftBand     			dp    Left limit of banded tapering
-!   dRightBand		   		dp    Right limit of banded tapering
-!
+		
+	! *****************************************************************************
+	! 
+	!   LOCAL PARAMETERS      
+	!
+	!   InputValW       		dpc   Frequency components of input signal
+	!   OutputValW     			dpc   Frequency components of output signal
+	!   InputLen   				i8b   Length of Input Signal
+	!   EvenOrOdd       		i8b   Variable, 0 if even or 1 if odd 
+	!   iNumPlanTransform     	i8b   plan for FFT
+	!   iNumPlanTransform_inv	i8b   plan for IFFT
+	!   dTaperMaxFreqWindow     dp    Tapering of Max Frequency to remove artifact
+	!   dLeftBand     			dp    Left limit of banded tapering
+	!   dRightBand		   		dp    Right limit of banded tapering
+	!
 	integer(i8b)				::			interp_factor
-    complex(dpc) 				::	 		InputValW(size(InputVal)+1), Green(size(InputVal)+1) 
-    complex(dpc) 				::	 		InputValWT(size(InputVal)+1), OutputValWT(size(InputVal)+1)
-    complex(dpc),allocatable	::			OutputValW(:)
+    complex(dpc) 				::	 		Green(size(InputVal,1)+1) 
+    complex(dpc) 				::	 		InputValWT(size(InputVal,1)+1), OutputValWT(size(InputVal,1)+1)
+	
     integer(i8b) 				::			InputLen, OutputLen, EvenOrOdd, iDimW
-    integer(i8b) 				::			iNumPlanTransform, iNumPlanTransform_inv, iNumPlanTransformXYZ, iNumPlanTransformXYZ_inv, cFFTWtestarray(1)
+    integer(i8b) 				::			iNumPlanTransform, iNumPlanTransform_inv
     
     !Filtering and windowing parameters 
-    real(dp) 	::			dTaperMaxFreqWindow(size(InputVal)+1), dLeftBand,dRightBand, dDomega, InputValT(size(InputVal))
-    integer		::			i,iErr
+    real(dp) 					::			dTaperSupportWindow(size(InputVal,1)), dTaperMaxFreqWindow(size(InputVal,1)+1), dLeftBand,dRightBand, dDomega
+	real(dp)					::			InputValT(size(InputVal,1)*2),OutputValT(size(InputVal,1)*2)
+    integer						::			i,iErr
     
     !Green's function parameters:
     
 	integer(i8b) 	:: 				iIndZ, iOmega,iDifft
-	real(dp) 		::				dStartT, dEndT, dRad
+	real(dp) 		::				dStartT, dEndT, dRad, viX, viY, viZ
 	real(dp) 		::				dSi1, dSi2, dCi1, dCi2;
 	real(dp) 		::				dOmega, dCorrection, dKcutoff
 	complex(dpc) 	::				dKangular,E1mm,E1mp,E1pm,E1pp
 	integer(i8b) 	:: 				error
 
-! *****************************************************************************
-!
-!   I/O
-!
-!   none
-!   
-! *****************************************************************************
-!
-!   SUBROUTINES/FUNCTIONS CALLED
-!
-!   none
-!   
-! =============================================================================
-	call dfftw_plan_guru_dft(iNumPlanTransformXYZ,	&
-	3, int((/ 1,1,1 /)), int((/ 1,1,1 /)), int((/ 1,1,1 /)),1,1,1,1, cFFTWtestarray, cFFTWtestarray, FFTW_FORWARD, FFTW_ESTIMATE);
-
-	call dfftw_plan_guru_dft(iNumPlanTransformXYZ_inv,	&
-	3, int((/ 1,1,1 /)), int((/ 1,1,1 /)), int((/ 1,1,1 /)),1,1,1,1, cFFTWtestarray, cFFTWtestarray, FFTW_BACKWARD, FFTW_ESTIMATE);
+	! *****************************************************************************
+	!
+	!   I/O
+	!
+	!   none
+	!   
+	! *****************************************************************************
+	!
+	!   SUBROUTINES/FUNCTIONS CALLED
+	!
+	!   none
+	!   
+	! =============================================================================
 	
     ! Same proceedure from ReorderDistr1to0 or the other way , but it is implemented for 1d arrays
-    OutputLen = size(OutputVal)
-    InputLen  = size(InputVal)
+    OutputLen = size(OutputVal,1)
+    InputLen  = size(InputVal,1)
     EvenOrOdd = mod(InputLen,2_i8b)
     iDimW = InputLen/2+1
     interp_factor = 1
-    
+	
+    InputValT = 0.0D0
     !    in the contrast source
-    InputValT = InputVal * dTaperingWindow(InputLen,cSpace%dDt,2.0_dp,2.0_dp)
-    InputValW  = 0.0D0
-    InputValW(1:InputLen/2) = InputValT(1:InputLen-EvenOrOdd:2) + im * InputValT(2:InputLen-EvenOrOdd:2)
-    if(EvenOrOdd==1) then
-    	InputValW((InputLen+1)/2) = InputValT(InputLen)
-    endif
+	dTaperSupportWindow = dTaperingWindow(InputLen,cSpace%dDt,2.0D0,2.0D0)
+    InputValT(1:InputLen) = InputVal(:) !* dTaperSupportWindow
 	
     ! Do a FFT of InputLen-point (Initial Variable Length) with complex numbers 
-    call dfftw_plan_dft_r2c_1d(iNumPlanTransform, (interp_factor+1)*InputLen, InputValW, InputValWT, FFTW_ESTIMATE)
-    call dfftw_execute_dft_r2c(iNumPlanTransform, InputValW, InputValWT)
-    
-    !Allocate to upsample or decimate . OutputValW has to have more or equal points to the initial signal 
-    ALLOCATE(OutputValW(max(InputLen+1,OutputLen+1)))
+    call dfftw_plan_dft_r2c_1d(iNumPlanTransform, (interp_factor+1)*InputLen, InputValT, InputValWT, FFTW_ESTIMATE)
+    call dfftw_execute_dft_r2c(iNumPlanTransform, InputValT, InputValWT)    
     
     dKcutoff = two_pi  * ( 1.0_dp  + 0.5_dp/cSpace%iDimX) * cSpace%dFnyq
 	iDiffT=0;
@@ -1915,24 +1906,19 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
 	
 	dEndT		= (iDiffT + iBeamOffSetT(cSpace,iIndZ) + cSpace%iDimT + 0.5) * cSpace%dDt;
 	dStartT		= (iDiffT + iBeamOffSetT(cSpace,iIndZ) - cSpace%iDimT + 0.5) * cSpace%dDt;
+
+	dRad = SQRT(sum(real(Bubble_diff**2,dp)))
+	Green = 0.0 ; 
 	
-	dRad = sqrt(sum(Bubble_diff**2))
-	Green = 0.0 ;
 	if(cMediumParams%a_att==0.0_dp) then
 		do iOmega = 0, InputLen
-			dOmega = two_pi *  iOmega   * cSpace%dFnyq / InputLen
-
+			dOmega = two_pi *  iOmega   * cSpace%dFnyq / real(InputLen,dp)
 			call cisi4((dKcutoff-dOmega)*dRad, dCi1, dSi1)
 			call cisi4((dKcutoff+dOmega)*dRad, dCi2, dSi2)
-			Green(iOmega+1)=1.0D0/(dRad*4.0D0*pi**2)* &
-						( cos(dOmega*dRad)*(dSi1+dSi2)&
-						 +sin(dOmega*dRad)*(dCi1-dCi2-im*pi));
-						 
-			Green(iOmega+1) = Green(iOmega+1)*exp(-im*dOmega*Bubble_diff(3))
-			call dfftw_execute_dft(iNumPlanTransformXYZ, Green(iOmega+1), Green(iOmega+1))
-			call dfftw_execute_dft(iNumPlanTransformXYZ, InputValWT(iOmega+1),InputValWT(iOmega+1))
+			Green(iOmega+1)=1.0D0/REAL(dRad*4.0D0*pi**2,dp)* ( dcos(dOmega*dRad)*(dSi1+dSi2) + dsin(dOmega*dRad)*(dCi1-dCi2-im*pi));
+			
+			if(cSpace%dTant ==1 ) Green(iOmega+1) = Green(iOmega+1)*exp(-im*dOmega*Bubble_diff(3))
 			InputValWT(iOmega+1) = InputValWT(iOmega+1)*Green(iOmega+1)* cSpace%dDx**3 /real((interp_factor+1)*InputLen,dp)
-			call dfftw_execute_dft(iNumPlanTransformXYZ_inv, InputValWT(iOmega+1), InputValWT(iOmega+1))
 		enddo
 	else
 		do iOmega = 0, InputLen
@@ -1954,10 +1940,7 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
 						  +exp(-im*dKcutoff*dRad)*(E1Pm+E1pp))/(im*two_pi))	
 						  
 			Green(iOmega+1) = Green(iOmega+1)*exp(-im*dOmega*Bubble_diff(3))
-			call dfftw_execute_dft(iNumPlanTransformXYZ, Green(iOmega+1), Green(iOmega+1))
-			call dfftw_execute_dft(iNumPlanTransformXYZ, InputValWT(iOmega+1),InputValWT(iOmega+1))
 			InputValWT(iOmega+1) = InputValWT(iOmega+1)*Green(iOmega+1)* cSpace%dDx**3 /real((interp_factor+1)*InputLen,dp)
-			call dfftw_execute_dft(iNumPlanTransformXYZ_inv, InputValWT(iOmega+1), InputValWT(iOmega+1))
 		enddo
     endif
         
@@ -1968,25 +1951,18 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     ! This is done by initializing OutputValW with 0 ( Really small number due to precision)
     ! Replace the first half part with the values of initial variable.
     OutputValWT = 0.0D0
-  	OutputValWT(1:InputLen+1)  = InputValWT(1:InputLen+1) * dTaperMaxFreqWindow
+  	OutputValWT(1:InputLen+1)  = InputValWT(1:InputLen+1) !* dTaperMaxFreqWindow
   	
     ! Inverse FFT of OutputLen-point
-    call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, (interp_factor+1)*InputLen, OutputValWT, OutputValW, FFTW_ESTIMATE)
-    call dfftw_execute_dft_c2r(iNumPlanTransform_inv, OutputValWT, OutputValW)
+    call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, (interp_factor+1)*InputLen, OutputValWT, OutputValT, FFTW_ESTIMATE)
+    call dfftw_execute_dft_c2r(iNumPlanTransform_inv, OutputValWT, OutputValT )
     
+ 	OutputVal = OutputValT(1:OutputLen) !* dTaperSupportWindow
+    ! OutputVal = OutputVal * ABS(real(OutputVal,dp)<1E100_dp)
     call dfftw_destroy_plan(iNumPlanTransform)
     call dfftw_destroy_plan(iNumPlanTransform_inv)
-    call dfftw_destroy_plan(iNumPlanTransformXYZ)
-    call dfftw_destroy_plan(iNumPlanTransformXYZ_inv)
     
-    EvenOrOdd = mod(OutputLen,2_i8b)
-    OutputVal = 0.0D0
-    OutputVal(1:OutputLen-EvenOrOdd:2) = real(OutputValW(1:OutputLen/2),dp)
-    OutputVal(2:OutputLen:2) = dimag(OutputValW(1:OutputLen/2))
     
- 	OutputVal = OutputVal * dTaperingWindow(InputLen,cSpace%dDt,2.0_dp, 2.0_dp)
-    
-    DEALLOCATE(OutputValW)
     END SUBROUTINE GREENS1DFREQ
     
     

@@ -284,6 +284,7 @@ MODULE ParnacParamDef
     real(dp)  ::  sigma_R
     real(dp)  ::  gama
     real(dp)  ::  P_g0
+	real(dp),allocatable  ::  LinearAmplitude(:)
 
     !---------------Marmottant model parameters
     real(dp)  ::  chi 

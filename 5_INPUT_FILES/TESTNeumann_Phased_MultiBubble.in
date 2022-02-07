@@ -134,7 +134,7 @@ none
 OP					*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius','Minnaert_and_radius'
 ****
-1E+6		  		*** No. of Bubbles consisting the cluster
+1E+5		  		*** No. of Bubbles consisting the cluster
 *** monodisperse, Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	

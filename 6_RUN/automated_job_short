@@ -3,50 +3,54 @@ INPUT_FILE=${1?Error: No input file given}
 OUTPUT_FOLDER=${2?Error: No output folder given}
 export INPUT_FILE
 export OUTPUT_FOLDER
+IFS=/ read OUTPUT_FOLDER_NAME OUTPUT_FILE_NAME <<< $OUTPUT_FOLDER
+echo $OUTPUT_FOLDER_NAME
+echo $OUTPUT_FILE_NAME
 echo $OUTPUT_FOLDER
 
-export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.out
-export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.err
+export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FILE_NAME.out
+export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FILE_NAME.err
 echo $OUT_FILE
 echo $ERR_FILE
 
 cd ../2_SOURCE_CODE/
-#rm ../3_COMPILED_FILES/INCS_Agis_*
+rm ../3_COMPILED_FILES/INCS_Agis_*
 make 
-cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER}
+cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME}
 
 #if [ -d ../7_RESULTS/$OUTPUT_FOLDER]; then
 mkdir ../7_RESULTS/$OUTPUT_FOLDER
 #	echo "Directory is created ..."
 #fi
 
-cd ../7_RESULTS/$OUTPUT_FOLDER/
-find . -name '*GlobalLoc*' | xargs rm -f
-mkdir 2_SOURCE_CODE
-mkdir Bubbles
+mkdir ../7_RESULTS/empty_dir
+#rsync -a --delete ../7_RESULTS/empty_dir/  ../7_RESULTS/$OUTPUT_FOLDER/
+rm -rf ../7_RESULTS/$OUTPUT_FOLDER
+mkdir ../7_RESULTS/$OUTPUT_FOLDER_NAME
+mkdir ../7_RESULTS/$OUTPUT_FOLDER
+mkdir ../7_RESULTS/$OUTPUT_FOLDER/2_SOURCE_CODE
+mkdir ../7_RESULTS/$OUTPUT_FOLDER/Bubbles
 
-cd ../../2_SOURCE_CODE/
-rm ../7_RESULTS/$OUTPUT_FOLDER/*
-rm ../7_RESULTS/$OUTPUT_FOLDER/Bubbles/*
 cp *.f90 ../7_RESULTS/$OUTPUT_FOLDER/2_SOURCE_CODE/
 cp ../5_INPUT_FILES/$INPUT_FILE ../7_RESULTS/$OUTPUT_FOLDER/
+cp ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME} ../7_RESULTS/$OUTPUT_FOLDER/
 
 cd ../6_RUN/
 
 ### HERE WE CREATE THE BASH FILE
 echo "#!/bin/bash" 									 															> job_INCS_short
 echo " " 											 															>> job_INCS_short
-echo "#SBATCH --job-name=2_MONO_$OUTPUT_FOLDER" 	 															>> job_INCS_short
-echo "#SBATCH --partition=general" 					 															>> job_INCS_short
-echo "#SBATCH --qos=short"          				 															>> job_INCS_short
+echo "#SBATCH --job-name=2_MONO_$OUTPUT_FILE_NAME" 	 															>> job_INCS_short
+echo "#SBATCH --partition=imphys,general" 					 															>> job_INCS_short
+echo "#SBATCH --qos=long"          				 															>> job_INCS_short
 echo "#SBATCH --nodes=1"           					 															>> job_INCS_short
-echo "#SBATCH --ntasks-per-node=56" 				 															>> job_INCS_short
+echo "#SBATCH --ntasks=48" 				 															>> job_INCS_short
 echo "#SBATCH --cpus-per-task=1"    				 															>> job_INCS_short
-echo "#SBATCH --mem=500G"           				 															>> job_INCS_short
-echo "#SBATCH --time=04:00:00"      				 															>> job_INCS_short
+echo "#SBATCH --mem-per-cpu=8G"           				 															>> job_INCS_short
+echo "#SBATCH --time=08:00:00"      				 															>> job_INCS_short
 echo "#SBATCH --output=$OUT_FILE" 					 															>> job_INCS_short
 echo "#SBATCH --error=$ERR_FILE"     				 															>> job_INCS_short
-echo "##SBATCH --exclusive"          				 															>> job_INCS_short
+####echo "##SBATCH --exclusive"          				 															>> job_INCS_short
 echo " " 											 															>> job_INCS_short
 echo "module use /opt/insy/modulefiles" 			 															>> job_INCS_short
 echo "module load intel" 							 															>> job_INCS_short
@@ -55,7 +59,10 @@ echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin
 echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh" 				>> job_INCS_short
 echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64" 		>> job_INCS_short
 echo " " 																										>> job_INCS_short
+echo "ulimit -a"		 																						>> job_INCS_short
 echo "ulimit -s unlimited" 																						>> job_INCS_short
+echo "ulimit -a"		 																						>> job_INCS_short
+echo "ulimit -l unlimited" 																						>> job_INCS_short
 echo " " 																										>> job_INCS_short
 echo "# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so" 						>> job_INCS_short
 echo "export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so" 															>> job_INCS_short
@@ -64,7 +71,7 @@ echo "export MKL_NUM_THREADS=1" 																				>> job_INCS_short
 echo "#export MKL_THREADING_LAYER=intel" 																		>> job_INCS_short
 echo "#export MKL_DYNAMIC="FALSE"" 																				>> job_INCS_short
 echo "#export MKL_VERBOSE=1" 																					>> job_INCS_short
-echo "srun ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER" >> job_INCS_short
+echo "srun ../7_RESULTS/$OUTPUT_FOLDER/INCS_Agis_${OUTPUT_FILE_NAME} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER" >> job_INCS_short
 
 
 sbatch ../6_RUN/job_INCS_short &

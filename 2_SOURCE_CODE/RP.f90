@@ -75,7 +75,7 @@
     integer(i4b) 			::  iwork(liw)
     integer(i4b) 			::  i, iopar, iopt, iout, istate, itask, itol, mf, jt, flag
 	real(dp) 				::  norm_factor(3), P_interp(1)
-	real(dp)				::  R_bub(n_samples,3), dTaperSupportWindowN(n_samples)
+	real(dp)				::  R_bub(n_samples,3), dTaperSupportWindowN(n_samples), P_bub(n_samples)
  
 	character(len = 1024)	::  actemp 
 	
@@ -95,7 +95,7 @@
 		 BubbleParams%time_norm = cModelParams%freq0
 		 BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
 	elseif (trim(BubbleParams%Solver_Normalize) =='Minnaert_and_radius') then
-		 BubbleParams%time_norm = SQRT(cMediumParams%P0/cMediumParams%rho0/BubbleParams%R0(iBubble)**2)
+		 BubbleParams%time_norm = SQRT(cMediumParams%P0/cMediumParams%rho0)/BubbleParams%R0(iBubble)
 		 BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
 	endif 
 
@@ -106,7 +106,7 @@
 	dTaperSupportWindowN = dTaperingWindow(n_samples,(RealTimeIn(2)-RealTimeIn(1))* cModelParams%freq0,2.0_dp,2.0_dp)
 
     ALLOCATE(BubbleParams%P_driv(n_samples ),BubbleParams%T_driv(n_samples ))
-	BubbleParams%P_driv = RealPressIn * dTaperSupportWindowN
+	BubbleParams%P_driv = RealPressIn !* dTaperSupportWindowN
 	BubbleParams%T_driv = RealTimeIn * BubbleParams%time_norm
 	
 	! Medium parameters (water, Room temperature =20° and 1 atm ambient pressure) 
@@ -146,51 +146,51 @@
 		
 				ATOL_UP = ATOL
 				RTOL_UP = RTOL
-				tout = tout + (RealTimeIn(2)-RealTimeIn(1)) * BubbleParams%time_norm ; 
+				tout = BubbleParams%T_driv(iout) !tout + (RealTimeIn(2)-RealTimeIn(1)) * BubbleParams%time_norm ; 
 				y(5) = BubbleParams%P_driv(iout)
-				call dlsoda(MARMOTTANT,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JACDUM,jt)
+				call dlsode(MARMOTTANT,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JACDUM,mf)
 
-				! do while (ISTATE <0)
+				do while (ISTATE <0)
 				
-					! if (ISTATE == -2) then
-						! TOLSF = RWORK(14) ; if (isnan(TOLSF)) TOLSF = 1.0D0
-						! write(*,*) "Initial tolerance : ", ATOL_UP,RTOL_UP
-						! write(*,*) "Tolerance factor used ", TOLSF
-						! ATOL_UP = ATOL_UP * TOLSF * 2.0D0
-						! RTOL_UP = RTOL_UP * TOLSF * 2.0D0
-						! if (ATOL_UP(1) .GE. atol(1)*8.0D0) then; ITASK = 4; ISTATE = 2;RWORK(1) = tout; end if
-					! elseif (ISTATE == -1) then
-						! IWORK(6)=0 
-						! IWORK(6) = INT(IWORK(11)*1.5, i4b);
-						! tout = BubbleParams%T_driv(iout) + 1D-15;
-						! write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
-						! write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
-						! ISTATE = 3
-					! elseif(ISTATE == -3) then
-						! RWORK(5:7) = 0 ; IWORK(5:7) = 0;
-						! tout = RWORK(13)-RWORK(11)/2.0D0
-						! ATOL_UP = ATOL_UP  * 2.0D0
-						! RTOL_UP = RTOL_UP  * 2.0D0
-						! IWORK(6) = INT(IWORK(11) * 2, i4b);
-						! write(*,*) "TOUT CHANGED TO = ", tout,"ATOL = ", ATOL_UP
-						! write(*,*) "ISTATE = " ,ISTATE
-						! ISTATE = 3
-					! elseif(ISTATE == -4) then
-						! RWORK(5:7) = 0 ; IWORK(5:7) = 0;
-						! write(*,*) "RESET DEFAULT VALUES"
-						! write(*,*) "ISTATE = " ,ISTATE
-						! ISTATE = 3
-					! else
-						! write(*,*) "ISTATE = " ,ISTATE
-						! ISTATE = 3
-					! endif
+					if (ISTATE == -2) then
+						TOLSF = RWORK(14) ; if (isnan(TOLSF)) TOLSF = 1.0D0
+						write(*,*) "Initial tolerance : ", ATOL_UP,RTOL_UP
+						write(*,*) "Tolerance factor used ", TOLSF
+						ATOL_UP = ATOL_UP * TOLSF * 2.0D0
+						RTOL_UP = RTOL_UP * TOLSF * 2.0D0
+						if (ATOL_UP(1) .GE. atol(1)*8.0D0) then; ITASK = 4; ISTATE = 2;RWORK(1) = tout; end if
+					elseif (ISTATE == -1) then
+						IWORK(6)=0 
+						IWORK(6) = INT(IWORK(11)*1.5, i4b);
+						tout = BubbleParams%T_driv(iout) + 1D-15;
+						write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
+						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+						ISTATE = 3
+					elseif(ISTATE == -3) then
+						RWORK(5:7) = 0 ; IWORK(5:7) = 0;
+						tout = RWORK(13)-RWORK(11)/2.0D0
+						ATOL_UP = ATOL_UP  * 2.0D0
+						RTOL_UP = RTOL_UP  * 2.0D0
+						IWORK(6) = INT(IWORK(11) * 2, i4b);
+						write(*,*) "TOUT CHANGED TO = ", tout,"ATOL = ", ATOL_UP
+						write(*,*) "ISTATE = " ,ISTATE
+						ISTATE = 3
+					elseif(ISTATE == -4) then
+						RWORK(5:7) = 0 ; IWORK(5:7) = 0;
+						write(*,*) "RESET DEFAULT VALUES"
+						write(*,*) "ISTATE = " ,ISTATE
+						ISTATE = 3
+					else
+						write(*,*) "ISTATE = " ,ISTATE
+						ISTATE = 3
+					endif
 					
-					! call dlsoda(MARMOTTANT,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JACDUM,jt)
+					call dlsoda(MARMOTTANT,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JACDUM,jt)
 					
-					! IF (ISTATE>0) RWORK((/5,7,8,9/)) = 0 
-					! IF (ISTATE>0) IWORK(5:6) = 0 
+					IF (ISTATE>0) RWORK((/5,7,8,9/)) = 0 
+					IF (ISTATE>0) IWORK(5:6) = 0 
 					
-				! end do
+				end do
 				R_bub(iout,:) = y(1:3)
 				RealTimeOut(iout) = t 
 				
@@ -202,7 +202,9 @@
 
 	! Find volume acceleration d^2V/dt^2 [m^3/s^2] 
     ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
-    V_dd_pad = REAL(4.0D0*pi*R_bub(:,1)*(R_bub(:,1)*R_bub(:,3)+2.0D0*R_bub(:,2)**2),dp)*dTaperSupportWindowN
+    V_dd_pad = REAL(4.0D0*pi*R_bub(:,1)*(R_bub(:,1)*R_bub(:,3)+2.0D0*R_bub(:,2)**2),dp)!*dTaperSupportWindowN
+	P_bub  = REAL( BubbleParams%P_g0*( R_bub(:,1) /BubbleParams%R0(iBubble) )**(-3.0D0*BubbleParams%gama) * (1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0 * R_bub(:,2)),dp)
+	
     DEALLOCATE(BubbleParams%P_driv,BubbleParams%T_driv)
 	
     END SUBROUTINE RP_SOLVER
@@ -246,7 +248,7 @@
 
     iBubble= NINT(R(4))
 	BubbleParams%kappa_s  = (1.5D-9)*EXP(8.0D5*BubbleParams%R0(iBubble))
-    call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
+    call INTERP1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
 	
     ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
     ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)
@@ -262,14 +264,14 @@
         sigma_R = BubbleParams%sigma_w
     end if
 
-	call VanDerWaalsHardCoreRadius(R,R_VanderWaals)
-	P_gas     =  BubbleParams%P_g0*R_VanderWaals
-    ! P_gas     =  BubbleParams%P_g0*( R_norm(1) /BubbleParams%R0(iBubble) )**(-3.0D0*BubbleParams%gama)
+	! call VanDerWaalsHardCoreRadius(R,R_VanderWaals)
+	! P_gas     =  BubbleParams%P_g0*R_VanderWaals
+    P_gas     =  BubbleParams%P_g0*( R_norm(1) /BubbleParams%R0(iBubble) )**(-3.0D0*BubbleParams%gama)
 	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0 * R_norm(2)
 	Damp_visc =  4.0D0*cMediumParams%mu * R_norm(2)/R_norm(1)
     P_elas    =  2.0D0*sigma_R/R_norm(1)
     P_vis     =  4.0D0*BubbleParams%kappa_s * R_norm(2)/R_norm(1)**2
-	P_total   = (P_gas*Damp_ac - cMediumParams%P0 - R(5) - Damp_visc - P_elas - P_vis)
+	P_total   = (P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)
 	
     Rdot(1) = R(2)  ! Rdot , radius velocity 
     R_norm(3) = (P_total/cMediumParams%rho0 - 3.0D0/2.0D0*R_norm(2)**2)/R_norm(1)  
@@ -394,8 +396,8 @@
     sigma_R = sigma_R*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + BubbleParams%sigma_w * abs(A_m > 1.116D0)
 
 	call VanDerWaalsHardCoreRadius(R,R_VanderWaals)
-	P_gas     =  BubbleParams%P_g0*R_VanderWaals
-    ! P_gas     =  BubbleParams%P_g0*( R_norm(1) /BubbleParams%R0(iBubble) )**(-3.0D0*BubbleParams%gama)
+	! P_gas     =  BubbleParams%P_g0*R_VanderWaals
+    P_gas     =  BubbleParams%P_g0*( R_norm(1) /BubbleParams%R0(iBubble) )**(-3.0D0*BubbleParams%gama)
 	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0 * R_norm(2)
 	Damp_visc =  4.0D0*cMediumParams%mu * R_norm(2)/R_norm(1)
     P_elas    =  2.0D0*sigma_R/R_norm(1)

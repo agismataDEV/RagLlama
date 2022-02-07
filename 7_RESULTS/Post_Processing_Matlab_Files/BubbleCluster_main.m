@@ -1,10 +1,10 @@
 %% A.M. 23-02-2020 - This script reads and displays the results1 contained in the HDF5 data
-clear all
-fclose('all')
+% clear all
+% fclose('all')
 % close all;
-for slicenum1 = [2]%[12,3,4,5,6]
+for slicenum1 = [4]%[12,3,4,5,6]
     
-    clearvars -except slicenum1 atten atten_fund
+    clearvars -except slicenum1 atten atten_fund Loc Press_all Press_close
     %     close all
     clc
     %% Initialize parameters for all the significant variables
@@ -12,19 +12,19 @@ for slicenum1 = [2]%[12,3,4,5,6]
     %%
 %     %% Bubble Location and Pressure
     [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');
-    PS=Bubble ; [PS] = BubbleCluster_LocCon(medium,domain,file,PS,'PS');
+    PS=Bubble ; domainPS = domain; domainPS.beamiterations=0;[PS] = BubbleCluster_LocCon(medium,domainPS,file,PS,'PS');
     %%  Bubble Cluster Positions
     [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','o');
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx');
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','rx');
     
     %% PlayMovies
-    Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble)
+        Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble)
     %% CREATING MATRICES FOR NONLINEAR AND CONTRAST DATA
     [pnl,plin] = BubbleCluster_ConPlot(medium,domain,dslice,file,plin,pnl,Bubble);
 %     atten(dslice.num,:) = pnl.attenuation(dslice.num,:);
 %     atten_fund(dslice.num,:) = pnl.attenuation_fund(dslice.num,:);
     %% Compare Analytic solution with simulation results
-    BubbleCluster_Compare_individually(medium,domain,dslice,file,plin,pnl,Bubble);
+    BubbleCluster_Compare(medium,domain,dslice,file,plin,pnl,Bubble);
     %% Plot residuals
     %     Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,[1E2 1E3 1E4 Bubble.N])
     

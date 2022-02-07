@@ -685,92 +685,46 @@
     END SUBROUTINE LINSPACE
 
     SUBROUTINE INTERP1D( xData, yData, xVal, yVal )
-	! =============================================================================
-    !
-    !   Programmer: Agisilaos Matalliotakis // Date : 200902
-    !
-    !   Language: Fortran 90
-    !
-    !   Version Date    Comment
-    !   ------- -----   -------
-    !   3.0     200902  Original code (KAM)
-    !
-    ! *****************************************************************************
-    !
-    !   DESCRIPTION
-    !
-    !   The subroutine FIND_CLOSEST_DIVISOR finds an integer divisor of a given
-    !	number (Nominator) which is closest to a given second number (Denominator). 
-    !
-    ! *****************************************************************************
-    !
-    !   INPUT/OUTPUT PARAMETERS
-    !
-    !   xData             	i   i8b  		a vector of the x-values of the data to be interpolated
-    !   yData			  	i   i8b         a vector of the y-values of the data to be interpolated
-    !   xVal            	i   i8b         a vector of the x-values where interpolation should be performed
-    !   yVal            	o   i8b         a vector of the resulting interpolated values
-    !
-    ! *****************************************************************************
-    real(dp), intent(in) 	:: 	xData(:), yData(:), xVal(:)
-    real(dp), intent(out) 	:: 	yVal(:)
+    ! Inputs: xData = a vector of the x-values of the data to be interpolated
+    !         yData = a vector of the y-values of the data to be interpolated
+    !         xVal  = a vector of the x-values where interpolation should be performed
+    ! Output: yVal  = a vector of the resulting interpolated values
+    
+    real(dp), intent(in) :: xData(:), yData(:), xVal(:)
+    real(dp), intent(out) :: yVal(:)
+    integer :: inputIndex, dataIndex, i_start, i_end, i_min, i_max,xval_start, xVal_end, max_xData_pos, max_xVal_pos
 
-	! *****************************************************************************
-    !
-    !   LOCAL PARAMETERS
-    !
-    ! *****************************************************************************
-    integer(i8b)		    ::  inputIndex, i_start, i_end, i_min, i_max
-	integer(i8b) 			::	xval_start, xVal_end, max_xData_pos, max_xVal_pos
-    ! *****************************************************************************
-    !
-    !   I/O
-    !
-    !   none
-    !
-    ! *****************************************************************************
-    !
-    !   SUBROUTINES/FUNCTIONS CALLED
-    !
-    !   none
-    !
-    ! =============================================================================
+    ! Get length of the vector of X and the one for interpolation
     max_xData_pos = size(xData,1)
     max_xVal_pos  = size(xVal,1)
     
-    i_min = minloc(xVal,1 , xVal > xData(1))
-    xval_start = 1
-        
-    i_max = maxloc(xVal, 1, xVal< xData(max_xData_pos))+1
-    xval_end = size(xVal,1)
+    ! Find min location at the output X vector where the output value is larger than the input
+    ! This is the starting point of the interpolation 
+    ! if it is greater than the total number of input X, then this means that the first value of output 
+    ! is larger than the last of input. This means that use only the last 2 values for interpolation
+    i_max = maxloc(xVal,DIM = 1, MASK = xVal < xData(max_xData_pos))+1
+    xval_start = max_xData_pos-1;
+    xval_end   = max_xData_pos;
     
-    ! Check if there are values in the xVal higher than the max value of xData.
-    ! If true, this means that the interpolation should take place using the last 2 values of the xData
-    ! if there are more than 1 value, then do this for all the data and change the iteration range
-    ! else  change on
-    if (size(xVal,1)==1) then
-        xval_end = 1
-    elseif (i_max /= size(xVal,1)) then
-        yVal(i_max : max_xVal_pos) = (yData(max_xData_pos)-yData(1))*1.0_dp/max_xData_pos*(xVal(i_max : max_xVal_pos)-xData(max_xData_pos))+yData(max_xData_pos)
-        xval_end = i_max-1
-    else
-        yVal(i_max) = (yData(max_xData_pos)-yData(1))*1.0_dp/max_xData_pos*(xVal(i_max)-xData(max_xData_pos))+yData(max_xData_pos)
-        xval_end = i_max - 1
-    endif
+    yVal(i_max:max_xVal_pos) = (yData(xval_end)-yData(xval_start))*1.0_dp/(xData(xval_end)-xData(xval_start))*(xVal(i_max:max_xVal_pos)-xData(xval_start))+yData(xval_start)
+     
+    ! Find max location at the output X vector where the output value is smaller than the input
+    ! This is the ending point of the interpolation . 
+    i_min = maxloc(xVal, DIM = 1, MASK = xVal< xData(1)) - 1
+    xval_start = 1;
+    xval_end   = 2;
     
-    if (i_min /= 1) then
-       xval_start=i_min+1
-    endif
+    yVal(1:i_min) = (yData(xval_end)-yData(xval_start))*1.0_dp/(xData(xval_end)-xData(xval_start))*(xVal(1:i_min)-xData(xval_start))+yData(xval_start)
     
+    xval_start = i_min+1
+    xval_end = i_max -1 
     do inputIndex = xval_start,  xval_end
-        i_start = minloc(xData, 1, xData > xVal(inputIndex))-1
-        i_end = minloc(xData, 1, xData > xVal(inputIndex))
- 
+        i_start = maxloc(xData, 1, xData < xVal(inputIndex))
+        i_end = i_start + 1 
+         
         yVal(inputIndex) = (yData(i_end)-yData(i_start))*1.0_dp/(xData(i_end)-xData(i_start))*(xVal(inputIndex)-xData(i_start))+yData(i_start)
     end do
-   
     END SUBROUTINE INTERP1D
-	
 
     SUBROUTINE INTERP3D(LOCDATA,FDATA,LOCFINAL,FFINAL)
 	! =============================================================================
@@ -840,7 +794,8 @@
     zmin = LOCDATA(minloc(LOCDATA(:,3),1) ,3)
     zmax = LOCDATA(maxloc(LOCDATA(:,3),1) ,3)
     z_d  = (LOCFINAL(3) - zmin)/(zmax - zmin)
-    
+	
+    ! 1 -> 000, 2 -> 100, 3 -> 001, 4 -> 101, 5 -> 010,  6 -> 110, 7 -> 011, 8 -> 111
     c00=  FDATA(1,:)*(1-x_d) + FDATA(2,:)*x_d
     c01 = FDATA(3,:)*(1-x_d) + FDATA(4,:)*x_d
     c10 = FDATA(5,:)*(1-x_d) + FDATA(6,:)*x_d
@@ -852,6 +807,74 @@
     FFINAL = c0*(1-z_d)+c1*z_d
 
     END SUBROUTINE INTERP3D
+	
+	
+    SUBROUTINE INTERP3D_SHEPARD(LOCDATA,FDATA,LOCFINAL,FFINAL)
+	! =============================================================================
+    !
+    !   Programmer: Agisilaos Matalliotakis // Date : 200902
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   3.0     200902  Original code (KAM)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine FIND_CLOSEST_DIVISOR finds an integer divisor of a given
+    !	number (Nominator) which is closest to a given second number (Denominator). 
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   xData             	i   i8b  		a vector of the x-values of the data to be interpolated
+    !   yData			  	i   i8b         a vector of the y-values of the data to be interpolated
+    !   xVal            	i   i8b         a vector of the x-values where interpolation should be performed
+    !   yVal            	o   i8b         a vector of the resulting interpolated values
+    !
+    ! *****************************************************************************
+	
+    real(dp), intent(in) 		:: 		LOCDATA(:,:), FDATA(:,:), LOCFINAL(:)
+    real(dp), intent(out) 		:: 		FFINAL(:)
+
+	! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    ! *****************************************************************************
+    integer(i8b)		 		:: 		i
+	real(dp)					:: 		diffXYZ(size(LOCDATA,1) ), DENOM_SUM
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   none
+    !
+    ! *****************************************************************************
+    !
+    !   SUBROUTINES/FUNCTIONS CALLED
+    !
+    !   none
+    !
+    ! =============================================================================
+  
+
+    ! xmin is the minimum location of the point in x axis , found as the one smaller than the asked x location  
+    ! xmax is the maximum location of the point in x axis , found as the one greater than the asked x location
+    ! Same idea for the rest values
+	diffXYZ = 1.0D0/sqrt((LOCDATA(:,1) - LOCFINAL(1))**2 + (LOCDATA(:,2) - LOCFINAL(2))**2 + (LOCDATA(:,3) - LOCFINAL(3))**2)
+	FFINAL = 0 
+	DENOM_SUM = 0
+	do i = 1, size(LOCDATA,1)
+		FFINAL = FFINAL + diffXYZ(i) * FDATA(i,:)
+	enddo
+	FFINAL = FFINAL / SUM(diffXYZ)
+
+    END SUBROUTINE INTERP3D_SHEPARD
     
     SUBROUTINE FIND_CLOSEST_DIVISOR(Nominator, Denominator, Result)
     

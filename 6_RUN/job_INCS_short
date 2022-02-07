@@ -1,16 +1,15 @@
 #!/bin/bash
  
-#SBATCH --job-name=2_MONO_test_2
-#SBATCH --partition=general
-#SBATCH --qos=short
+#SBATCH --job-name=2_MONO_PW_A1E5_5E5MBs_2
+#SBATCH --partition=imphys,general
+#SBATCH --qos=long
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=56
+#SBATCH --ntasks=48
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=500G
-#SBATCH --time=04:00:00
-#SBATCH --output=../7_RESULTS/test_2/INCS_test_2.out
-#SBATCH --error=../7_RESULTS/test_2/INCS_test_2.err
-##SBATCH --exclusive
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=08:00:00
+#SBATCH --output=../7_RESULTS/test/PW_A1E5_5E5MBs_2/INCS_PW_A1E5_5E5MBs_2.out
+#SBATCH --error=../7_RESULTS/test/PW_A1E5_5E5MBs_2/INCS_PW_A1E5_5E5MBs_2.err
  
 module use /opt/insy/modulefiles
 module load intel
@@ -19,7 +18,10 @@ source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compi
 source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh
 source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64
  
+ulimit -a
 ulimit -s unlimited
+ulimit -a
+ulimit -l unlimited
  
 # export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so
 export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
@@ -28,4 +30,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../3_COMPILED_FILES/INCS_Agis_test_2 TESTNeumann_Planewave_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test_2
+srun ../7_RESULTS/test/PW_A1E5_5E5MBs_2/INCS_Agis_PW_A1E5_5E5MBs_2 TESTNeumann_Planewave_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test/PW_A1E5_5E5MBs_2

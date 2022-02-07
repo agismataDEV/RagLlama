@@ -1,15 +1,15 @@
 #!/bin/bash
  
-#SBATCH --job-name=2_MONO_1E3PS_2E4MBs_A78_LongPulse
-#SBATCH --partition=general
+#SBATCH --job-name=2_MONO_1E3MBs_Validation_linear
+#SBATCH --partition=imphys,general
 #SBATCH --qos=long
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=56
 #SBATCH --cpus-per-task=1
 #SBATCH --mem=500G
-#SBATCH --time=40:00:00
-#SBATCH --output=../7_RESULTS/1E3PS_2E4MBs_A78_LongPulse/INCS_1E3PS_2E4MBs_A78_LongPulse.out
-#SBATCH --error=../7_RESULTS/1E3PS_2E4MBs_A78_LongPulse/INCS_1E3PS_2E4MBs_A78_LongPulse.err
+#SBATCH --time=20:00:00
+#SBATCH --output=../7_RESULTS/1E3MBs_Validation_linear/INCS_1E3MBs_Validation_linear.out
+#SBATCH --error=../7_RESULTS/1E3MBs_Validation_linear/INCS_1E3MBs_Validation_linear.err
 ##SBATCH --exclusive
  
 module use /opt/insy/modulefiles
@@ -28,4 +28,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../3_COMPILED_FILES/INCS_Agis_1E3PS_2E4MBs_A78_LongPulse TESTNeumann_PointSourceCloud_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/1E3PS_2E4MBs_A78_LongPulse
+srun ../7_RESULTS/1E3MBs_Validation_linear/INCS_Agis_1E3MBs_Validation_linear TESTNeumann_Planewave_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/1E3MBs_Validation_linear

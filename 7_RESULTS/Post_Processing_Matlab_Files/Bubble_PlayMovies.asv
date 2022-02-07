@@ -48,14 +48,14 @@ if (strcmp(file.play_movies,'yes'))
     
     %% ========================= Initialize first frame=========================
     
-    dBVALUES = 50;
-    plot_value = 20*log10(abs(pnl.data));
+    dBVALUES = 60;
+    plot_value = 20*log10(abs(pnl.contrastdata));
     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
-    mov = VideoWriter('PressureFieldEvolution.avi','Motion JPEG AVI');
-    mov.FrameRate = 30; mov.Quality = 75;
+    mov = VideoWriter('PressureFieldEvolution_LS_1E4_25fps.avi','Motion JPEG AVI');
+    mov.FrameRate = 25; mov.Quality = 75;
     open(mov);
     
     num_frames = i_end;
@@ -74,7 +74,7 @@ if (strcmp(file.play_movies,'yes'))
 %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
     end
     
-    title_txt = 'Scatter Pressure Field, t_i = ';
+    title_txt = 'Scattered Pressure Field | Off Resonance , t_i = ';
 %     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
     %     if (sum(sum(sum(plot_value==Total_Field)))==numel(plot_value)) ;title_txt = 'Total Pressure Field, t_i = ';end
     title(ax,[title_txt,num2str(1)])
@@ -102,11 +102,11 @@ if (strcmp(file.play_movies,'yes'))
         set(ax.Title,'String',[title_txt,num2str(i)])
         set(p,'XData',domain.par{domain.dimval(3)},'YData',domain.par{domain.dimval(2)},'CData',squeeze(plot_value(i,:,:)))
         drawnow
-%         if (strcmp(file.save_movies,'yes'))
-%             F(i) = getframe(gcf);
-%             writeVideo(mov,F(i));
-%         end
-        %         pause(0.01)
+        if (strcmp(file.save_movies,'yes'))
+            F(i) = getframe(gcf);
+            writeVideo(mov,F(i));
+        end
+%                 pause(0.01)
         
         
     end
