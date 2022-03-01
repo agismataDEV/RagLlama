@@ -15,11 +15,11 @@
 *************************************************
 ***   domain and discretization parameters    ***
 *************************************************
-1.500000E+001		*** Lx in [mm]
-1.500000E+001		*** Ly in [mm]
-4.000000E+001		*** Lt in [cycles]
+1.000000E+001		*** Lx in [mm]
+1.000000E+001		*** Ly in [mm]
+3.000000E+001		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
-1.500000E+001		*** Lz in [mm]	(length of the field in z)
+1.000000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E+000		*** Thetat [rad]
@@ -41,7 +41,7 @@ bubble
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation
 0		***	Switch: Use Symmetry in the Y axis 
 1		*** Number of beams in which the total field is split
-15		*** Number of iterations of the first beam
+8		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 9		*** Number of slices to be stored
@@ -61,7 +61,7 @@ z 10.03
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-1.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+1.000000E+004		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
 0.600000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
@@ -121,14 +121,14 @@ gaussian
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-5.000000E+003	*** No. of Bubbles consisting the cluster
+1.000000E+000	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
 2.4E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
 0.25 0.75	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
 0.25 0.75	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.2 0.8  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+0.3 0.7  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
 10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"

@@ -28,11 +28,10 @@ if (strcmp(file.play_movies,'yes'))
         Total_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
     %%
     if (domain.dimval(1) ==1 || domain.dimval(1)==2)   % For X and Y , the domain should be moved in order to get a nice movie
-        %         Scatter_Field=round(ifft(fft(reshape(pnl.contrastdata,sizeP(1)*sizeP(2),sizeP(3))',[],2).* exp(-2i*pi/10*[1:sizeP(3)]),[],2))
         for k=1:sizeP(3)
-                        Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(plin.data(:,:,k)));
+            Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(plin.data(:,:,k)));
             Scatter_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.contrastdata(:,:,k)));
-                        Total_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.data(:,:,k)));
+            Total_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.data(:,:,k)));
         end
         
         i_end = sizeP(1)+sizeP(3); % For X And Y the plot is a moving window at each Z position

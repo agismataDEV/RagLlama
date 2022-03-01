@@ -1,16 +1,15 @@
 #!/bin/bash
  
-#SBATCH --job-name=2_MONO_1E3MBs_Validation_linear
+#SBATCH --job-name=Phased_1E6_70T_1E2Pa_LP_1micron
 #SBATCH --partition=imphys,general
 #SBATCH --qos=long
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=56
+#SBATCH --ntasks=56
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=500G
-#SBATCH --time=20:00:00
-#SBATCH --output=../7_RESULTS/1E3MBs_Validation_linear/INCS_1E3MBs_Validation_linear.out
-#SBATCH --error=../7_RESULTS/1E3MBs_Validation_linear/INCS_1E3MBs_Validation_linear.err
-##SBATCH --exclusive
+#SBATCH --mem-per-cpu=10G
+#SBATCH --time=40:00:00
+#SBATCH --output=../7_RESULTS/Paper/Phased_1E6_70T_1E2Pa_LP_1micron/INCS_Phased_1E6_70T_1E2Pa_LP_1micron.out
+#SBATCH --error=../7_RESULTS/Paper/Phased_1E6_70T_1E2Pa_LP_1micron/INCS_Phased_1E6_70T_1E2Pa_LP_1micron.err
  
 module use /opt/insy/modulefiles
 module load intel
@@ -19,7 +18,10 @@ source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compi
 source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh
 source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64
  
+ulimit -a
 ulimit -s unlimited
+ulimit -a
+ulimit -l unlimited
  
 # export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so
 export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so
@@ -28,4 +30,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../7_RESULTS/1E3MBs_Validation_linear/INCS_Agis_1E3MBs_Validation_linear TESTNeumann_Planewave_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/1E3MBs_Validation_linear
+srun ../7_RESULTS/Paper/Phased_1E6_70T_1E2Pa_LP_1micron/INCS_Agis_Phased_1E6_70T_1E2Pa_LP_1micron TESTNeumann_Phased_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/Paper/Phased_1E6_70T_1E2Pa_LP_1micron

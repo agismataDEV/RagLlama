@@ -1798,7 +1798,7 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
 	DEALLOCATE(dTaperMaxFreqWindow)
     END SUBROUTINE INTERP1DFREQ
     
-    SUBROUTINE GREENS1DFREQ( InputVal , OutputVal, cSpace ,iTargetIndex,Bubble_diff)
+    SUBROUTINE GREENS1DFREQ( cSpace, InputVal , OutputVal , iTargetIndex, Bubble_diff)
 
 	! =============================================================================
 	!
@@ -1858,7 +1858,7 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     
     !Filtering and windowing parameters 
     real(dp) 					::			dTaperSupportWindow(size(InputVal,1)), dTaperMaxFreqWindow(size(InputVal,1)+1), dLeftBand,dRightBand, dDomega
-	real(dp)					::			InputValT(size(InputVal,1)*2),OutputValT(size(InputVal,1)*2)
+	real(dp)					::			InputValT(size(InputVal,1)*2),OutputValT(size(InputVal,1)*2), Test(size(InputVal,1)+1) 
     integer						::			i,iErr
     
     !Green's function parameters:
@@ -1894,11 +1894,11 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     InputValT = 0.0D0
     !    in the contrast source
 	dTaperSupportWindow = dTaperingWindow(InputLen,cSpace%dDt,2.0D0,2.0D0)
-    InputValT(1:InputLen) = InputVal(:) !* dTaperSupportWindow
+    InputValT(1:InputLen) = InputVal(:) 
 	
     ! Do a FFT of InputLen-point (Initial Variable Length) with complex numbers 
-    call dfftw_plan_dft_r2c_1d(iNumPlanTransform, (interp_factor+1)*InputLen, InputValT, InputValWT, FFTW_ESTIMATE)
-    call dfftw_execute_dft_r2c(iNumPlanTransform, InputValT, InputValWT)    
+    ! call dfftw_plan_dft_r2c_1d(iNumPlanTransform, (interp_factor+1)*InputLen, InputValT, InputValWT, FFTW_ESTIMATE)
+    call dfftw_execute_dft_r2c(cSpace%cGrid%cTransforms%iPlanTransform1D_Own, InputValT, InputValWT)    
     
     dKcutoff = two_pi  * ( 1.0_dp  + 0.5_dp/cSpace%iDimX) * cSpace%dFnyq
 	iDiffT=0;
@@ -1916,8 +1916,6 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
 			call cisi4((dKcutoff-dOmega)*dRad, dCi1, dSi1)
 			call cisi4((dKcutoff+dOmega)*dRad, dCi2, dSi2)
 			Green(iOmega+1)=1.0D0/REAL(dRad*4.0D0*pi**2,dp)* ( dcos(dOmega*dRad)*(dSi1+dSi2) + dsin(dOmega*dRad)*(dCi1-dCi2-im*pi));
-			
-			if(cSpace%dTant ==1 ) Green(iOmega+1) = Green(iOmega+1)*exp(-im*dOmega*Bubble_diff(3))
 			InputValWT(iOmega+1) = InputValWT(iOmega+1)*Green(iOmega+1)* cSpace%dDx**3 /real((interp_factor+1)*InputLen,dp)
 		enddo
 	else
@@ -1938,8 +1936,6 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
 			Green(iOmega+1)= 1.0_dp/(4.0_dp*pi*dRad)*(exp(-im*dKangular*dRad)	&
 						+(-exp( im*dKcutoff*dRad)*(E1mm+E1mp)&
 						  +exp(-im*dKcutoff*dRad)*(E1Pm+E1pp))/(im*two_pi))	
-						  
-			Green(iOmega+1) = Green(iOmega+1)*exp(-im*dOmega*Bubble_diff(3))
 			InputValWT(iOmega+1) = InputValWT(iOmega+1)*Green(iOmega+1)* cSpace%dDx**3 /real((interp_factor+1)*InputLen,dp)
 		enddo
     endif
@@ -1951,16 +1947,16 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     ! This is done by initializing OutputValW with 0 ( Really small number due to precision)
     ! Replace the first half part with the values of initial variable.
     OutputValWT = 0.0D0
-  	OutputValWT(1:InputLen+1)  = InputValWT(1:InputLen+1) !* dTaperMaxFreqWindow
+  	OutputValWT(1:InputLen+1)  = InputValWT(1:InputLen+1) * dTaperMaxFreqWindow
   	
     ! Inverse FFT of OutputLen-point
-    call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, (interp_factor+1)*InputLen, OutputValWT, OutputValT, FFTW_ESTIMATE)
-    call dfftw_execute_dft_c2r(iNumPlanTransform_inv, OutputValWT, OutputValT )
+    ! call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, (interp_factor+1)*InputLen, OutputValWT, OutputValT, FFTW_ESTIMATE)
+    call dfftw_execute_dft_c2r(cSpace%cGrid%cTransforms%iPlanTransform1D_Own_inv, OutputValWT, OutputValT )
     
- 	OutputVal = OutputValT(1:OutputLen) !* dTaperSupportWindow
-    ! OutputVal = OutputVal * ABS(real(OutputVal,dp)<1E100_dp)
-    call dfftw_destroy_plan(iNumPlanTransform)
-    call dfftw_destroy_plan(iNumPlanTransform_inv)
+ 	OutputVal = OutputValT(1:OutputLen) 
+	
+    ! call dfftw_destroy_plan(iNumPlanTransform)
+    ! call dfftw_destroy_plan(iNumPlanTransform_inv)
     
     
     END SUBROUTINE GREENS1DFREQ

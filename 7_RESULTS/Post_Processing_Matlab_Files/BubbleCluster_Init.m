@@ -57,8 +57,8 @@ domain.symmetry             = 0;
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1MBs_Validation_sinc_all';
-file.dirname             = '../test/1E3PS_A78_2E4MBs';
-file.dirname             = '../test/PW_A1E5_5E3MBs_2';
+file.dirname             = '../test/PW_1E4LS';
+file.dirname             = '../Test/PW_1E2';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 
@@ -136,7 +136,7 @@ domain.Fnyq        = 1/(domain.dtpar*2)/medium.freq0;
 %% generate axes for focal plane
 domain.TXYstarts=domain.TXYstart+min(domain.TXYoff);
 
-domain.tpar        = (0:domain.tdimpar-1)*domain.dtpar;
+domain.tpar        = (0:domain.tdimpar-1)*domain.dtpar + domain.tstart*domain.dtpar;
 domain.par{1}      = (domain.start(1)+(0:domain.dimlen(1)-1))*domain.dxpar;
 domain.par{2}      = (domain.start(2)+(0:domain.dimlen(2)-1))*domain.dypar;
 domain.par{3}      = (domain.start(3)+(0:domain.dimlen(3)-1))*domain.dzpar;

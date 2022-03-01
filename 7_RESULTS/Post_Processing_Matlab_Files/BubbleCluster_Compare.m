@@ -33,24 +33,24 @@ if (Bubble.N <=10 && Bubble.N>0)
     Sim_OSFactor=1;
     %%
     i_start = 1;
-    i_end = 200;
+    i_end = domain.tdimpar;
     depth =  domain.dimlen(3)-20;
     figure('WindowState','maximized');
     hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,round(size(plin.data,3)/2)+1,depth)*1E-3,'-','LineWidth',2)
-    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.anN_cluster(i_start:i_end,round(size(plin.data,3)/2)+1,depth)*1E-3, '--','LineWidth',2)
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.contrastdata(i_start:i_end,round(size(plin.data,3)/2)+1,depth)*1E-3, '--','LineWidth',2)
     xlabel('Time [usec]')
     ylabel('Pressure [kPa]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
     legend('Linear','With MBs')
     grid on;
-    title(['INCS Results after 10 Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(70)),', ',num2str(0),', ', num2str(domain.par{3}(depth)),') [mm]'])
+    title(['INCS Results after 10 Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(round(size(plin.data,3)/2)+1)),', ',num2str(0),', ', num2str(domain.par{3}(depth)),') [mm]'])
     
     F_s = 1/(2*domain.dtpar);                          % [Hz] , 1/dt
-    [f_p,Sp_p] = Freq_Calc(plin.data(i_start:i_end,70,depth),1/(2*domain.dtpar));            % Spectrum of simulation
+    [f_p,Sp_p] = Freq_Calc(plin.data(i_start:i_end,round(size(plin.data,3)/2)+1,depth),1/(2*domain.dtpar));            % Spectrum of simulation
     figure('WindowState','maximized');
     hold on;  plot(f_p*1E-6,Sp_p,'-','LineWidth',2)
-    [f_s,Sp_s] = Freq_Calc(pnl.contrastdata(i_start:i_end,70,depth),1/(2*domain.dtpar));            % Spectrum of simulation
+    [f_s,Sp_s] = Freq_Calc(pnl.contrastdata(i_start:i_end,round(size(plin.data,3)/2)+1,depth),1/(2*domain.dtpar));            % Spectrum of simulation
     hold on;  plot(f_s*1E-6,Sp_s,'--','LineWidth',2)
     xlabel('Frequency [MHz]')
     ylabel('Amplitude [dB]')
@@ -64,8 +64,8 @@ if (Bubble.N <=10 && Bubble.N>0)
         %%
         % Load pressure values from file
         %             filename_pres = filename_pres(1:end-1);
-        filename_pres = split(cellstr(ls([file.dirname '/Bubbles/' 'v_dd_norm_004*.txt'])));
-        for ifile =1:1
+        filename_pres = split(cellstr(ls([file.dirname '/Bubbles/' 'v_dd_norm_001*.txt'])));
+        for ifile =56:56
             fileID_pres = fopen([file.dirname '/Bubbles/' filename_pres{ifile} ],'r');
             size_pres = [1 Inf];
             formatSpec = '%f';
@@ -73,15 +73,16 @@ if (Bubble.N <=10 && Bubble.N>0)
             V_dd_sim_loaded = fscanf(fileID_pres,formatSpec,size_pres);
             
             n_pad = (length(V_dd_sim_loaded)/domain.tdimpar-2)/2;
-            n_pad = 4;
-            iBubble_ofinterest =  1 ;
-            if (length(V_dd_sim_loaded)>(1+2*domain.tdimpar+2*n_pad*domain.tdimpar)); iBubble_ofinterest = 1;end
-            V_dd_sim = V_dd_sim_loaded((iBubble_ofinterest-1)*(2*domain.tdimpar+2*n_pad*domain.tdimpar) + 1 :iBubble_ofinterest*(2*domain.tdimpar+2*n_pad*domain.tdimpar));
+            n_pad = 2;
+            tdimpar_file = size(Bubble.Contrast,2);
+            iBubble_ofinterest =  10;
+%             if (length(V_dd_sim_loaded)>(1+2*domain.tdimpar+2*n_pad*domain.tdimpar)); iBubble_ofinterest = 1;end
+            V_dd_sim = V_dd_sim_loaded((iBubble_ofinterest-1)*(2*tdimpar_file+2*n_pad*tdimpar_file) + 1 :iBubble_ofinterest*(2*tdimpar_file+2*n_pad*tdimpar_file));
             
-            V_dd_Time = V_dd_sim(1:domain.tdimpar);
-            V_dd_Pres = V_dd_sim(domain.tdimpar + 1 : 2*domain.tdimpar) * medium.rho0;
-            V_dd_TimePad = V_dd_sim(2*domain.tdimpar + 1:(n_pad+2)*domain.tdimpar);
-            V_dd_PresPad = V_dd_sim((n_pad+2)*domain.tdimpar + 1 : (n_pad+2)*domain.tdimpar+n_pad*domain.tdimpar)* medium.rho0;
+            V_dd_Time = V_dd_sim(1:tdimpar_file);
+            V_dd_Pres = V_dd_sim(tdimpar_file + 1 : 2*tdimpar_file) * medium.rho0;
+            V_dd_TimePad = V_dd_sim(2*tdimpar_file + 1:(n_pad+2)*tdimpar_file);
+            V_dd_PresPad = V_dd_sim((n_pad+2)*tdimpar_file + 1 : (n_pad+2)*tdimpar_file+n_pad*tdimpar_file)* medium.rho0;
             
             figure('WindowState','maximized');
             hold on; plot(V_dd_Time*1E6,V_dd_Pres,V_dd_TimePad*1E6,V_dd_PresPad)
@@ -110,7 +111,7 @@ if (Bubble.N <=10 && Bubble.N>0)
         fclose('all')
         %%
         filename_pres = split(cellstr(ls([file.dirname '/Bubbles/output_file_pressure_001*.txt'])));
-        for ifile = 1:1
+        for ifile =56:56
             fileID_pres = fopen([file.dirname '/Bubbles/' filename_pres{ifile} ],'r');
             size_pres = [1 Inf];
             formatSpec = '%f';
@@ -118,15 +119,17 @@ if (Bubble.N <=10 && Bubble.N>0)
             BubbleVal_loaded = fscanf(fileID_pres,formatSpec,size_pres);
             
             n_pad = ((length(BubbleVal_loaded)-1)/domain.tdimpar-2)/2;
-            n_pad = 4;
-            iBubble_ofinterest = 1;
-            if (length(BubbleVal_loaded)>(1+2*domain.tdimpar+2*n_pad*domain.tdimpar)); iBubble_ofinterest = 1;end
-            BubbleVal = BubbleVal_loaded((iBubble_ofinterest-1)*(1+2*domain.tdimpar+2*n_pad*domain.tdimpar) + 2 :iBubble_ofinterest*(1+2*domain.tdimpar+2*n_pad*domain.tdimpar));
+            n_pad = 2;
+            tdimpar_file = size(Bubble.Contrast,2);
+            iBubble_ofinterest = 10;
+%             if (length(BubbleVal_loaded)>(1+2*tdimpar_file+2*n_pad*tdimpar_file)); iBubble_ofinterest = 20;end
+            BubbleVal = BubbleVal_loaded((iBubble_ofinterest-1)*(1+2*tdimpar_file+2*n_pad*tdimpar_file) + 2 :iBubble_ofinterest*(1+2*tdimpar_file+2*n_pad*tdimpar_file));
+            iBubble = BubbleVal_loaded((iBubble_ofinterest-1)*(1+2*tdimpar_file+2*n_pad*tdimpar_file) + 1)
             
-            BubbleTime = BubbleVal(1:domain.tdimpar);
-            BubblePres = BubbleVal(domain.tdimpar + 1 : 2*domain.tdimpar);
-            BubbleTimePad = BubbleVal(2*domain.tdimpar + 1:(n_pad+2)*domain.tdimpar);
-            BubblePresPad = BubbleVal((n_pad+2)*domain.tdimpar + 1 : (n_pad+2)*domain.tdimpar+n_pad*domain.tdimpar);
+            BubbleTime = BubbleVal(1:tdimpar_file);
+            BubblePres = BubbleVal(tdimpar_file + 1 : 2*tdimpar_file);
+            BubbleTimePad = BubbleVal(2*tdimpar_file + 1:(n_pad+2)*tdimpar_file);
+            BubblePresPad = BubbleVal((n_pad+2)*tdimpar_file + 1 : (n_pad+2)*tdimpar_file + n_pad*tdimpar_file);
             figure('WindowState','maximized');
             hold on; plot(BubbleTime*1E6,BubblePres,BubbleTimePad*1E6,BubblePresPad)
             legend('Initial Pulse', 'Resampled Pulse')
@@ -195,7 +198,7 @@ if (Bubble.N <=10 && Bubble.N>0)
     %         close all
     
     OSFactor = 	1;
-    R_rigid = repmat(5E-6,Bubble.N,1);
+    R_rigid = repmat(2E-6,Bubble.N,1); %R_rigid(1) = 0;
     time_signature  =   (4/3*pi*R_rigid.^3)/(medium.c0^2);
     medium.rho1     =   10;
     medium.c1       =   100;
@@ -206,12 +209,12 @@ if (Bubble.N <=10 && Bubble.N>0)
     w_driving   = 2*pi*freq;
     gauss_dl    = 3/freq;
     gauss_win   = 1.5/freq;
-    
+      
     domain.tpar_OS = interp(domain.tpar,OSFactor);
     domain.dtpar_OS = domain.tpar_OS(2) - domain.tpar_OS(1);
     domain.tdimpar_OS = length(domain.tpar_OS);
     
-    Inc_Press   = repmat(1E5*exp( - ((domain.tpar_OS-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(domain.tpar_OS-gauss_dl)),Bubble.N,1);
+    Inc_Press   = repmat(1E4*exp( - ((domain.tpar_OS-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(domain.tpar_OS-gauss_dl)),Bubble.N,1);
     Fs          = 1/domain.dtpar_OS;  dF = Fs/domain.tdimpar_OS;
     if mod(domain.tdimpar_OS,2) == 0 % Nt is even
         f = -Fs/2 : dF : Fs/2-dF;
@@ -242,23 +245,21 @@ if (Bubble.N <=10 && Bubble.N>0)
         P_scattered = zeros(Bubble.N,domain.tdimpar_OS);
         for iBubble = 1:ceil(Bubble.N/2)
             r_from_scatterer = sqrt((Bubble.LocGlob(iBubble,1) - Bubble.LocGlob(:,1)).^2 + (Bubble.LocGlob(iBubble,2) - Bubble.LocGlob(:,2)).^2 + (Bubble.LocGlob(iBubble,3) - Bubble.LocGlob(:,3)).^2)*1e-3;
-            Greens_function = (exp(-1i*omega.*r_from_scatterer/medium.c0)./(4*pi*r_from_scatterer)); % 1/(4πr) and the time shift due to wave travel
+            Greens_function = exp(-1i*omega.*r_from_scatterer/medium.c0)./(4*pi*r_from_scatterer); % 1/(4πr) and the time shift due to wave travel
             Greens_function(isinf(Greens_function)) = 0;
             
-            ddpddt          =   repmat(fft(TotalPress(iBubble,:),[],2).*(1i*omega(iBubble,:)).^2,Bubble.N,1) ; % What the scatterer understands
-            ddpddt = ddpddt.* time_signature(iBubble) .* Greens_function;
-            pnl.an = ddpddt;
-            pnl.an = real(ifft(pnl.an,[],2));
+            ddpddt      =   fft(TotalPress(iBubble,:),[],2).*(1i*omega(iBubble,:)).^2 ; % What the scatterer understands
+            pnl.an      =   ddpddt.* time_signature(iBubble) .* Greens_function;
+            pnl.an      =   real(ifft(pnl.an,[],2));
             
             iBubble_end = Bubble.N - iBubble+1;
             r_from_scatterer_end = sqrt((Bubble.LocGlob(iBubble_end,1) - Bubble.LocGlob(:,1)).^2 + (Bubble.LocGlob(iBubble_end,2) - Bubble.LocGlob(:,2)).^2 + (Bubble.LocGlob(iBubble_end,3) - Bubble.LocGlob(:,3)).^2)*1e-3;
-            Greens_function_end = (exp(-1i*omega.*r_from_scatterer_end/medium.c0)./(4*pi*r_from_scatterer_end)); % 1/(4πr) and the time shift due to wave travel
+            Greens_function_end = exp(-1i*omega.*r_from_scatterer_end/medium.c0)./(4*pi*r_from_scatterer_end); % 1/(4πr) and the time shift due to wave travel
             Greens_function_end(isinf(Greens_function_end)) = 0;
             
-            ddpddt_end          =   repmat(fft(TotalPress(iBubble_end,:),[],2).*(1i*omega(iBubble_end,:)).^2,Bubble.N,1) ; % What the scatterer understands
-            ddpddt_end = ddpddt_end.* time_signature(iBubble_end) .* Greens_function_end;
-            pnl.an_end = ddpddt_end;
-            pnl.an_end = real(ifft(pnl.an_end,[],2));
+            ddpddt_end  =   fft(TotalPress(iBubble_end,:),[],2).*(1i*omega(iBubble_end,:)).^2 ; % What the scatterer understands
+            pnl.an_end  =   ddpddt_end.* time_signature(iBubble_end) .* Greens_function_end;
+            pnl.an_end  =   real(ifft(pnl.an_end,[],2));
             
             % This array contains for each row, the pressure that this bubble understands as a summation of all its neighbors
             % So the first row is for
@@ -277,11 +278,11 @@ if (Bubble.N <=10 && Bubble.N>0)
 %     %
 %     m_init = idx1;
 %     k_init = idx3;
-    m_init      =   69;49;77;
+    m_init      =   139;49;77;
     m_end       =   m_init;
     k_init      =   10;11;58;
     k_end       =   k_init;
-    %     %
+%         %
     RRMS_ErrorG_semi_an = zeros(k_end,m_end);
     RRMS_ErrorG_an = zeros(k_end,m_end);
     for i = domain.beamiterations:domain.beamiterations
@@ -308,9 +309,8 @@ if (Bubble.N <=10 && Bubble.N>0)
                 % As in the movies, there should be a shift in
                 r_from_scatterer = sqrt((Bubble.LocGlob(:,domain.dimval(2)) - domain.par{domain.dimval(2)}(SliceIndex(1))).^2+(Bubble.LocGlob(:,domain.dimval(1)) - dslice.pos(dslice.num)).^2 ...
                     +(Bubble.LocGlob(:,domain.dimval(3))-domain.par{domain.dimval(3)}(SliceIndex(3))).^2)*1e-3;
-                z_shift = (Bubble.LocGlob(:,domain.dimval(3))-domain.par{domain.dimval(3)}(SliceIndex(3)) )*1e-3;
+                z_shift = domain.par{domain.dimval(3)}(SliceIndex(3)) *1e-3;
                 
-                phase_shift = 1;
                 Greens_function = (exp(-1i*omega.*r_from_scatterer/medium.c0)./(4*pi*r_from_scatterer)); % 1/(4πr) and the time shift due to wave travel
                 Greens_function(isinf(Greens_function)) = 0;
                 
@@ -342,19 +342,18 @@ if (Bubble.N <=10 && Bubble.N>0)
                 %================================================== SEMI-ANALYTIC RESULTS SHIFTED =============================================================
                 % This phase shift is due to the shift that was implemented in the incident pressure field in the beginning
                 % When a comoving time window is used then all the results need to be shifted in the correct position
-                if (domain.a_t); phase_shift = exp(-1i*omega.*repmat(Bubble.LocGlob(:,3)*1E-3,1,domain.tdimpar_OS)/medium.c0); end
-                pnl.semi_an = Bubble.Contrast ; % Semi - analytic because checking only the Green's function
-                pnl.semi_an = real(ifft(fft(pnl.semi_an,[],2).*Greens_function.*phase_shift,[],2));
-                pnl.semi_anN_cluster(:,k,m) = sum(pnl.semi_an,1)';%interp(pnl.semi_an,OSFactor)'; % Normalize to calculate error
+%                 pnl.semi_an = Bubble.Contrast ; % Semi - analytic because checking only the Green's function
+%                 pnl.semi_an = real(ifft(fft(pnl.semi_an,[],2).*Greens_function,[],2));
+%                 pnl.semi_anN_cluster(:,k,m) = sum(pnl.semi_an,1)';%interp(pnl.semi_an,OSFactor)'; % Normalize to calculate error
                 
                 %================================================== SIMULATION RESULTS =============================================================
                 pnl.sim = squeeze(pdiff(:,SliceIndex(1),SliceIndex(3)));
-                if (domain.a_t);pnl.sim = real(ifft(fft(pnl.sim').*phase_shift(1,:).* exp(1i*omega(1,:).*z_shift(1,1)/medium.c0)))';end
+                if (domain.a_t);pnl.sim = real(ifft(fft(pnl.sim').* exp(-1i*omega(1,:)* (z_shift(1,1)/medium.c0 - domain.tstart*domain.dtpar) )))';end
                 % The check for the time signature for microbubbles is done from the previous step of the comparison of the ode solvers
-                pnl.simN_cluster = pnl.sim;%interp(pnl.sim,OSFactor); % Normalize to calculate error
+                pnl.simN_cluster(:,k,m) = pnl.sim;%interp(pnl.sim,OSFactor); % Normalize to calculate error
                 
-                [RRMS_ErrorG_an(k,m),Rel_ErrorG_an(k,m)] = Error(pnl.anN_cluster(:,k,m),pnl.simN_cluster);
-                [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an(k,m)] = Error(pnl.semi_anN_cluster(:,k,m),pnl.simN_cluster);
+                [RRMS_ErrorG_an(k,m),Rel_ErrorG_an(k,m)] = Error(pnl.anN_cluster(:,k,m),pnl.simN_cluster(:,k,m));
+%                 [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an(k,m)] = Error(pnl.semi_anN_cluster(:,k,m),pnl.simN_cluster);
                 
                 %Safety measure , max 10 plots
                 if ( (k_end-k_init+1)*(m_end-m_init+1)<10)
@@ -373,30 +372,37 @@ if (Bubble.N <=10 && Bubble.N>0)
     %% ========================================= PLOT ERROR IN 2D SLICE ==================================================================
     %     if ( k_end == domain.dimlen(1) && m_end == domain.dimlen(3))
     RRMS_Err_Corr = RRMS_ErrorG_an;
-    RRMS_Err_Corr(abs(RRMS_Err_Corr)>0.9)=0;
+    RRMS_Err_Corr(abs(RRMS_Err_Corr)>0.2)=0;
 %         RRMS_Err_Corr(abs(RRMS_Err_Corr)>0.2)=0;
     figure('WindowState','maximized');
     ax1 = axes;
     length_z = 1;
     length_x = 1;
     contourf(domain.par{3}(length_z:end-length_z-1),domain.par{1}(length_x:end-length_x-1),RRMS_Err_Corr(length_x:end-length_x-1,length_z:end-length_z-1)*100);
-%     contourf(RRMS_Err_Corr*100)
+    contourf(RRMS_Err_Corr*100)
+%     RRMS_Err_Corr(abs(RRMS_Err_Corr)>=0.1)=0.1;
+%     RRMS_Err_Corr(abs(RRMS_Err_Corr)>=0.01 & abs(RRMS_Err_Corr)<0.1)=0.01;
+%     RRMS_Err_Corr(abs(RRMS_Err_Corr)>=0.001 & abs(RRMS_Err_Corr)<0.01)=0.001;
+%     RRMS_Err_Corr(abs(RRMS_Err_Corr)<0.01)=0;
+%     [C, h] = contourf(domain.par{3}(length_z:end-length_z-1),domain.par{1}(length_x:end-length_x-1),RRMS_Err_Corr(length_x:end-length_x-1,length_z:end-length_z-1)*100,[0.1 1 10],'Color','black'); 
+%     clabel(C,h)
+%     xlim([2 8]); ylim([-3 3])
     xlabel('Z [mm]')
     ylabel('X [mm]')
     c1 = colorbar(ax1);
-    c1.Label.String = 'RRRMS [%], Estimator : Peak Pressue';
+    c1.Label.String = 'RRRMS [%]';
     set(gca,'FontSize',20)
-    
+    hold on;
     %         ax2 = axes;
     %         c2 = colorbar(ax2);
     %         c2.Label.String = 'RRRMS [%]';
     %         axis off;
-    %     if (Bubble.N >6)
-    %         %         rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor',[190 0 0]/255,'LineWidth',5)
-    %         rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',5)
-    %     else
-    %         plot(ax1,Bubble.LocGlob(:,3),Bubble.LocGlob(:,1), 'x','Color','white','MarkerSize',20,'LineWidth',4)
-    %     end
+        if (Bubble.N >6)
+%                     rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor',[190 0 0]/255,'LineWidth',5)
+            rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',5)
+        else
+            plot(ax1,Bubble.LocGlob(:,3),Bubble.LocGlob(:,1), 'x','Color','white','MarkerSize',20,'LineWidth',4)
+        end
     BubbleCluster_Colormaps(file)
     shading interp;
     
@@ -405,6 +411,11 @@ if (Bubble.N <=10 && Bubble.N>0)
     std(std(RRMS_Err_Corr))
     set(gca,'FontSize',20)
     set(gcf,'Color','white');
+    %%
+    k = 39; m =35;
+     pnl.simN_cluster(:,k,m) = squeeze(pdiff(:,k,m));
+    Plot_Error(domain.tpar_OS,pnl,domain,SliceIndex,RRMS_ErrorG_semi_an,RRMS_ErrorG_an,k,m,Bubble.N,i)
+    Plot_Spectral_Response(domain,pnl,OSFactor,k,m)
     %% ========================================= PLOT Scattered pressure ==================================================================
     
     for iBubble = 1:Bubble.N
@@ -450,7 +461,7 @@ function Plot_Error(tpar_N,pnl,domain,SliceIndex,RRMS_ErrorG_semi_an,RRMS_ErrorG
 f6 = figure('WindowState','maximized');
 h_f1 = subplot(2,1,1);
 ax = gca; hold on;
-p1 = plot(tpar_N*1E6 ,pnl.simN_cluster,'--o','MarkerIndices',1:50:length(tpar_N),'MarkerSize',4,'color','k');
+p1 = plot(tpar_N*1E6 ,pnl.simN_cluster(:,k,m),'--o','MarkerIndices',1:50:length(tpar_N),'MarkerSize',4,'color','k');
 p3 = plot(tpar_N*1E6 ,pnl.semi_anN_cluster(:,k,m),':x','MarkerIndices',1:50:length(tpar_N),'MarkerSize',4,'color',[17 17 17]./255);
 p2 = plot(tpar_N*1E6 ,pnl.anN_cluster(:,k,m),'-d','MarkerIndices',1:50:length(tpar_N),'MarkerSize',4,'color',[17 17 17]./255);
 h =[p1;p2;p3];
@@ -482,7 +493,7 @@ end
 function Plot_Spectral_Response(domain,pnl,OSFactor,k,m)
 
 F_s = 1/(domain.dtpar/OSFactor*2);                          % [Hz] , 1/dt
-[f_p,Sp_psim] = Freq_Calc(pnl.simN_cluster,F_s);            % Spectrum of simulation
+[f_p,Sp_psim] = Freq_Calc(pnl.simN_cluster(:,k,m),F_s);            % Spectrum of simulation
 [~,Sp_pan] = Freq_Calc(pnl.anN_cluster(:,k,m),F_s);                % Spectrum of analytical pulse
 [~,Sp_psemi_an] = Freq_Calc(pnl.semi_anN_cluster(:,k,m),F_s);      % Spectrum of semi_analytical pulse
 

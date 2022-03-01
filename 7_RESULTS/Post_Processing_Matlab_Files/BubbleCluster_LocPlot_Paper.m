@@ -43,7 +43,7 @@ box on;
 % endif
 [Z,X] = meshgrid(domain.par{3},domain.par{1});
 s=surf([Z(1,1) Z(1,end) Z(1,1) Z(end,1)] , [X(1,1) X(1,end) X(1,1) X(end,1)],dslice.pos(dslice.num)*ones(4,4) ,...
-    'EdgeColor','black','FaceColor','#0080FF', 'FaceAlpha' ,0.6);  %
+    'EdgeColor','black','FaceColor','#C0C0C0', 'FaceAlpha' ,0);  %
 
 % text_datalabels = [ '\color{black}X \color[rgb]{0.0784 0.5725 0.7882}\bf',num2str(Bubble.LocGlob(:,1)),...
 %     '\newline\color{black}Y \color[rgb]{0.0784 0.5725 0.7882}\bf',num2str(Bubble.LocGlob(:,2)),...
@@ -52,7 +52,7 @@ s=surf([Z(1,1) Z(1,end) Z(1,1) Z(end,1)] , [X(1,1) X(1,end) X(1,1) X(end,1)],dsl
 % Create textarrow
 annotation('arrow',[0.12888198757764 0.428571428571429],...
     [0.780179138321995 0.886621315192744],'LineWidth',1.2)
-text('Position',[-4.288198757764 0.428571428571429 4.680179138321995 ],...
+text('Position',[-3.588198757764 0.428571428571429 9.280179138321995 ],...
     'String','Direction of Propagation','Rotation',14,'FontSize',20);
 
 shading interp;
@@ -63,7 +63,7 @@ rotate(s,[0 0 1 ], 0)
 elseif (domain.dimval(1)==3)
 rotate(s,[0 1 0], -90)
 end
-p=plot3(Bubble.LocGlob(:,3),Bubble.LocGlob(:,1),Bubble.LocGlob(:,2),'o','MarkerSize',7/(log10(Bubble.N)+1),'MarkerFaceColor','black');
+p=plot3(Bubble.LocGlob(:,3),Bubble.LocGlob(:,1),Bubble.LocGlob(:,2),'o','MarkerSize',8/(log10(Bubble.N)+1),'MarkerFaceColor','black');
 
 % Simplified visualization of transducer with 8 elements
 El = 8;
@@ -78,7 +78,7 @@ end
 view(-37.5,30)
 
 s=surf([Z(1,1) Z(1,end) Z(1,1) Z(end,1)] , [X(1,1) X(1,end) X(1,1) X(end,1)],dslice.pos(dslice.num)*ones(4,4) ,...
-    'EdgeColor','black','FaceColor','#0080FF', 'FaceAlpha' ,0.6);  %
+    'EdgeColor','black','FaceColor','#C0C0C0', 'FaceAlpha' ,0.3);  %
 
 if (strcmp(file.plot_colour,'gray')); s.FaceColor =[ 192 192 192]/255;s.EdgeColor='black'; p.MarkerEdgeColor= '#404040' ;end
 % 
@@ -93,12 +93,22 @@ set(x, 'Position',get(x, 'Position').*[1,1,1],'Rotation',10)
 y = ylabel('X [mm]');
 set(y, 'Position',get(y, 'Position').*[1,1,1],'Rotation',-21)
 zlabel('Y [mm]')
-title(['Computational Domain with ',num2str(Bubble.N),' Scatterer(s) /ml'])
+title(['Cluster of ',num2str(Bubble.N),' Scatterer(s) / 0.1 ml, Slice @ Y = 0 [mm]'])
 grid on
 grid minor
 hold off;
 set(gca,'FontSize',25)
 set(gcf,'Color','white')
+
+if (strcmp(file.saveplot,'yes'))
+        figure(f4)
+        folder = ['../',file.savedir,'/',file.dirname,'_3D_cluster_slice',int2str(dslice.num),'.png'];
+        cd export_fig/
+        export_fig  folder -painters -q110 
+        movefile('folder.png',folder)
+        cd ../
+end
+
 %% ======================= 3D Microbubble Cluster Focused position =============
 % subplot(1,2,1)
 % f4 = figure('WindowState','maximized');

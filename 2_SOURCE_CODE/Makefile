@@ -7,7 +7,7 @@ objects = 	 $(addprefix $(OBJDIR)/, fftw3.o Types.o Constants.o Cisi.o FDWeight.
 								  Stopwatch.o ParnacGeneral.o ParnacParamDef.o ParnacIdentifierDef.o ParnacTransformInit.o \
 								  ParnacDataSpaceInit.o ParnacOutput.o ParnacDataMap.o  Specialfun.o ContrastGenFilt.o \
 								  ParnacDataRedist.o f2kcli.o ParnacParamInit.o  ParnacTransformFilter.o ParnacDerivative.o \
-			 					  ORDERPACK.o ODEPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacPointSourceCloud_v2.o \
+			 					  ORDERPACK.o ODEPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacPointSourceCloud_INSIDEBC.o \
 								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacSchemes.o ParnacMain.o\
 								)  
  
@@ -27,7 +27,7 @@ LIBS		=  	$(LIBS_HDF5) $(LIBS_MPI) $(LIBS_FFTW3) -lz -lm -shared-intel
 CFLAGS_MKL 		= 	-mkl -liomp5 -lpthread -lm -qopenmp $(INC_PATH_MKL)
 CFLAGS_OPT 		= 	-O3 -funroll-all-loops #-xSSE4.2 -axAVX,CORE-AVX2 # -fast -ipo
 CFLAGS_DEBUG 	= 	-g -traceback -debug extended #-check all -fpe0 -warn 
-CFLAGS 			=  	-fpp -heap-arrays $(CFLAGS_DEBUG)  
+CFLAGS 			=  	-fpp -heap-arrays $(CFLAGS_OPT)  
 
 # For debugging use -g -check all -fpe0 -warn -traceback -debug extended
 FFTW_WRAPPERS   = 	-I fftw_wrappers.inc
@@ -89,8 +89,8 @@ $(OBJDIR)/ParnacConvolution.o : ParnacConvolution.f90
 ##Contrast
 $(OBJDIR)/ParnacContrastFunctions.o : ParnacContrastFunctions.f90
 	mpiifort -c ParnacContrastFunctions.f90 $(CFLAGS) -o $(OBJDIR)/ParnacContrastFunctions.o -module $(OBJDIR)
-$(OBJDIR)/ParnacPointSourceCloud_v2.o : ParnacPointSourceCloud_v2.f90
-	mpiifort -c ParnacPointSourceCloud_v2.f90 $(CFLAGS) $(CFLAGS_MKL)  $(LIBS)  -o $(OBJDIR)/ParnacPointSourceCloud_v2.o -module $(OBJDIR)
+$(OBJDIR)/ParnacPointSourceCloud_INSIDEBC.o : ParnacPointSourceCloud_INSIDEBC.f90
+	mpiifort -c ParnacPointSourceCloud_INSIDEBC.f90 $(CFLAGS) $(CFLAGS_MKL)  $(LIBS)  -o $(OBJDIR)/ParnacPointSourceCloud_INSIDEBC.o -module $(OBJDIR)
 
 ##Iterative Schemes
 $(OBJDIR)/ParnacIterStepMain.o  : ParnacIterStepMain.f90

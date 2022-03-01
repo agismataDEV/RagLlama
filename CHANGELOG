@@ -83,3 +83,12 @@ is solving the domain of its location. Now we split the number of the scatterers
 =============================================================================================================
 ParnacPointSourceCloud.f90 : Introduction of new subroutine only for trilinear interpolation so the code is more
 readable
+
+=============================================================================================================
+21/02/2022 
+=============================================================================================================
+ParnacPointSourceCloud.f90 : 
+1. Introduction of new subroutine for computing pressure only around each scatterer
+2. Also an update on the function for the efficient random generation of the bubble cloud. 
+3. Introduction of computing the bubble cloud in the boundaries also for the time domain.
+	(This has an impact on the memory mainly for large bubble clouds > 1E6 MBs/ ml) 

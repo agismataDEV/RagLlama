@@ -4,7 +4,7 @@
 % close all;
 for slicenum1 = [2]%[12,3,4,5,6]
     
-    clearvars -except slicenum1 atten atten_fund Loc Press_all Press_close
+    clearvars -except slicenum1 atten atten_fund Loc
     %     close all
     clc
     %% Initialize parameters for all the significant variables

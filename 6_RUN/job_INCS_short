@@ -1,15 +1,15 @@
 #!/bin/bash
  
-#SBATCH --job-name=2_MONO_PW_A1E5_5E3MBs_2
+#SBATCH --job-name=PW_1E2
 #SBATCH --partition=imphys,general
-#SBATCH --qos=long
+#SBATCH --qos=short
 #SBATCH --nodes=1
-#SBATCH --ntasks=48
+#SBATCH --ntasks=56
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=8G
-#SBATCH --time=08:00:00
-#SBATCH --output=../7_RESULTS/test/PW_A1E5_5E3MBs_2/INCS_PW_A1E5_5E3MBs_2.out
-#SBATCH --error=../7_RESULTS/test/PW_A1E5_5E3MBs_2/INCS_PW_A1E5_5E3MBs_2.err
+#SBATCH --mem-per-cpu=10G
+#SBATCH --time=04:00:00
+#SBATCH --output=../7_RESULTS/Test/PW_1E2/INCS_PW_1E2.out
+#SBATCH --error=../7_RESULTS/Test/PW_1E2/INCS_PW_1E2.err
  
 module use /opt/insy/modulefiles
 module load intel
@@ -30,4 +30,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../7_RESULTS/test/PW_A1E5_5E3MBs_2/INCS_Agis_PW_A1E5_5E3MBs_2 TESTNeumann_Planewave_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test/PW_A1E5_5E3MBs_2
+srun ../7_RESULTS/Test/PW_1E2/INCS_Agis_PW_1E2 TESTNeumann_Planewave_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/Test/PW_1E2

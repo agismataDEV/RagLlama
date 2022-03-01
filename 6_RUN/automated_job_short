@@ -40,14 +40,14 @@ cd ../6_RUN/
 ### HERE WE CREATE THE BASH FILE
 echo "#!/bin/bash" 									 															> job_INCS_short
 echo " " 											 															>> job_INCS_short
-echo "#SBATCH --job-name=2_MONO_$OUTPUT_FILE_NAME" 	 															>> job_INCS_short
-echo "#SBATCH --partition=imphys,general" 					 															>> job_INCS_short
-echo "#SBATCH --qos=long"          				 															>> job_INCS_short
+echo "#SBATCH --job-name=$OUTPUT_FILE_NAME" 	 														     	>> job_INCS_short
+echo "#SBATCH --partition=imphys,general" 					 													>> job_INCS_short
+echo "#SBATCH --qos=short"          				 															>> job_INCS_short
 echo "#SBATCH --nodes=1"           					 															>> job_INCS_short
-echo "#SBATCH --ntasks=48" 				 															>> job_INCS_short
+echo "#SBATCH --ntasks=56" 				 																		>> job_INCS_short
 echo "#SBATCH --cpus-per-task=1"    				 															>> job_INCS_short
-echo "#SBATCH --mem-per-cpu=8G"           				 															>> job_INCS_short
-echo "#SBATCH --time=08:00:00"      				 															>> job_INCS_short
+echo "#SBATCH --mem-per-cpu=10G"           				 														>> job_INCS_short
+echo "#SBATCH --time=04:00:00"      				 															>> job_INCS_short
 echo "#SBATCH --output=$OUT_FILE" 					 															>> job_INCS_short
 echo "#SBATCH --error=$ERR_FILE"     				 															>> job_INCS_short
 ####echo "##SBATCH --exclusive"          				 															>> job_INCS_short

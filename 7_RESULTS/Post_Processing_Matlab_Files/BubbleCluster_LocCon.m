@@ -35,7 +35,7 @@ Bubble.LocFile  = zeros(Bubble.N,3);
 [Bubble.LocNorm,Bubble.N]  = LoadContrastParams(Bubble,file,[name,'_Location',int2string_ICS(domain.beamiterations)], Bubble.LocFile , 'yes', 'r',1);
 if Bubble.N>0
     % Load the bubbles' contrast source term value
-    Bubble.ConFile  = zeros(Bubble.N,domain.tdimpar);
+    Bubble.ConFile  = zeros(Bubble.N,1);
     Bubble.Contrast = LoadContrastParams(Bubble,file,[name,'_Contrast',int2string_ICS(domain.beamiterations)], Bubble.ConFile , file.load_contrast_from_file, 'rb');
     % Load the bubbles' radius value
     Bubble.RadFile  = zeros(Bubble.N,1);
@@ -148,7 +148,8 @@ if (strcmp(load_operator,'yes'))
             if strcmp(fformat,'r')  ;ReadBubbleParameter = fscanf(fileID_loc,formatSpec,size_loc); end
             if strcmp(fformat,'rb') ;ReadBubbleParameter = fread(fileID_loc,size_loc,'*double') ; end
             if (returnN) ; Bubble.N = length(ReadBubbleParameter)/3; input = zeros(Bubble.N,3);end
-            
+            if (iProcID ==0); input = zeros(Bubble.N,length(ReadBubbleParameter)/Bubble.N); end
+                
             input(1:Bubble.N,:) = reshape(ReadBubbleParameter,size(input,2),Bubble.N)';
             %         Check if all the values of all the processors are the same
             if iProcID >0

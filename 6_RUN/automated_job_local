@@ -3,36 +3,39 @@ INPUT_FILE=${1?Error: No input file given}
 OUTPUT_FOLDER=${2?Error: No output folder given}
 export INPUT_FILE
 export OUTPUT_FOLDER
+IFS=/ read OUTPUT_FOLDER_NAME OUTPUT_FILE_NAME <<< $OUTPUT_FOLDER
+echo $OUTPUT_FOLDER_NAME
+echo $OUTPUT_FILE_NAME
 echo $OUTPUT_FOLDER
 
-export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.out
-export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FOLDER.err
+export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FILE_NAME.out
+export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FILE_NAME.err
 echo $OUT_FILE
 echo $ERR_FILE
 
 cd ../2_SOURCE_CODE/
-#rm ../3_COMPILED_FILES/INCS_Agis_*
+rm ../3_COMPILED_FILES/INCS_Agis_*
 make 
-cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER}
+cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME}
 
 #if [ -d ../7_RESULTS/$OUTPUT_FOLDER]; then
 mkdir ../7_RESULTS/$OUTPUT_FOLDER
 #	echo "Directory is created ..."
 #fi
 
-cd ../7_RESULTS/$OUTPUT_FOLDER/
-find . -name '*GlobalLoc*' | xargs rm -f
-mkdir 2_SOURCE_CODE
-mkdir Bubbles
+mkdir ../7_RESULTS/empty_dir
+#rsync -a --delete ../7_RESULTS/empty_dir/  ../7_RESULTS/$OUTPUT_FOLDER/
+rm -rf ../7_RESULTS/$OUTPUT_FOLDER
+mkdir ../7_RESULTS/$OUTPUT_FOLDER_NAME
+mkdir ../7_RESULTS/$OUTPUT_FOLDER
+mkdir ../7_RESULTS/$OUTPUT_FOLDER/2_SOURCE_CODE
+mkdir ../7_RESULTS/$OUTPUT_FOLDER/Bubbles
 
-cd ../../2_SOURCE_CODE/
-rm ../7_RESULTS/$OUTPUT_FOLDER/*
-rm ../7_RESULTS/$OUTPUT_FOLDER/Bubbles/*
 cp *.f90 ../7_RESULTS/$OUTPUT_FOLDER/2_SOURCE_CODE/
 cp ../5_INPUT_FILES/$INPUT_FILE ../7_RESULTS/$OUTPUT_FOLDER/
+cp ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME} ../7_RESULTS/$OUTPUT_FOLDER/
 
 cd ../6_RUN/
-
 ### HERE WE CREATE THE BASH FILE						 															
 											 															
 source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64	
@@ -48,6 +51,6 @@ export MKL_NUM_THREADS=1
 export MKL_THREADING_LAYER=intel																		
 export MKL_DYNAMIC="FALSE" 																			
 export MKL_VERBOSE=1																					
-srun --nodes=1 --ntasks=32 --job-name=2_MONO_$OUTPUT_FOLDER 	--partition=general --qos=short --output=$OUT_FILE --error=$ERR_FILE --mem=100G --time=04:00:00 ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FOLDER} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER 
+srun --nodes=1 --ntasks=32 --job-name=$OUTPUT_FILE_NAME --partition=general --qos=short --output=$OUT_FILE --error=$ERR_FILE --mem=100G --time=04:00:00 ../7_RESULTS/$OUTPUT_FOLDER/INCS_Agis_${OUTPUT_FILE_NAME} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER
 sleep 5
 qstat -u agismatalliota 
