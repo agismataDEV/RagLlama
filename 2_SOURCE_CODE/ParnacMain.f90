@@ -2318,8 +2318,8 @@
 				    call SubtractStoredToFieldBis(cResidualNeumann1,cResidualNeumann2,cResidualNeumann1,RandomNumber); ! this gives p at the given iteration
 				    ! this function does A=B-d*C
 
-		!            call FieldtoContrastSource(cResidualNeumann1, cModelParams.ContrastSourceType, cInhomContrast)
-		!            call ContrastSourcetoField(cResidualNeumann1, cResidualNeumann1, .false.)
+		            call FieldtoContrastSource(cResidualNeumann1, cModelParams.ContrastSourceType, cInhomContrast)
+		            call ContrastSourcetoField(cResidualNeumann1, cResidualNeumann1, .false.)
 					if (cModelParams%Numiterations(1+iBeam)==1) cResidualNeumann1 = cBeam
 				    RandomNumber=1
 				    call SubtractStoredToFieldBis(cResidualNeumann2,cResidualNeumann2,cResidualNeumann1,RandomNumber);

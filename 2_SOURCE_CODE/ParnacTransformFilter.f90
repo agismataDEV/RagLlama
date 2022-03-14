@@ -1897,7 +1897,6 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
     InputValT(1:InputLen) = InputVal(:) 
 	
     ! Do a FFT of InputLen-point (Initial Variable Length) with complex numbers 
-    ! call dfftw_plan_dft_r2c_1d(iNumPlanTransform, (interp_factor+1)*InputLen, InputValT, InputValWT, FFTW_ESTIMATE)
     call dfftw_execute_dft_r2c(cSpace%cGrid%cTransforms%iPlanTransform1D_Own, InputValT, InputValWT)    
     
     dKcutoff = two_pi  * ( 1.0_dp  + 0.5_dp/cSpace%iDimX) * cSpace%dFnyq
@@ -1950,13 +1949,9 @@ SUBROUTINE INTERP1DFREQ( InputVal , OutputVal, cSpace, Order )
   	OutputValWT(1:InputLen+1)  = InputValWT(1:InputLen+1) * dTaperMaxFreqWindow
   	
     ! Inverse FFT of OutputLen-point
-    ! call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, (interp_factor+1)*InputLen, OutputValWT, OutputValT, FFTW_ESTIMATE)
     call dfftw_execute_dft_c2r(cSpace%cGrid%cTransforms%iPlanTransform1D_Own_inv, OutputValWT, OutputValT )
     
  	OutputVal = OutputValT(1:OutputLen) 
-	
-    ! call dfftw_destroy_plan(iNumPlanTransform)
-    ! call dfftw_destroy_plan(iNumPlanTransform_inv)
     
     
     END SUBROUTINE GREENS1DFREQ

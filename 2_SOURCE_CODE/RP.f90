@@ -247,7 +247,7 @@
 	real(dp) P_elas, P_vis, P_gas, Damp_ac, Damp_visc, P_total 
 
     iBubble= NINT(R(4))
-	BubbleParams%kappa_s  = (1.5D-9)*EXP(8.0D5*BubbleParams%R0(iBubble))
+	! BubbleParams%kappa_s  = (1.5D-9)*EXP(8.0D5*BubbleParams%R0(iBubble))
     call INTERP1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
 	
     ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers

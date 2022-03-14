@@ -1405,7 +1405,7 @@ call MapVt(cSource)
     ! =============================================================================
 
     call PrintToLog("LoadField",1)
-	write(*,*) iBlockL
+	
     if (cSpace%cGrid%iDistr /= 0) then
         write (acTemp, '("Error occurred during the execution of LoadField, aborting program")');
         call PrintToLog(acTemp, -1);

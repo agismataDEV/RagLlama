@@ -809,7 +809,7 @@
     END SUBROUTINE INTERP3D
 	
 	
-    SUBROUTINE INTERP3D_SHEPARD(LOCDATA,FDATA,LOCFINAL,FFINAL)
+    SUBROUTINE INTERP3D_SHEPARD(LOCDATA,FDATA,LOCFINAL,FFINAL )
 	! =============================================================================
     !
     !   Programmer: Agisilaos Matalliotakis // Date : 200902
@@ -866,7 +866,7 @@
     ! xmin is the minimum location of the point in x axis , found as the one smaller than the asked x location  
     ! xmax is the maximum location of the point in x axis , found as the one greater than the asked x location
     ! Same idea for the rest values
-	diffXYZ = 1.0D0/sqrt((LOCDATA(:,1) - LOCFINAL(1))**2 + (LOCDATA(:,2) - LOCFINAL(2))**2 + (LOCDATA(:,3) - LOCFINAL(3))**2)
+	diffXYZ = sqrt((LOCDATA(:,1) - LOCFINAL(1))**2 + (LOCDATA(:,2) - LOCFINAL(2))**2 + (LOCDATA(:,3) - LOCFINAL(3))**2)
 	FFINAL = 0 
 	DENOM_SUM = 0
 	do i = 1, size(LOCDATA,1)
@@ -875,6 +875,73 @@
 	FFINAL = FFINAL / SUM(diffXYZ)
 
     END SUBROUTINE INTERP3D_SHEPARD
+    
+    SUBROUTINE FISHER_YATES_SHUFFLE(Array, N )
+	! =============================================================================
+    !
+    !   Programmer: Agisilaos Matalliotakis // Date : 200902
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   3.0     200902  Original code (KAM)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine FIND_CLOSEST_DIVISOR finds an integer divisor of a given
+    !	number (Nominator) which is closest to a given second number (Denominator). 
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   xData             	i   i8b  		a vector of the x-values of the data to be interpolated
+    !   yData			  	i   i8b         a vector of the y-values of the data to be interpolated
+    !   xVal            	i   i8b         a vector of the x-values where interpolation should be performed
+    !   yVal            	o   i8b         a vector of the resulting interpolated values
+    !
+    ! *****************************************************************************
+	
+    integer(i8b), intent(inout) 		:: 		Array(:)
+    integer(i8b), intent(in) 		    :: 		N
+
+	! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    ! *****************************************************************************
+    integer				    	::		i, j, temp
+    real(dp)                    ::      rand_num
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   none
+    !
+    ! *****************************************************************************
+    !
+    !   SUBROUTINES/FUNCTIONS CALLED
+    !
+    !   none
+    !
+    ! =============================================================================
+
+    Array = -1
+    
+	do i = N,1,-1
+		call RANDOM_NUMBER(rand_num)
+		j = INT(rand_num*(i-1)+1)
+		if (Array(i)<0) Array(i) = i
+		if (Array(j)<0) Array(j) = j
+		temp = Array(i)
+		Array(i) = Array(j)
+		Array(j) = temp
+	enddo
+
+    END SUBROUTINE FISHER_YATES_SHUFFLE
     
     SUBROUTINE FIND_CLOSEST_DIVISOR(Nominator, Denominator, Result)
     

@@ -825,7 +825,9 @@
 
     write ( *, '("Configuration input file: ",A)') trim(sInputDir)//trim(sInputName)
     write ( *, '(" ")')
+    write ( *, '("---------------------------------------------------------------------------")')
     write ( *, '("Input file, version ",F10.2)') fileversion
+    write ( *, '("---------------------------------------------------------------------------")')
     write ( *, '(" ")')
     write ( *, '("rho0:  ",E10.3)') cMediumParams.rho0
     write ( *, '("c0:    ",E10.3)') cMediumParams.c0
@@ -847,17 +849,17 @@
     write ( *, '("freq0:  ",E10.3)') cModelParams.freq0
     write ( *, '("Fnyq:   ",E10.3)') cModelParams.Fnyq
     write ( *, '(" ")')
-    write ( *, '("PrimSType:  ",I3)') cModelParams.PrimarySourceType
-    write ( *, '("ContSType:  ",I3)') cModelParams.ContrastSourceType
+    write ( *, '("PrimSType:  ",I4)') cModelParams.PrimarySourceType
+    write ( *, '("ContSType:  ",I4)') cModelParams.ContrastSourceType
     write ( *, '("FDTorder:   ",I4)') cModelParams.FDTorder
     write ( *, '("FDXorder:   ",I4)') cModelParams.FDXorder
     write ( *, '("Debuglvl:   ",I4)') iDebugLvl
     write ( *, '("A-Aliasing: ",L4)') cModelParams.UseAntiAliasing
     write ( *, '("SupTaper:   ",L4)') cModelParams.UseSupportTapering
     write ( *, '("FreqTaper:  ",L4)') cModelParams.UseFreqTapering
-    write ( *, '("Numbeams:   ",I5)') cModelParams.Numbeams
+    write ( *, '("Numbeams:   ",I4)') cModelParams.Numbeams
     do i=1,cModelParams%Numbeams
-        write ( *, '(" NumIt(",I2,"):    ",I4)') i,cModelParams.numiterations(i)
+        write ( *, '(" NumIt(",I2,"):   ",I4)') i,cModelParams.numiterations(i)
     end do
     write ( *, '("Slicesavespecifier: ",I5)') cModelParams.slicesavespecifier
     write ( *, '("Numslices:          ",I5)') cModelParams.Numslices
@@ -898,15 +900,15 @@
                 write ( *, '(" Triangxcenter: ",E10.3)') cSourceParams.triangxcenter
             else if (cSourceParams.srcshapetype == iHI_POINTSOURCE) then
             else if (cSourceParams.srcshapetype == iHI_PHASEDARRAY) then
-                write ( *, '(" Numel:    ",I3)') cSourceParams.numel
-                write ( *, '(" Elwidth:  ",E10.3)') cSourceParams.elwidth
-                write ( *, '(" Elheight: ",E10.3)') cSourceParams.elheight
-                write ( *, '(" Kerf:     ",E10.3)') cSourceParams.kerf
-                write ( *, '(" Focusx:   ",E10.3)') cSourceParams.focusx
-                write ( *, '(" Focusz:   ",E10.3)') cSourceParams.focusz
-                write ( *, '(" Elfocus:  ",E10.3)') cSourceParams.elevationfocusz
-                write ( *, '(" TD file:  ",A)') cSourceParams.td_filename
-                write ( *, '(" Apodfile: ",A)') cSourceParams.phaseapodfilename
+                write ( *, '(" Numel:        ",I3)') cSourceParams.numel
+                write ( *, '(" Elwidth:      ",E10.3)') cSourceParams.elwidth
+                write ( *, '(" Elheight:     ",E10.3)') cSourceParams.elheight
+                write ( *, '(" Kerf:         ",E10.3)') cSourceParams.kerf
+                write ( *, '(" Focusx:       ",E10.3)') cSourceParams.focusx
+                write ( *, '(" Focusz:       ",E10.3)') cSourceParams.focusz
+                write ( *, '(" Elfocus:      ",E10.3)') cSourceParams.elevationfocusz
+                write ( *, '(" TD file:       ",A)') cSourceParams.td_filename
+                write ( *, '(" Apodfile:      ",A)') cSourceParams.phaseapodfilename
                 !KH		else if (cSourceParams.srcshapetype == iHI_MATRIXARRAY) then
                 !KH				write ( *, '(" Numelx:    ",I3)') cSourceParams.matnumelx
                 !KH				write ( *, '(" Numely:    ",I3)') cSourceParams.matnumely
@@ -919,9 +921,9 @@
                 !KH				write ( *, '(" Focusz:   ",E10.3)') cSourceParams.matfocusz
                 !KH!				write ( *, '(" Apodfile: ",A)') cSourceParams.phaseapodfilename
                 write ( *, '(" ")')
-                write ( *, '("-------------------------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '(" ")')
-                write ( *, '(" Symmetry in the Y axis:				",I3)') abs(cModelParams%UseYSymmetry*-1)
+                write ( *, '(" Symmetry in the Y axis:             ",I3)') abs(cModelParams%UseYSymmetry)
                 write ( *, '(" Nonlinear Compressibility Contrast: ",I3)') cSourceParams.NKC
                 write ( *, '(" Linearized Contrast Source Method:  ",I3)') cSourceParams.LCSM
                 write ( *, '(" Bi-CGSTAB:                          ",I3)') cSourceParams.BiCGSTAB
@@ -930,10 +932,12 @@
                 write ( *, '(" Dual Frequency Modality:            ",I3)') cSourceParams.DFM
                 write ( *, '(" Shift for Dual Frequency Modality:  ",I3)') cSourceParams.SHIFT
                 write ( *, '(" ")')
-                write ( *, '("-------------------------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
 
                 write ( *, '(" ")')
-                write ( *, '("Parameters Section ----------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
+                write ( *, '("Parameters Section ")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '(" ")')
                 write ( *, '(" alpha1: ",E10.3)') cSourceParams.alpha1
                 write ( *, '(" b1:     ",E10.3)') cSourceParams.b1
@@ -965,9 +969,9 @@
                 write ( *, '(" KAPPA5: ",E10.3)') cSourceParams.KAPPA5
                 write ( *, '(" BETA5:  ",E10.3)') cSourceParams.BETA5
                 write ( *, '(" ")')
-                write ( *, '("-------------------------------------")')
+                write ( *, '("--------------------------------------------------------------------------")')
                 write ( *, '("Residual :",A)') trim(cSourceParams.residualdirectory)
-                write ( *, '("-------------------------------------")')
+                write ( *, '("--------------------------------------------------------------------------")')
             
             
             end if
@@ -975,9 +979,9 @@
         end if
         if (cModelParams.ContrastSourceType==iCI_BUBBLE) then
             	write ( *, '(" ")')
-                write ( *, '("--------------------------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '("Bubble Parameters for Marmottant Model")')
-                write ( *, '("--------------------------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '(" ")')
                 write ( *, '(" kappa_s:   ",E10.3)') BubbleParams%kappa_s
                 write ( *, '(" sigma_w:   ",E10.3)') BubbleParams%sigma_w
@@ -987,9 +991,9 @@
                 write ( *, '(" Marmottant Solver:       ",A)') trim(BubbleParams%Solver_Method)
                 write ( *, '(" Normalize in:       ",A)') trim(BubbleParams%Solver_Normalize)
                 write ( *, '(" ")')
-                write ( *, '("------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '("Cluster Parameters")')
-                write ( *, '("------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '(" ")')
                 write ( *, '(" Distribution: 	     ",A)'	  		) trim(BubbleParams%Distribution)
             if (trim(BubbleParams%Distribution) == 'monodisperse') then
@@ -1006,10 +1010,11 @@
         endif
     end if
     write ( *, '(" ")')
+     write ( *, '("---------------------------------------------------------------------------")')
 
     END SUBROUTINE ConfigFileInfo
 
-    SUBROUTINE SpecialChecksConfigParameters
+SUBROUTINE SpecialChecksConfigParameters
 
     ! =============================================================================
     !

@@ -47,7 +47,7 @@ MODULE ParnacPointSourceCloud
        ReorderDistr0ToDistr1,ReorderDistr1ToDistr0, &
        ReorderDistr1ToDistr2,ReorderDistr2ToDistr1
   USE ParnacDataSpaceInit, ONLY : &
-       iBeamOffsetX, iBeamOffsetY, InitSaveSlices
+       iBeamOffsetX, iBeamOffsetY, InitSaveSlices, SpaceInfo
   USE ParnacTransformFilter, ONLY : &
        TransformT, TransformTInv, &
        TransformT_sml, TransformTInv_sml, &
@@ -261,7 +261,7 @@ CONTAINS
 	call ReorderDistr0ToDistr1(pcGrid);
 	call MapVt(cSpace)
 	call ReorderDistr1ToDistr0(pcGrid);
-	
+
     call BubbleInit()
 
     INQUIRE(FILE=trim(trim(sOutputDir)//trim(BubbleParams%sBubbleDir)),EXIST =exists_loc)
@@ -306,9 +306,9 @@ CONTAINS
        do iBubble= 1 ,BubbleParams%N
           read(11, *) dBubbleLocationN(iBubble,1),dBubbleLocationN(iBubble,2),dBubbleLocationN(iBubble,3)
        end do
-       close(11)
+       close(11)   
 	   ibDimT  = iDimT - FLOOR(minval(dBubbleLocationN(:,3) + cSpace%iStartZ* cSpace%dDx) / cSpace%dDt)  + 20 ! This should not be changed because ibDimT is Integer
-	   
+	    
        write(acTemp,"('No. of Bubbles consisting the cluster: ', I<INT(log10(real(BubbleParams%N,dp)))+1>, ' in a volume of ', F5.3, ' [mL].')") BubbleParams%N, PRODUCT(maxval(dBubbleLocationN,1)-minval(dBubbleLocationN,1))*(cMediumParams%c0 * 1E3 /cModelParams%freq0)**3*1.0D-3;    call PrintToLog(acTemp,2);
 
        ! Load i_loc which is the number of the scatterers in each cpu domain
@@ -338,7 +338,7 @@ CONTAINS
     iMemAllocated=iMemAllocated + PRODUCT(SHAPE(tempcon)) * dpS + PRODUCT(SHAPE(temploc)) * i4bs
 	
 	call TrilinInterp_SNDRCV(cSpace, dBubbleLocationN, i_loc, tempcon, temploc, BubbleID, count_neighbs)
-	
+	  
     !************************************* COMMUNICATE PRESSURE AND LOCATION OF ALL THE SCATTERERS TO EVERY CPU **************************************************
     ! Create Bubble_count which contains the number of the bubbles inside each processors domain
     ! This is done to enhance speed . Other way is to save and load but it is totally inefficient
@@ -762,9 +762,9 @@ CONTAINS
     type(PointSourceCloudInput)            ::		PointCloud
     integer(i4b)         					::  	iErr, ErrCode,errstatus
     real(dp),parameter						::		MultFactor = 1.1D0
-    integer				    				::		Bcounter, iBubble, BubbleIdx, i, MaxBubbles
+    integer				    				::		Bcounter, iBubble, BubbleIdx, i, j, MaxBubbles, temp
     integer									::		Num_counter(cSpace%cGrid%iProcN),Bubble_Outliers(cSpace%cGrid%iProcN)
-    real(dp)								::      dLambdaMM, Dist
+    real(dp)								::      dLambdaMM, Dist 
 
     integer(i8b),allocatable				::  	Bubble_count(:), BubbleID(:), BubbleCube(:)
     real(dp),allocatable					::      randpos(:,:) , RadFactor(:)
@@ -829,29 +829,34 @@ CONTAINS
     randpos(:,2) = randpos(:,2)*(Domain_Range(2,2)-Domain_Range(1,2)) 
     randpos(:,3) = randpos(:,3)*(Domain_Range(2,3)-Domain_Range(1,3)) 
     call MPI_BCAST(randpos,S*3,MPI_DOUBLE_PRECISION,0,MPI_COMM_WORLD,iErr)
-	Bcounter = COUNT( 	CEILING(randpos(:,3)/((Domain_Range(2,3)-Domain_Range(1,3))/cSpace%cGrid%iProcN)) == cSpace%cGrid%iProcID + 1 .OR. &
-						CEILING(randpos(:,3)/((Domain_Range(2,3)-Domain_Range(1,3))/cSpace%cGrid%iProcN + PointCloud%MinInBetweenDist*1.0D+3)) == cSpace%cGrid%iProcID + 1)
+    
+    Dist = (Domain_Range(2,3)-Domain_Range(1,3))/cSpace%cGrid%iProcN;
+	Bcounter = COUNT( 	randpos(:,3) >= cSpace%cGrid%iProcID*Dist  .AND. &
+                        randpos(:,3) <= (cSpace%cGrid%iProcID+1)*Dist + PointCloud%MinInBetweenDist*1.0D+3  )
+                        
 	BubbleID = (/ (i , i =1, S) /)
-	
-	ALLOCATE(BubbleCube(Bcounter),Bubble_count(INT(Bcounter,8)))
-	BubbleCube = PACK(BubbleID, CEILING(randpos(:,3)/((Domain_Range(2,3)-Domain_Range(1,3))/cSpace%cGrid%iProcN)) == cSpace%cGrid%iProcID + 1 .OR.  &
-								CEILING(randpos(:,3)/((Domain_Range(2,3)-Domain_Range(1,3))/cSpace%cGrid%iProcN + PointCloud%MinInBetweenDist*1.0D+3)) == cSpace%cGrid%iProcID + 1)
-	
-	
+    
+	ALLOCATE(BubbleCube(Bcounter),Bubble_count(INT(Bcounter,8))) 
+	BubbleCube = PACK(BubbleID, (randpos(:,3) >= cSpace%cGrid%iProcID*Dist  .AND. &
+                                randpos(:,3) <= (cSpace%cGrid%iProcID+1)*Dist + PointCloud%MinInBetweenDist*1.0D+3) )
+                                
     ! ============================== FIND HOW MANY FULFILL THE REQUIREMENT OF THE HYPOTHESIS OF DISTANCE ==========================
+
     Bcounter = 1 ;
+    Bubble_count = 0;
     do iBubble =1,PRODUCT(SHAPE(BubbleCube))
-	
-       if( .NOT. ANY(sqrt(  (randpos(BubbleCube(iBubble),1) - randpos(BubbleCube(1:iBubble-1),1) )**2 		+ &
+       
+       if( ANY(sqrt(  (randpos(BubbleCube(iBubble),1) - randpos(BubbleCube(1:iBubble-1),1) )**2 		+ &
 							(randpos(BubbleCube(iBubble),2) - randpos(BubbleCube(1:iBubble-1),2) )**2 		+ &
 							(randpos(BubbleCube(iBubble),3) - randpos(BubbleCube(1:iBubble-1),3) )**2 ) 	- &
-							PointCloud%MinInBetweenDist * 1.0D-3  <0) ) then
-
+							PointCloud%MinInBetweenDist * 1.0D+3  <0) ) then
+          
           Bubble_count(Bcounter)=BubbleCube(iBubble)
           Bcounter=Bcounter+1
        endif
 
     enddo
+    
     ! ================================== TRANSFER THEM FROM EACH PROCESSOR =======================================================
     call MPI_Allgather(Bcounter-1,1,MPI_INTEGER,Num_counter,1,MPI_INTEGER,MPI_COMM_WORLD,iErr) ! Array with the number of bubble outliers
     Bubble_outliers=0;
@@ -870,20 +875,27 @@ CONTAINS
     Bubble_count = 0
     call MPI_Allgatherv(GridDist,Bcounter-1,MPI_INTEGER8,Bubble_count,Num_counter,Bubble_outliers,MPI_INTEGER8,MPI_COMM_WORLD,iErr)
     DEALLOCATE(GridDist)
-	call I_unista(Bubble_count, n)
-	Bcounter = n;
+	call I_unista(Bubble_count, n) 
+    
+    ALLOCATE(GridDist(S))
+    GridDist = 1 ; GridDist( Bubble_count(1:n)) = 0;
+    GridDist(1:S-n) = PACK(BubbleID, GridDist == 1);
+    DEALLOCATE(Bubble_count)
     ! ======================================= GENERATE THE LOCATION MATRIX FROM THE CORRECT VALUES ===================================
 
     ! if there is no scatterer too close to the others, change the variables of interest and proceed without any more actions
-    if(Bcounter>=PointCloud%N) then
-       dBubbleLocationN(1:PointCloud%N,:) = randpos( Bubble_count(1:PointCloud%N),:)
-       PointCloud%R0(1:PointCloud%N)=RadFactor(Bubble_count(1:PointCloud%N))
+    if(S-n>=PointCloud%N) then
+       call FISHER_YATES_SHUFFLE(BubbleID, S-n )
+       dBubbleLocationN(1:PointCloud%N,:) = randpos( GridDist(BubbleID(1:PointCloud%N)),:)
+       PointCloud%R0(1:PointCloud%N)=RadFactor(GridDist(BubbleID(1:PointCloud%N)))
     else
-	   write(*,*) "NOT ENOUGH"
+	   write(*,*) "NOT ENOUGH", n
        ! BubbleID(1:Bcounter) = Bubble_count;
 	   ! dBubbleLocationN(1:Bcounter,:) = randpos( Bubble_count ,:)
        ! PointCloud%R0(1:S)= PointCloud%R0( (/ BubbleID(1:Bcounter) , /) )
     endif
+    DEALLOCATE(GridDist, BubbleID, BubbleCube)
+    DEALLOCATE(randpos, RadFactor)
 
 	dBubbleLocationN(:,1)  = dBubbleLocationN(:,1) + Domain_Range(1,1)
 	dBubbleLocationN(:,2)  = dBubbleLocationN(:,2) + Domain_Range(1,2)
@@ -892,7 +904,7 @@ CONTAINS
     ! ================================================================================================================================
 
     ! dBubbleLocationN(1,:)=  (/-0.0366470588235294 ,   -0.0726470588235294 ,    5.12194117647059/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-    ! dBubbleLocationN(1,:)=  (/-0.0366470588235294 ,   -0.0366470588235294 ,    2.10194117647059/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
+    ! dBubbleLocationN(1,:)=  (/-0.0366470588235294 ,   -0.0366470588235294 ,    3.59602941176471/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
     ! dBubbleLocationN(2,:)=  (/-0.0366470588235294 ,   -0.0366470588235294 ,    5.08194117647059/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
     ! dBubbleLocationN(1,:)=  (/-0.0726470588235294 ,   -0.0726470588235294 ,    5.15794117647059 /) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
     ! dBubbleLocationN(1,:)=  (/-0.0726470588235294 ,   -0.0726470588235294 ,    9.44411764705882 /) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
@@ -927,8 +939,6 @@ CONTAINS
     dBubbleLocationN(:,2) = dBubbleLocationN(:,2)/dLambdaMM - cSpace%iStartY* cSpace%dDx
     dBubbleLocationN(:,3) = dBubbleLocationN(:,3)/dLambdaMM - cSpace%iStartZ* cSpace%dDx
 
-    DEALLOCATE(Bubble_count, BubbleID)
-    DEALLOCATE(randpos, RadFactor)
 
   END SUBROUTINE RNDGeneratePSCloud_Eff
 
@@ -1354,13 +1364,11 @@ CONTAINS
 					! write(*,*) RealPressure_i1(i,:)
 					! endif
 					RealPressure_i1(i,:) = RealPressure_i1(i,:) - RealPressure_Own(i,:)
-					RealPressure_i1(i,:) = RealPressure_i1(i,:) * PRODUCT(dSinc(dK_c*diff(i,:)))*(dK_c/pi)**3
 					! This is for the non-comoving time window. There should be a time shift 
 					RealPressure_i1(i,1:iDimT-(ones(i,3)+size(trilin,1)/2)) =  RealPressure_i1(i,1+ones(i,3)+size(trilin,1)/2:iDimT)
 				 enddo
 				 ! Do the 3D interpolation in order to acquire the pressure , RealPressureFinal    
-				 ! call INTERP3D(GlobalPos,RealPressure_i1,dBubbleLocationN(iBubble,:),Interp_PressureBL)
-				 Interp_PressureBL = sum(RealPressure_i1,1)/size(ones,1)
+				 call INTERP3D(GlobalPos,RealPressure_i1,dBubbleLocationN(iBubble,:),Interp_PressureBL)
 				 RealPressure  = Interp_PressureBL
 				 
 				 call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D,RealPressure,RealPressureC)
@@ -1497,12 +1505,13 @@ CONTAINS
 	
     V_dd_norm        = 0;
     V_dd_Pad         = 0; 
+	LinearAmplitude  = 0;
 	
 	Bubble_per_CPU = BubbleParams%N/pcGrid%iProcN + (pcGrid%iProcID+1)/pcGrid%iProcN * mod(BubbleParams%N,pcGrid%iProcN)
 	
 	ALLOCATE(tempcon(Bubble_per_CPU*ibDimT))
 
-    RealTime = [(i + iDimT - ibDimT, i=cSpace%iStartT,iDimT-1+cSpace%iStartT)]*cSpace%dDt/cModelParams%freq0     ! Array with the real time unnormalized 
+    RealTime = [(i + iDimT - ibDimT, i=cSpace%iStartT,ibDimT-1+cSpace%iStartT)]*cSpace%dDt/cModelParams%freq0     ! Array with the real time unnormalized 
     RealTimePad = 1D-30
     call linspace(RealTimePad, RealTime(1), RealTime(size(RealTime,1)), ibDimT*n_pad)
 	
@@ -1522,7 +1531,7 @@ CONTAINS
           call INTERP1D( RealTimePadOut, V_dd_Pad, RealTime, V_dd_norm)
           Time_Signature = cMediumParams%rho0*V_dd_norm;
           
-          ! LinearAmplitude = 4.0/3.0*pi*(2.0D-6)**3 * cMediumParams%rho0* &
+          ! LinearAmplitude =  -4.0/3.0*pi*(BubbleParams%R0(iBubble))**3 * cMediumParams%rho0* &
           ! (1.0D0/(10.0D0*100.0D0**2) - 1.0D0/(cMediumParams%rho0*cMediumParams%c0**2))
           ! call LinScatterer(cSpace, RealPressure , Time_Signature, LinearAmplitude * cModelParams%freq0**2, 2 )  
 		  
@@ -2058,7 +2067,7 @@ CONTAINS
     ! This is done by initializing OutputValW with 0 ( Really small number due to precision)
     ! Replace the first half part with the values of initial variable.
     OutputValW = 0.0D0
-    OutputValW(1:iDimW) = InputValW(1:iDimW) * dMultFactor(1:iDimW) * dTaperMaxFreqWindow /real(InputLen,dp)
+    OutputValW(1:iDimW) = InputValW(1:iDimW) * dMultFactor(1:iDimW)  /real(InputLen,dp) * dTaperMaxFreqWindow
 
     ! Inverse FFT of OutputLen-point	
     call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, OutputLen, OutputValW, OutputVal, FFTW_ESTIMATE)
