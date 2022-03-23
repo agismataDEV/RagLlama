@@ -683,7 +683,7 @@ call MapVt(cSource)
             call NonlinearKappaOperatorDZAli(cSpace);
         case (iCI_NONLIN)
             call NonlinContrastOperator_Ali(cSpace);
-        case(iCI_BUBBLE)                                                                    ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                                    ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator_Ali(cSpace);
@@ -694,7 +694,7 @@ call MapVt(cSource)
             call NonlinContrastOperator(cSpace);
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator(cSpace,cInhomContrast);
-        case(iCI_BUBBLE)                                                                   ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                      ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         end select
     end if
@@ -787,7 +787,7 @@ call MapVt(cSource)
         select case (iContrastID)
         case (iCI_NONLIN)
             call NonlinContrastOperator_Ali(cSpace);
-        case(iCI_BUBBLE)                                                                    ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                                   ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         case (iCI_LINCONTRA)                                        !! LCSM L.D. 12-07-2010 6
@@ -835,7 +835,7 @@ call MapVt(cSource)
         select case (iContrastID)
         case (iCI_NONLIN)
             call NonlinContrastOperator(cSpace);
-        case(iCI_BUBBLE)                                                                    ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                   ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator(cSpace,cInhomContrast);
@@ -1284,7 +1284,7 @@ call MapVt(cSource)
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**28;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
 
@@ -1382,7 +1382,7 @@ call MapVt(cSource)
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**28;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
     real(dp), allocatable::                  parBuffer(:);
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
@@ -1492,7 +1492,7 @@ call MapVt(cSource)
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**28;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
     real(dp), allocatable::                  parBuffer(:);
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
@@ -1603,7 +1603,7 @@ call MapVt(cSource)
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**28;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
     real(dp), allocatable::                 parBuffer(:)
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
@@ -1649,6 +1649,7 @@ call MapVt(cSource)
         call PrintToLog(acTemp,-1)
         stop
     end if
+    
     iLast = int(cSpace%cGrid%iD0LocSize/iBlockL);
     do iLi = 0, iLast-1
         read (unit=iExportUNIT, iostat=iErr) parBuffer;
@@ -1657,6 +1658,7 @@ call MapVt(cSource)
     read (unit=iExportUNIT, iostat=iErr) parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL);
     cSpace%cGrid%parD0(1+iLast*iBlockL:cSpace%cGrid%iD0LocSize) = cSpace%cGrid%parD0(1+iLast*iBlockL:cSpace%cGrid%iD0LocSize) + parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL)
     close (unit=iExportUNIT);
+    
     call SWStop(cswDiskAcces)
 
     call SWStop(cswDisk)

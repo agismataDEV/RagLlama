@@ -225,7 +225,7 @@ MODULE ParnacParamDef
 
 	type(SourceInput) :: cSourceParams
     
-    type BubbleInput
+    type ScattererInput
 
     ! =============================================================================
     !
@@ -264,45 +264,50 @@ MODULE ParnacParamDef
     character(len = 1024)	::  sBubbleDir 
     character(len = 1024)	::  GridPointsPressure 
     !--------------Cluster Parameters--------------
-    integer(i8b)   		  ::  	N
-    real(dp)  			  ::  	ClusterDimsRatio(2,3)
-    character(LEN=128)	  ::	Distribution  
-    real(dp)  			  ::  	MinInBetweenDist
-    integer(i8b)		  :: 	ClusterSlicesN
-    character(LEN=1), allocatable :: 	ClusterSliceDim(:)
-    integer(i8b),allocatable  :: OutputIndexes(:)
+    integer(i8b)   		  			::  N
+    real(dp)  			  			::  ClusterDimsRatio(2,3)
+    character(LEN=128)	  			::	Distribution  
+    character(LEN=128)	  			::	ScType  
+    real(dp)  			  			::  MinInBetweenDist
+    integer(i8b)		  			:: 	ClusterSlicesN
+    character(LEN=1), allocatable 	:: 	ClusterSliceDim(:)
+    integer(i8b),allocatable  		::  OutputIndexes(:)
     
     !------------------ Bubble parameters
     
-    real(dp),allocatable  ::  R0(:) 
-    real(dp)  ::  PDRange(2)
-    real(dp)  ::  kappa_s
+    real(dp),allocatable  	::  R0(:) 
+    real(dp)  				::  PDRange(2)
+    real(dp)  				::  kappa_s
 
     !------------------ Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
-    real(dp)  ::  sigma_w 
-    real(dp)  ::  sigma_R0
-    real(dp)  ::  sigma_R
-    real(dp)  ::  gama
-    real(dp)  ::  P_g0
-	real(dp),allocatable  ::  LinearAmplitude(:)
-
+    real(dp)  				::  sigma_w 
+    real(dp)  				::  sigma_R0
+    real(dp)  				::  sigma_R
+    real(dp)  				::  gama
+    real(dp)  				::  P_g0
+	real(dp),allocatable  	::  LinearAmplitude(:)
+	
     !---------------Marmottant model parameters
-    real(dp)  ::  chi 
-    real(dp)  ::  R_b
-    real(dp)  ::  R_r
-	real(dp)	:: time_norm
-	real(dp)	:: rad_norm
-    real(dp),allocatable  :: P_driv(:), T_driv(:)
-	character(LEN=2) :: Solver_Method
-	character(LEN=24) :: Solver_Normalize
+    real(dp)  				::  chi 
+    real(dp)  				::  R_b
+    real(dp)  				::  R_r
+	real(dp)				:: 	time_norm
+	real(dp)				:: 	rad_norm
+    real(dp),allocatable  	:: 	P_driv(:), T_driv(:)
+	character(LEN=2) 		:: 	Solver_Method
+	character(LEN=24) 		:: 	Solver_Normalize	
+	
+    !---------------Linear Scatterer Parameters
+    real(dp)  				::  rho1 
+    real(dp)  				::  c1
    
     !------------- Experimental
     real(qp)  :: coeff_fit(11)
     real(qp)  :: A0c
     
-    end type BubbleInput
+    end type ScattererInput
     
-    type(BubbleInput) :: BubbleParams
+    type(ScattererInput) :: ScattererParams
 	
 	type PointSourceCloudInput
 

@@ -7,7 +7,7 @@ objects = 	 $(addprefix $(OBJDIR)/, fftw3.o Types.o Constants.o Cisi.o FDWeight.
 								  Stopwatch.o ParnacGeneral.o ParnacParamDef.o ParnacIdentifierDef.o ParnacTransformInit.o \
 								  ParnacDataSpaceInit.o ParnacOutput.o ParnacDataMap.o  Specialfun.o ContrastGenFilt.o \
 								  ParnacDataRedist.o f2kcli.o ParnacParamInit.o  ParnacTransformFilter.o ParnacDerivative.o \
-			 					  ORDERPACK.o ODEPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacPointSourceCloud_INSIDEBC.o \
+			 					  ORDERPACK.o ODEPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacPointSourceCloud.o \
 								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacSchemes.o ParnacMain.o\
 								)  
  
@@ -89,8 +89,8 @@ $(OBJDIR)/ParnacConvolution.o : ParnacConvolution.f90
 ##Contrast
 $(OBJDIR)/ParnacContrastFunctions.o : ParnacContrastFunctions.f90
 	mpiifort -c ParnacContrastFunctions.f90 $(CFLAGS) -o $(OBJDIR)/ParnacContrastFunctions.o -module $(OBJDIR)
-$(OBJDIR)/ParnacPointSourceCloud_INSIDEBC.o : ParnacPointSourceCloud_INSIDEBC.f90
-	mpiifort -c ParnacPointSourceCloud_INSIDEBC.f90 $(CFLAGS) $(CFLAGS_MKL)  $(LIBS)  -o $(OBJDIR)/ParnacPointSourceCloud_INSIDEBC.o -module $(OBJDIR)
+$(OBJDIR)/ParnacPointSourceCloud.o : ParnacPointSourceCloud.f90
+	mpiifort -c ParnacPointSourceCloud.f90 $(CFLAGS) $(CFLAGS_MKL)  $(LIBS)  -o $(OBJDIR)/ParnacPointSourceCloud.o -module $(OBJDIR)
 
 ##Iterative Schemes
 $(OBJDIR)/ParnacIterStepMain.o  : ParnacIterStepMain.f90

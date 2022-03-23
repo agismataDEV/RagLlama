@@ -128,7 +128,7 @@ MODULE ParnacIdentifierDef
 	integer(i8b), parameter :: iCI_NONLINKAPPADIRECTIONDX=16
 	integer(i8b), parameter :: iCI_NONLINKAPPADIRECTIONDY=17
 	integer(i8b), parameter :: iCI_NONLINKAPPADIRECTIONDZ=18
-	integer(i8b), parameter :: iCI_BUBBLE=19
+	integer(i8b), parameter :: iCI_SCATTERER=19
 	    
 
 	!identifiers for the Slicesave Identifier

@@ -5903,7 +5903,7 @@ MODULE ParnacContrastFunctions
              end do
           end do
        end do
-    elseif (iContrastID == iCI_BUBBLE) then
+    elseif (iContrastID == iCI_SCATTERER) then
        do iIndexX = 0, pcGridLarge%iD2XL-1
           do iIndexY = 0, pcGridLarge%iD2YL-1
              do iIndexZ = 0, pcGridLarge%iD2ZL-1

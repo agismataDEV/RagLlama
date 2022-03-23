@@ -320,7 +320,7 @@
     call InitRRMSPreviousCorrection(cRRMSNorm,cRefBeam)
 
     ! Initialize and export the inhomogeneous contrast source space
-    if (cModelParams.ContrastSourceType/=iCI_NONLIN .AND. cModelParams.ContrastSourceType/=iCI_BUBBLE) then
+    if (cModelParams.ContrastSourceType/=iCI_NONLIN .AND. cModelParams.ContrastSourceType/=iCI_SCATTERER ) then
 
         call InitSpace(cInhomContrast, iSI_INHOMCONTRAST, cRefBeam%bYSymm, &
             1_i8b, cRefBeam.iDimX, cRefBeam.iDimY, cRefBeam.iDimZ,  &
@@ -2462,7 +2462,7 @@
 
     ! Destruct the spaces used
     call DestructSpace(cRefBeam)
-    if (cModelParams.ContrastSourceType /= iCI_NONLIN .AND. cModelParams.ContrastSourceType/=iCI_BUBBLE) then
+    if (cModelParams.ContrastSourceType /= iCI_NONLIN .AND. cModelParams.ContrastSourceType/=iCI_SCATTERER ) then
         call DestructSpace(cInhomContrast)
     end if
 
@@ -2473,8 +2473,8 @@
     !Deallocate arrays in cModelParams
     deallocate(cModelParams%numiterations)
     deallocate(cModelParams%xyzslicedim,cModelParams%xyzslicepos,cModelParams%xyzslicebeam,cModelParams%xyzsliceindex)
-    if (cModelParams.ContrastSourceType==iCI_BUBBLE) then
-    	deallocate(BubbleParams%ClusterSliceDim)
+    if (cModelParams.ContrastSourceType==iCI_SCATTERER ) then
+    	deallocate(ScattererParams%ClusterSliceDim)
     endif
     
     ! Deinitialization
