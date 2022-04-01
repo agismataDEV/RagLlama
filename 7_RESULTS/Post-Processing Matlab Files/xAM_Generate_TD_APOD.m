@@ -1,17 +1,19 @@
 %% Phased Array Specs
 % clear all;
 % close all;
-for i_theta = [21]
+function [x_el,arr,td_x,apod_x,apod_right,apod_left] = xAM_Generate_TD_APOD(theta_list)
+for i = 1:length(theta_list)
+    i_theta = theta_list(i);
 location = '';
 % mkdir('../../5_Input_Files/', location)
 c0 = 1480;
 freq0 = 15E6;
 
 theta = i_theta; % deg
-arr.N_el = 32;
-arr.H_el = 1;    %mm
-arr.W_el = 0.08; %mm
-arr.Kerf = 0.02; %mm
+arr.N_el = 64;
+arr.H_el = 4;    %mm
+arr.W_el = 0.1; %mm
+arr.Kerf = 0.00; %mm
 
 arr.W = (arr.W_el + arr.Kerf)* (arr.N_el-1) + arr.W_el;
 arr.H = arr.H_el ;
@@ -28,6 +30,7 @@ apod_x_filename = ['../../5_Input_Files/APOD/', location,'apod_' num2str(i_theta
 % If even , all ones, if odd, the middle is silenced
 % apod_x = [ones(floor(arr.N_el/2),1); zeros(arr.N_el - 2*floor(arr.N_el/2),1) ; ones(floor(arr.N_el/2),1)];
 apod_x = [tukeywin(arr.N_el/2,0.5); tukeywin(arr.N_el/2,0.5)];
+if (i_theta==0) ;apod_x = tukeywin(arr.N_el,0.2);end
 
 % apod_x = [tukeywin(arr.N_el,0.5)];
 % apod_x = [hanning(32); hanning(32)];
@@ -57,4 +60,5 @@ apod_right = [zeros(arr.N_el - floor(arr.N_el/2),1);ones(floor(arr.N_el/2),1)];
 apod_right = apod_right.*apod_x;
 size_apod = size(apod_right);
 save(apod_right_filename, 'size_apod','apod_right','-ASCII', '-DOUBLE')
+end
 end

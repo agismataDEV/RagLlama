@@ -49,15 +49,16 @@ Bubble.mindist           = 10e-6;
 
 domain.beamiterations       = 0;
 domain.ibeam                = 0;
-domain.Fnyq                 = 3.5;
 domain.PPW_t                = 2;
+domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
 domain.strides              = [1 1 1 1];
 domain.offsets              = [0 0 0 0];
 domain.symmetry             = 0;
 
 %% File Parameters
 file.lin_name            = 'TESTNeumann';
-file.dirname             = '../David_210deg_x_Lagr_Only_2';
+file.dirname             = '../David_210deg_x_sin_64el_W10um_H4mm_apod';
+% file.dirname             = '../David_0deg_x_integrable_64el_long_high_apod';
 file.dirname_left        = '../David_150deg_left_high_amp';
 file.dirname_right       = '../David_150deg_left_high_amp';
 file.rootname            = 'TESTNeumann';
@@ -68,7 +69,7 @@ file.plot_attenslices    = 'no';
 file.plot_converr        = 'yes';
 file.plot_colour         = 'viridis';        % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
-file.play_movies         = 'no';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
+file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
 file.load_contrast_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
 domain.angle = str2num(file.dirname(strfind(file.dirname,'deg')+[-3:-1]))/10;
@@ -77,8 +78,8 @@ dslice.dims          = [ 'x','y','z'];
 dslice.num           = slicenumber;
 
 % Find the files that contain the slice dimension that interests us
-LS_slice = split(cellstr(ls([file.dirname,'/',file.lin_name int2string_ICS(domain.beamiterations),'_*' int2string_ICS(dslice.num) '_','*.h5'])),[file.lin_name int2string_ICS(domain.beamiterations),'_']);
-dslice.savedim(dslice.num) = LS_slice{2,2}(1);   % if in cluster change this to LS_slice(2)
+LS_slice = split(cellstr(ls([file.dirname,'/',file.rootname int2string_ICS(domain.beamiterations),'_*' int2string_ICS(dslice.num) '_','*.h5'])),[file.rootname int2string_ICS(domain.beamiterations),'_']);
+dslice.savedim(dslice.num) = LS_slice{2,end}(1);   % if in cluster change this to LS_slice(2)
 
 % This is the base of the structure of the code
 if dslice.savedim(dslice.num) =='y'; domain.dimval = [2 1 3];end
@@ -89,17 +90,10 @@ dslice.xlabel = ([upper(dslice.dims(domain.dimval(3))) ' [mm]']);
 dslice.ylabel = ([upper(dslice.dims(domain.dimval(2))) ' [mm]']);
 dslice.zlabel = ([upper(dslice.savedim(dslice.num)) ' [mm]']);
 
-%%
-% Find the all the log files and split them based on file.rootname to get all possibles processor files .
-% Split with the extension and get the max value added +1 because the first processor is 0 , to get the ProcNum
-% LS_log = split(cellstr(ls([file.dirname,'/*.log'])),[file.lin_name,'_']);
-% LS_logsplit = split(LS_log(2:end,2),'.log');  % if in cluster change this to LS_log(2:end)
-% domain.iProcN              = max(str2double(LS_logsplit(:,1)))+1;
-
 file.focalplanename = [ dslice.savedim(dslice.num) int2string_ICS(dslice.num) ];
 
-%% X_wave
-plin.filename       = [file.dirname '/' file.lin_name int2string_ICS(0) '_' file.focalplanename int2string_ICS(domain.ibeam)];
+%% LINEAR DATA WITHOUT ANY BUBBLES
+plin.filename       = [file.dirname '/' file.rootname int2string_ICS(0) '_' file.focalplanename int2string_ICS(domain.ibeam)];
 
 i_start=1;
 if isempty(file.dirname); i_start = 2; end
@@ -108,14 +102,14 @@ if isempty(file.dirname); i_start = 2; end
 output             = load_ICS_slice(plin.filename(i_start:end),domain.strides,domain.offsets);
 plin.data          = squeeze(output.data);
 domain.tdimpar     = size(plin.data,1);
+domain.iProcN      = output.iNumProc;
 
 %% Source Delay
-% file_srcdelay       = [file.dirname '/' file.rootname  'srcdelay' int2string_ICS(0)];
-% output_srcdelay     = load_ICS_array(file_srcdelay);
-% t_delay             = output_srcdelay.data;
+file_srcdelay       = [file.dirname '/' file.rootname  'srcdelay' int2string_ICS(0)];
+output_srcdelay     = load_ICS_array(file_srcdelay);
+plin.t_delay             = output_srcdelay.data;
 
 %%
-% domain.iProcN = output.iNumProc;
 domain.dimlen(domain.dimval(1)) = output.lengthslice;
 domain.dimlen(domain.dimval(2)) = size(plin.data,2);
 domain.dimlen(domain.dimval(3)) = size(plin.data,3);
@@ -133,6 +127,7 @@ domain.start(3)    = output.start(4);
 domain.tstart      = domain.TXYstart(1)+domain.TXYoff(1,1);
 domain.xsource     = (output.start(2)+(0:size(plin.data,2)-1))*domain.dxpar;
 domain.ysource     = (output.start(3)+(0:size(plin.data,3)-1))*domain.dypar;
+domain.Fnyq        = 1/(domain.dtpar*2)/medium.freq0;
 
 %% generate axes for focal plane
 domain.TXYstarts=domain.TXYstart+min(domain.TXYoff);

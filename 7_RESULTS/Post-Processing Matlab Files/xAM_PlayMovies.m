@@ -92,9 +92,8 @@ if (strcmp(file.play_movies,'yes'))
     
     F(1) = getframe(gcf);
     writeVideo(mov,F(1));
-    
-%     hold off;
-    %% ======================================== Create Frames and write each frame to video =============================
+    %%
+    % ======================================== Create Frames and write each frame to video =============================
     for i=2:i_end  % Change this to i_end for full time simulation movie
         set(ax.Title,'String',[title_txt,num2str(i)])   
         set(p,'XData',domain.par{domain.dimval(3)},'YData',domain.par{domain.dimval(2)},'CData',squeeze(plot_value(i,:,:)))

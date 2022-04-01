@@ -1,15 +1,15 @@
 #!/bin/bash
  
-#SBATCH --job-name=David_0deg_x_Sym
+#SBATCH --job-name=David_210deg_x_sin_64el_W10um_H4mm_apod_FFT
 #SBATCH --partition=imphys,general
 #SBATCH --qos=short
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=54
+#SBATCH --ntasks-per-node=48
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=500G
+#SBATCH --mem=400G
 #SBATCH --time=04:00:00
-#SBATCH --output=../7_RESULTS/David_0deg_x_Sym/INCS_David_0deg_x_Sym.out
-#SBATCH --error=../7_RESULTS/David_0deg_x_Sym/INCS_David_0deg_x_Sym.err
+#SBATCH --output=../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT/INCS_David_210deg_x_sin_64el_W10um_H4mm_apod_FFT.out
+#SBATCH --error=../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT/INCS_David_210deg_x_sin_64el_W10um_H4mm_apod_FFT.err
 ##SBATCH --exclusive
  
 module use /opt/insy/modulefiles
@@ -28,4 +28,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../3_COMPILED_FILES/INCS_Agis_David_0deg_x_Sym TESTNeumann_David_small_phased_array_planewave.in TESTNeumann ../7_RESULTS/David_0deg_x_Sym ../7_RESULTS/David_0deg_x_Sym
+srun ../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT/INCS_Agis_David_210deg_x_sin_64el_W10um_H4mm_apod_FFT TESTNeumann_David_small_phased_array.in TESTNeumann ../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT ../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT

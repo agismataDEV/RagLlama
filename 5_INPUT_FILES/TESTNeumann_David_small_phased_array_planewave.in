@@ -30,7 +30,7 @@
 ***    other model parameters    ***
 ************************************
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave"
-qsource
+planewave
 *** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob", "bubble", "lagrangian"
 nonlin
 30		*** Order of the Temporal Finite Difference schemes
@@ -39,7 +39,7 @@ nonlin
 1		*** Switch: Use Anti-Aliasing in contrast source evaluation
 1		*** Switch: Use Support Tapering in contrast source evaluation	
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
-1		*** Switch: Use Symmetry in the Y axis
+0		*** Switch: Use Symmetry in the Y axis
 1		*** Number of beams in which the total field is split
 2		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
@@ -54,30 +54,14 @@ z 4.0000
 ***   source inputfilename    *** Use "standard" for [inputfilename]_src.mat, use "none" for parametric source definition (below)
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
-blackman
-4.000000E+004		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
-0.600000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
+integrable
+1.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
-6.0000E+000			*** Twidth = Width of gaussian window
-*** Source shape, choices: "cylindricalflat", "rectangularflat", "triangularflat", "pointsource", "phasedarray"
-phasedarray
-*** cylindricalflat specific: Radius (in mm), Radfocus (in mm)
-*** rectangularflat specific: Width(x, in mm), Height(y, in mm)
-*** triangularflat specific: Edge size (in mm), Position of the center in the x-dimension (in mm) (top corner of the triangle lies on the positive x-axis)
-*** pointsource specific: No parameters
-*** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), TimeDelatFilename, PhaseApodFilename
-32			*** Number of elements
-0.0800000	*** Element width
-1.00      	*** Element height
-0.0200000	*** Kerf
-0.0000000	*** Focus x
-1.00000E+30	*** Focus z
-1.00000E+30	*** Elevation focus
-***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-none
-***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_0deg_x.dat
+3.00000E+000		*** Twidth = Width of gaussian window
+3.00000E+000		*** Tdelay = Delay of gaussian window
+2.0					*** Power
 ***************************
 ***  Switches  		***
 ***************************
@@ -120,27 +104,6 @@ apod_0deg_x.dat
 1482	*** SOS5 	= Small signal sound velocity [m/s]
 4.5E-10	*** KAPPA5	= Compressibility 
 4	*** BETA5	= Nonlinear parameter
-**********************************
-*** Parameters-Bubble Cluster  ***
-**********************************
-6.00000000E-9   *** Kappa_s	= Surface dilatational viscosity of shell [kg/sec]
-0.07200000E+0   *** sigma_w	= Surface tension of water  [N/m]
-0.03600000E+0   *** sigma_R0 	= Initial surface tension   [N/m]
-1.07000000E+0   *** kappa	= Gas polytropic exponent
-2.50000000E+0	*** chi		= Shell elasticity  
-1E+5		  	*** No. of Bubbles consisting the cluster
-*** monodisperse , Give one value of Bubble Radius
-*** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
-polydisperse	
-0.5E-6 2.5E-6   	*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
-0.3 0.7  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.3 0.7 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.45 0.95	*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
-10e-6		*** MinDist 	= Minimum Distance between the bubbles [m]
-12			*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
-z z z z z z z z z z z z		*** Dimension of each slice. One for every slice
-*** calculate pressure in every gridpoint "all" or to the gridpoints close to scatterers "close"
-close
 ***************************
 *** Residuals Directory ***
 ***************************

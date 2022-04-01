@@ -198,14 +198,14 @@ for i = 1:i_end
     %     xlim([domain.par{domain.dimval(3)}(1) domain.par{domain.dimval(3)}(end)])
     %     set(gca,'FontSize',20)
     %% PLOT THE PRESSURE OF INTEREST IN THE 1H (PLIN,PNL) @ DIFFERENT DEPTHS  @ LATERAL PLANE
-    p_interest = pnl.fund;
+    p_interest = squeeze((max(abs(pnl.xwave_data))));
     disp(['Ploting the signal and frequency spectrum at specific depth ...'])
     colors = { '#0072BD';'#D95319';	'#4DBEEE';	'#77AC30';'#7E2F8E';'#EDB120';'#A2142F';'#009999'};
     
-    diff_from_mid = 6;
+    diff_from_mid = 10;
     mid = round(size(p_interest,1)/2+1);
-    depth_of_int = [250:20:450];
-    Oversampling_Factor = 10;
+    depth_of_int = [300:20:600];
+    Oversampling_Factor = 5;
     x_OS= linspace(domain.par{1}(mid-diff_from_mid),domain.par{1}(mid+diff_from_mid),Oversampling_Factor*(2*diff_from_mid+1));
     f0 = figure('WindowState','maximized');
     hold on;
@@ -272,18 +272,18 @@ for i = 1:i_end
     
 %     pnl_harmi = eval(['pnl.harm_' name{i}  num2str(k)])*1E-3;
 %     pnl_harmi= eval(['pnl.diff_' name{i}  num2str(k)])*1E-3;
-    pnl_harmi = plin.nd;
+    pnl_harmi = 20*log10(squeeze(max(abs(plin.data))));
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
     
-    dBVALUES=max(max(pnl_harmi))/1.2;
+    dBVALUES=10;max(max(pnl_harmi))/1.2;
     hold on;
     caxis([max(max(pnl_harmi))-dBVALUES max(max(pnl_harmi))]+Add)
-    title(['Beam Profile - Pressure, ' num2str(domain.angle) ' deg, ' name{i} ', ' num2str(k) 'H, 60% Butterworth Filter'])
+%     title(['Beam Profile - Pressure, ' num2str(domain.angle) ' deg, ' name{i} ', ' num2str(k) 'H, 60% Butterworth Filter'])
     xlabel(dslice.xlabel )
     ylabel(dslice.ylabel )
     xAM_Colormaps(file)
     c = colorbar;
-    c.Label.String = 'Pressure [Pa]'; c.Label.FontSize = FontSize;
+    c.Label.String = 'Amplitude [dB]'; c.Label.FontSize = FontSize;
     set(gca,'YDir','normal')
     if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
     
