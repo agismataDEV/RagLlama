@@ -25,7 +25,7 @@
 % ***********************************************************************************************************
 
 
-function Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,BubbleList)
+function Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,BubbleList,filename)
 
 disp(['Ploting the Residuals ... '])
 
@@ -90,66 +90,57 @@ disp(['Ploting the Residuals ... '])
 % Create axes
 
 if (strcmp(file.plot_converr,'yes'))
-    for Bubblei = 1:length(BubbleList)
-        %Find the number of iterations
-        LS = ls([file.dirname,'/*_',dslice.savedim(dslice.num),'_*.h5']);
-        %         LS = split(LS,' ');
-        %         LS = LS(1:2:end);
-        LS_S = split(LS(2:end),[file.rootname,'_']);
-        q = strfind(LS_S,[file.contrast_name]);
-        index = cellfun(@(x) isempty(x), q, 'UniformOutput', 1);
-        LS_S = LS_S(index);
-        q = split(LS_S(2:end),'.h5');
-        q1 = split({q{:,1}},['_',dslice.savedim(dslice.num)]);
-        IterationNumber = max(str2double({q1{:,:,1}}));
-        %         Error_prev_total =0; Error_prev_contrast =0; Error_prev_init =0; Error_prev_contrast =0;
+    for Bubblei = 1:1
+        LS = split(cellstr(ls([file.dirname,'/',file.rootname,'*_',dslice.savedim(dslice.num),int2string_ICS(dslice.num),int2string_ICS(0),int2string_ICS(0),'*.h5'])),[file.rootname,'_']);
+        LS = split(LS(:,2) ,'_y_');
+        IterationNumber = max(str2double(LS(:,1)));
         
         ii = 0;
-        if (size(BubbleList,2)>1); file.dirname=['../1E',num2str(log10(BubbleList(Bubblei))),'_MBS_8FNYQ'];end
-        first_lin   = [file.dirname '/' file.rootname int2string_ICS(0) '_' file.focalplanename int2string_ICS(ii)];
-        output = load_ICS_slice(first_lin);
-        p_first_total  = squeeze(output.data);
+        txt_err = {'total'; 'contrast'};
+        file_dirname = [filename, erase(num2str(BubbleList(Bubblei),'%.0E'),'+0'),'MBs'];
         
-        first_nl   = [file.dirname '/' file.contrast_name int2string_ICS(1) '_' file.focalplanename int2string_ICS(ii)];
-        output = load_ICS_slice(first_nl);
-        p_first_contrast  = squeeze(output.data);
-        txt_err = {'Total'; 'Contrast'};
-        for jj=2:IterationNumber
-            for i =1:2
-                filename = file.rootname; if i==2;filename = file.contrast_name;end
-                current       = [file.dirname '/' filename int2string_ICS(jj-mod(i,2)) '_' file.focalplanename int2string_ICS(ii)];
-                output = load_ICS_slice(current);
-                p_curr  = squeeze(output.data);
+        for i =1:2
+            if (i==1)
+                current   = [file_dirname '/' file.rootname int2string_ICS(0) '_' file.focalplanename int2string_ICS(ii)];
+            else
+                current   = [file_dirname '/' file.contrast_name int2string_ICS(1) '_' file.focalplanename int2string_ICS(ii)];
+            end
+            output = load_ICS_slice_par(current);
+            p_curr  = squeeze(output.data); p_first = p_curr;
                 
-                prev       = [file.dirname '/' filename int2string_ICS(jj-1-mod(i,2)) '_' file.focalplanename int2string_ICS(ii)];
-                output = load_ICS_slice(prev);
-                p_prev = squeeze(output.data);
-                
-                eval(['Error_prev_',txt_err{i},'(Bubblei,jj) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum((p_prev).^2))));']);
-                eval(['Error_init_',txt_err{i},'(Bubblei,jj) = sqrt(sum(sum(sum((p_curr-p_first_',txt_err{i},').^2)))./sum(sum(sum((p_first_',txt_err{i},').^2))));']);
-                
+            for jj=2:IterationNumber+mod(i,2)
+                    p_prev = p_curr; 
+                    prev = current;
+                    disp(['Loading ... ',current])
+                    
+                    filename2 = file.rootname; if i==2;filename2 = file.contrast_name;end
+                    current       = [file_dirname '/' filename2 int2string_ICS(jj-mod(i,2)) '_' file.focalplanename int2string_ICS(ii)];
+                    output = load_ICS_slice_par(current);
+                    p_curr  = squeeze(output.data);
+
+                    eval(['Error_prev_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_prev.^2))));']);
+                    eval(['Error_init_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_first).^2)))./sum(sum(sum(p_first.^2))));']);
             end
         end
         
         % PLOTS
         i_end = 's';
-        if BubbleList(Bubblei)==1 ; i_end='';end
         legend_data2{Bubblei,1} = [int2str(BubbleList(Bubblei)), ' MB',i_end ];
         legend_data2{Bubblei,2} = [int2str(BubbleList(Bubblei)), ' MB',i_end ];
         %  plot(0:IterationNumber,log([1,Error]))
-        Error_prev_total(Bubblei,1:jj+1) = ([1,Error_prev_total(Bubblei,1:jj)]);
-        Error_init_total(Bubblei,1:jj+1) = ([1,Error_init_total(Bubblei,1:jj)]);
-        Error_prev_contrast(Bubblei,1:jj+1) = ([1,Error_prev_contrast(Bubblei,1:jj)]);
-        Error_init_contrast(Bubblei,1:jj+1) = ([1,Error_init_contrast(Bubblei,1:jj)]);
+        Error_prev_total(Bubblei,1:jj) = ([1,Error_prev_total(Bubblei,2:jj)]);
+        Error_init_total(Bubblei,1:jj) = ([1,Error_init_total(Bubblei,2:jj)]);
+        Error_prev_contrast(Bubblei,1:jj) = ([1,Error_prev_contrast(Bubblei,2:jj)]);
+        Error_init_contrast(Bubblei,1:jj) = ([1,Error_init_contrast(Bubblei,2:jj)]);
     end
     %% Plot
     % hold on;
     % Create multiple lines using matrix input to plot
 %     hold on
-    for i = 1:2
+    for i = 1:1
         
         f8=figure('WindowState','maximized');
-        eval(['plot',num2str(i),' = semilogy(0:size(Error_prev_',txt_err{i},',2)-1,flipud(Error_prev_',txt_err{i},'))'])
+        eval(['plot',num2str(i),' = semilogy(0:size(Error_init_',txt_err{i},',2)-1,flipud(Error_prev_',txt_err{i},'))'])
 
         set(eval(['plot',num2str(i),'(1)']),'DisplayName',[num2str(BubbleList(1)),' Bubble(s) Pres'],'Marker','o','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
             'Color','#994C00');

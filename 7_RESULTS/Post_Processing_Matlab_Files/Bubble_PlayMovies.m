@@ -30,7 +30,7 @@ if (strcmp(file.play_movies,'yes'))
     if (domain.dimval(1) ==1 || domain.dimval(1)==2)   % For X and Y , the domain should be moved in order to get a nice movie
         for k=1:sizeP(3)
             Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(plin.data(:,:,k)));
-            Scatter_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.contrastdata(:,:,k)));
+%             Scatter_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.contrastdata(:,:,k)));
             Total_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.data(:,:,k)));
         end
         
@@ -47,14 +47,14 @@ if (strcmp(file.play_movies,'yes'))
     
     %% ========================= Initialize first frame=========================
     
-    dBVALUES = 60;
-    plot_value = 20*log10(abs(pnl.contrastdata));
+    dBVALUES = 50;
+    plot_value = 20*log10(abs(plin.data));
     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
-    mov = VideoWriter('PressureFieldEvolution_LS_1E4_25fps.avi','Motion JPEG AVI');
-    mov.FrameRate = 25; mov.Quality = 75;
+    mov = VideoWriter('PressureFieldEvolution_MBs_NL_20fps.avi','Motion JPEG AVI');
+    mov.FrameRate = 20; mov.Quality = 75;
     open(mov);
     
     num_frames = i_end;
@@ -64,19 +64,19 @@ if (strcmp(file.play_movies,'yes'))
     ax = gca;
     p=imagesc(ax,domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},squeeze(plot_value(1,:,:)) );
     hold on;
-    caxis(ax,[max(max(max(plot_value(:,:,:))))-dBVALUES max(max(max(plot_value(:,:,:))))] )
-    if Bubble.N >5
+    caxis(ax,[max(20*log10(abs(plin.data)),[],'all')-dBVALUES max(20*log10(abs(plin.data)),[],'all')] )
+    if Bubble.N >10
         rectangle(ax,'Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',2)
-    elseif (Bubble.N <=5 && Bubble.N > 0)
+    elseif (Bubble.N <=10 && Bubble.N > 0)
         plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
 %         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
 %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
     end
     
-    title_txt = 'Scattered Pressure Field | Off Resonance , t_i = ';
+    title_txt = 'Scattered Pressure Field $\vert$ Microbubbles , $t_i = $';
 %     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
     %     if (sum(sum(sum(plot_value==Total_Field)))==numel(plot_value)) ;title_txt = 'Total Pressure Field, t_i = ';end
-    title(ax,[title_txt,num2str(1)])
+    title(ax,[title_txt,num2str(1)],'interpreter','latex')
     xlabel(ax,dslice.xlabel)
     ylabel(ax,dslice.ylabel)
     
@@ -98,7 +98,7 @@ if (strcmp(file.play_movies,'yes'))
     %     hold off;
     % ======================================== Create Frames and write each frame to video =============================
     for i=2:i_end  % Change this to i_end for full time simulation movie
-        set(ax.Title,'String',[title_txt,num2str(i)])
+        set(ax.Title,'String',[title_txt,num2str(i)],'interpreter','latex')
         set(p,'XData',domain.par{domain.dimval(3)},'YData',domain.par{domain.dimval(2)},'CData',squeeze(plot_value(i,:,:)))
         drawnow
         if (strcmp(file.save_movies,'yes'))

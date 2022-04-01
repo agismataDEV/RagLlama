@@ -92,3 +92,11 @@ ParnacPointSourceCloud.f90 :
 2. Also an update on the function for the efficient random generation of the bubble cloud. 
 3. Introduction of computing the bubble cloud in the boundaries also for the time domain.
 	(This has an impact on the memory mainly for large bubble clouds > 1E6 MBs/ ml) 
+	
+=============================================================================================================
+23/03/2022 
+=============================================================================================================
+ParnacPointSourceCloud.f90 : 
+1. Update from BubbleParams to ScattererParams
+2. Now a linear scatterer can be used from input file 
+

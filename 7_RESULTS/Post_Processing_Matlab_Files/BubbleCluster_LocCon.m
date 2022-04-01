@@ -39,7 +39,7 @@ if Bubble.N>0
     Bubble.Contrast = LoadContrastParams(Bubble,file,[name,'_Contrast',int2string_ICS(domain.beamiterations)], Bubble.ConFile , file.load_contrast_from_file, 'rb');
     % Load the bubbles' radius value
     Bubble.RadFile  = zeros(Bubble.N,1);
-    Bubble.Radius   = LoadContrastParams(Bubble,file,[name,'_Radius']  , Bubble.RadFile , file.load_radius_from_file);
+    Bubble.Radius   = LoadContrastParams(Bubble,file,[name,'_Radius'], Bubble.RadFile , file.load_radius_from_file);
     
     % Find Location of each microbubble
     Bubble.Loc = Bubble.LocNorm*medium.dLambdaNN;
@@ -51,7 +51,7 @@ if Bubble.N>0
     % Find the range of the microbubble cluster , calculated with the
     % dimensions specified in the INCS code
     Bubble.LocRange = [ min(Bubble.LocGlob); max(Bubble.LocGlob)]';
-    Bubble.Volume = prod(max(Bubble.LocGlob) - min(Bubble.LocGlob));
+    Bubble.Volume = prod( (max(Bubble.LocGlob) - min(Bubble.LocGlob) ) ) * 1E-3; % [mL]
 end
 %% CHECK IF ANY BUBBLE IS LOCATED TOO CLOSE WITH ANOTHER BUBBLE
 %     if (Bubble.N>1)
@@ -69,7 +69,7 @@ end
 %         [MinVal , MinIndex] = min(Bubble.diff(1:end-1)*1e-3);
 % 
 %         q = ones(Bubble.N,1);
-%         for iBubble = 2:Bubble.N
+%         for iBubble = 2:Bubble.N-1
 %             q(1:iBubble-1) = sqrt(sum((Bubble.LocGlob(iBubble,:)- Bubble.LocGlob(1:iBubble-1,:)).^2,2));
 % 
 %             %         if (~sum(q==0)) ;break; end
@@ -131,8 +131,10 @@ function [output,BubbleN] = LoadContrastParams(Bubble,file,filename,input, load_
 if (nargin<5)
     load_operator='no';
     fformat = 'r';
+    returnN = 0;
 elseif (nargin<6)
     fformat = 'r';
+    returnN = 0;
 elseif (nargin<7)
     returnN = 0;
 end

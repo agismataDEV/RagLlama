@@ -27,7 +27,7 @@ function [V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f)
 %% ========================Initialization==============================================================
 
 % -------------Bubble parameters
-par.R0 = 2.4e-6 ;                         % [μm],  initial bubble radius R0
+par.R0 = 2e-6 ;                         % [μm],  initial bubble radius R0
 par.S_vis = 5.8e-9         ;            % [Pa*sec] , Shell viscosity
 par.S_vis = 1.5E-9*exp(8E5*par.R0);
 
@@ -70,11 +70,15 @@ P_elas =  2*par.sigma_R./R(:,1) ;
 P_vis  =  4*par.S_vis.*R(:,2)./R(:,1).^2 ;
 P_gas  = (par.P_g0.*(par.R0./R(:,1)).^(3*par.gamma).*(1-3*par.gamma*R(:,2)/par.c)-par.P0-p_driv'-4*par.mu*R(:,2)./R(:,1) - P_elas-P_vis) ;
 R_dd = (P_gas/par.rho-3/2*R(:,2).^2)./R(:,1);
-% R_d = R(:,2);
-% R_ = R(:,1);
+R_d = R(:,2);
+R_ = R(:,1);
 % R(:,3) = R_dd;
-V_dd_norm = (4*pi*R(:,1).*(R(:,1).*R_dd+2.*R(:,2).^2))';     % Should be divided by the total volume
 
+V_dd_norm = (4*pi*R_.*(R_.*R_dd+2.*R_d.^2))';     % Should be divided by the total volume
+
+r = par.R0;
+psc = par.rho*R_./r.*((2*R_d.^2 + R_.*R_dd) - R_.^3.*R_d.^2./(2.*r^3));
+disp(['Pressure @ ' num2str(r) ' [um] is ', num2str(max(psc)) ' [Pa].'])
 %% ======================= Spectral Response ====================================================
 F_s = length(t_p_driv)/(abs(T_end) + abs(T_start));                    % [Hz] , 1/dt
 t_interval = [0 T_end]; % time interval to analyse
@@ -172,4 +176,5 @@ set(h_f2,'XTickLabel',h_f2.XTick*1e+6) ; h_f2.XLabel.String = 'Time [μsec]';
 
 set(h_f4,'XTickLabel',h_f4.XTick*1e+6) ; h_f4.XLabel.String = 'Radius [μm]';
 
+end
 

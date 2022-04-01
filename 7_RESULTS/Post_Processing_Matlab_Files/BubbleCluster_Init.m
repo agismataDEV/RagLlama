@@ -35,7 +35,7 @@
 
 function [medium,domain,dslice,file,plin,pnl,Bubble] = BubbleCluster_Init(slicenumber)
 %% Medium Parameters
-medium.freq0               = 1.7E6;                    %fundamental frequency
+medium.freq0               = 1E6;                    %fundamental frequency
 medium.c0                  = 1482;                     % Speed of Sound [m/sec]
 medium.rho0                = 1060;
 medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
@@ -57,8 +57,9 @@ domain.symmetry             = 0;
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../1MBs_Validation_sinc_all';
-file.dirname             = '../test/PW_1E4LS';
-file.dirname             = '../Test/PW_1E2';
+file.dirname             = '../width_3cycl_round2/PW_2E5Pa_2micron_1MHz_2E4LS';
+file.dirname             = '../width_3cycl_round2/Phased_2E5Pa_2micron_1MHz_1E2MBs';
+file.dirname             = '../test/Phased_2E5Pa_2micron_1MHz_1E2MBs';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 
@@ -67,7 +68,7 @@ file.plot_attenslices    = 'no';
 file.plot_converr        = 'no';
 file.plot_colour         = 'viridis';          % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
-file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'yes'; end
+file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
 file.load_contrast_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 

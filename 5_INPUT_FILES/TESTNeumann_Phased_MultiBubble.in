@@ -32,7 +32,7 @@
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave"
 qsource
 *** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
-bubble
+scatterer
 30		*** Order of the Temporal Finite Difference schemes
 30		*** Order of the Spatial  Finite Difference schemes
 5		*** Debug message level 0-5 gives the level of detail of the messages
@@ -56,7 +56,7 @@ x 0
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-1.000000E+002		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+5.000000E+004		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
 1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
@@ -126,19 +126,20 @@ none
 **********************************
 *** Parameters-Bubble Cluster  ***
 **********************************
-5.800000E-009   	*** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
+microbubble			***	type of scatterer
+3.000000E-008   	*** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
 0.072000E+000   	*** sigma_w	 = Surface tension of water  [N/m]
-0.010000E+000   	*** sigma_R0 = Initial surface tension   [N/m]
+0.036000E+000   	*** sigma_R0 = Initial surface tension   [N/m]
 1.070000E+000   	*** kappa	 = Gas polytropic exponent
-0.500000E+000		*** chi		 = Shell elasticity  
+0.400000E+000		*** chi		 = Shell elasticity  
 OP					*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius','Minnaert_and_radius'
 ****
-1E+6	  		*** No. of Bubbles consisting the cluster
+1E+5		  		*** No. of Bubbles consisting the cluster
 *** monodisperse, Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
-1.0E-6	 			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
+2.0E-6	 			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
 0.25 0.75  			*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
 0.25 0.75 			*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
 0.50 0.90			*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len

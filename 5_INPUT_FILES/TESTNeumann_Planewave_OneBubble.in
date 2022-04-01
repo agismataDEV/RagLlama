@@ -32,7 +32,7 @@
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave"
 planewave
 *** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
-bubble
+scatterer
 30		*** Order of the Temporal Finite Difference schemes
 30		*** Order of the Spatial  Finite Difference schemes
 5		*** Debug message level 0-5 gives the level of detail of the messages
@@ -115,6 +115,7 @@ gaussian
 **********************************
 *** Parameters-Bubble Cluster  ***
 **********************************
+microbubble
 5.800000E-009   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
 0.072000E+000   *** sigma_w	 = Surface tension of water  [N/m]
 0.010000E+000   *** sigma_R0 = Initial surface tension   [N/m]

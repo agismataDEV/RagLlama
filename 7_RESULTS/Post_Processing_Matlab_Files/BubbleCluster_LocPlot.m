@@ -23,11 +23,10 @@
 %
 % ***********************************************************************************************************
 
-function [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,name,MarkerStyle)
+function [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,name,MarkerStyle,MarkerSize)
 
 %%
 disp('Ploting the microbubble cluster...')
-MarkerSize =  8/(log10(Bubble.N)+1);
 if (Bubble.N >0 )
     %=============================== 3D Domain View ==============================
     f4 = figure('WindowState','maximized');
@@ -183,7 +182,7 @@ if (Bubble.N >0 )
     integerPart=deblank(integerPart(1:(end-1)));
     integerPart = integerPart(end:-1:1);
     
-    sgtitle([name,' Cluster of ',integerPart,' Bubble(s) per ',num2str(round(Bubble.Volume*1e-3,2)),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
+    sgtitle([name,' Cluster of ',integerPart,' ',name,'(s) per ',num2str(round(Bubble.Volume,2)),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
     
     % set(gcf, 'Color', 'w');
     set(gca, 'Color', 'none'); % Sets axes background
@@ -198,19 +197,52 @@ if (Bubble.N >0 )
     if (sum(Bubble.Radius==0)==0)
         f5 = figure('WindowState','maximized');
         BinNum  = 100;
-        histfit(Bubble.Radius,BinNum,'Gamma');
+        histfit(Bubble.Radius,BinNum,'Gamma','interpreter','latex');
         h = get(gca,'Children');
         set(h(2),'FaceColor',[.8 .8 .8]) % Bar Properties
         set(h(1),'Color','blue')         % Line Properties
         %     set(h,'FaceColor','#404040')
         ax = gca;
+        ax.TickLabelInterpreter='latex';
         xlim([min(Bubble.Radius)-1E-10 max(Bubble.Radius)])
-        set(gca,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Radius [\mum]';
-        ax.YLabel.String = 'No. of Microbubbles';
-        title('Microbubble Radius Distribution')
+        set(gca,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Radius [$\mu$m]'; ax.XLabel.Interpreter = 'latex';
+        ax.YLabel.String = 'No. of Microbubbles'; ax.YLabel.Interpreter = 'latex';
+        title('Microbubble Radius Distribution','interpreter','latex')
         set(gca, 'Color', 'white'); % Sets axes background
         set(gcf, 'Color', 'white'); % Sets axes background
         set(gca,'FontSize',30)
+        
+        
+        figure('WindowState','maximized')
+        hold on;
+        box on;
+        [Z,X] = meshgrid(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)});
+        s=surf([Z(1,1) Z(1,end) Z(1,1) Z(end,1)] , [X(1,1) X(1,end) X(1,1) X(end,1)],dslice.pos(dslice.num)*ones(4,4),...
+            'EdgeColor','black', 'FaceAlpha' ,0.6);
+        if (strcmp(file.plot_colour,'gray')); color =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
+        for iBubble=1:Bubble.N
+          scatter3(Bubble.LocGlob(iBubble,domain.dimval(3)),Bubble.LocGlob(iBubble,domain.dimval(2)),Bubble.LocGlob(iBubble,domain.dimval(1)),'Marker','o', 'MarkerFaceColor',color,'SizeData',Bubble.Radius(iBubble)/min(Bubble.Radius)*10,'MarkerEdgeColor','black')
+        end
+        if (strcmp(file.plot_colour,'gray')); s.FaceColor =[ 192 192 192]/255; p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
+        view(-37.5,30)
+
+        xlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(3))) max(Bubble.LocGlob(:,domain.dimval(3)))] + [-domain.dzpar domain.dzpar]))/10)
+        ylim(round(10*([min(Bubble.LocGlob(:,domain.dimval(2))) max(Bubble.LocGlob(:,domain.dimval(2)))] + [-domain.dxpar domain.dxpar]))/10)
+        zlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(1))) max(Bubble.LocGlob(:,domain.dimval(1)))] + [-domain.dypar domain.dypar]))/10)
+        % xlim([ 40 45])
+        % ylim([ -4 -3])
+        % zlim([ 1 2])
+
+        x = xlabel(dslice.xlabel);
+        set(x, 'Position',get(x, 'Position').*[1,1,1],'Rotation',10)
+        y = ylabel(dslice.ylabel);
+        set(y, 'Position',get(y, 'Position').*[1,1,1],'Rotation',-21)
+        zlabel(dslice.zlabel)
+        title(['3D Cluster Focused Region'])
+        grid on
+        hold off;
+
+        set(gca,'FontSize',LocPlot_FontSize)
     end
     
     %%

@@ -4,7 +4,7 @@
 % close all;
 for slicenum1 = [2]%[12,3,4,5,6]
     
-    clearvars -except slicenum1 atten atten_fund Loc
+    clearvars -except slicenum1 atten atten_fund Loc pnl7
     %     close all
     clc
     %% Initialize parameters for all the significant variables
@@ -14,11 +14,11 @@ for slicenum1 = [2]%[12,3,4,5,6]
     [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');
     PS=Bubble ; domainPS = domain; domainPS.beamiterations=0;[PS] = BubbleCluster_LocCon(medium,domainPS,file,PS,'PS');
     %%  Bubble Cluster Positions
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','o');
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','rx');
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','o',3);
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx',0.8);
     
     %% PlayMovies
-        Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble)
+     Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble)
     %% CREATING MATRICES FOR NONLINEAR AND CONTRAST DATA
     [pnl,plin] = BubbleCluster_ConPlot(medium,domain,dslice,file,plin,pnl,Bubble);
 %     atten(dslice.num,:) = pnl.attenuation(dslice.num,:);
@@ -26,7 +26,7 @@ for slicenum1 = [2]%[12,3,4,5,6]
     %% Compare Analytic solution with simulation results
     BubbleCluster_Compare(medium,domain,dslice,file,plin,pnl,Bubble);
     %% Plot residuals
-    %     Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,[1E2 1E3 1E4 Bubble.N])
+    Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,[1E2 1E3 1E4],'../test/Phased_2E5Pa_2micron_1MHz_')
     
     fclose('all');
     %%

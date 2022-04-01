@@ -88,15 +88,16 @@ xlim([min(domain.par{3}) max(domain.par{3})])
 ylim([min(domain.par{1}) max(domain.par{1})])
 zlim([min(domain.par{2}) max(domain.par{2})])
 
-x = xlabel('Z [mm]');
+x = xlabel('Z [mm]','interpreter','latex');
 set(x, 'Position',get(x, 'Position').*[1,1,1],'Rotation',10)
-y = ylabel('X [mm]');
+y = ylabel('X [mm]','interpreter','latex');
 set(y, 'Position',get(y, 'Position').*[1,1,1],'Rotation',-21)
-zlabel('Y [mm]')
-title(['Cluster of ',num2str(Bubble.N),' Scatterer(s) / 0.1 ml, Slice @ Y = 0 [mm]'])
+zlabel('Y [mm]','interpreter','latex')
+title(['Cluster of ',num2str(Bubble.N),' Scatterer(s) / 0.1 ml, Slice @ Y = 0 [mm]'],'interpreter','latex')
 grid on
 grid minor
 hold off;
+ax = gca;ax.TickLabelInterpreter = 'latex';
 set(gca,'FontSize',25)
 set(gcf,'Color','white')
 
@@ -113,8 +114,8 @@ end
 % subplot(1,2,1)
 % f4 = figure('WindowState','maximized');
 
-f5=figure;
-set(f5,'Position',2*get(f5,'Position'));
+f5=figure('WindowState','maximized');
+% set(f5,'Position',2*get(f5,'Position'));
 hold on;
 box on;
 [X,Y,Z] = meshgrid(domain.par{domain.dimval(2)},domain.par{domain.dimval(1)},domain.par{domain.dimval(3)});
@@ -150,8 +151,8 @@ set(gcf, 'Color', 'w');
 %====================== X-Z Side View of Focused Region ==========================
 % subplot(1,2,2)
 % f5 = figure('WindowState','maximized');
-f6=figure;
-set(f6,'Position',2*get(f6,'Position'));
+f6=figure('WindowState','maximized');
+% set(f6,'Position',2*get(f6,'Position'));
 hold on;
 p=plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(1)),'o','MarkerSize',8/(log10(Bubble.N)+1));
 

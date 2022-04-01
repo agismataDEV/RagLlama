@@ -34,23 +34,24 @@ if (Bubble.N <=10 && Bubble.N>0)
     %%
     i_start = 1;
     i_end = domain.tdimpar;
-    depth =  domain.dimlen(3)-20;
+    depth =  100;
+    x_idx = 65;round(size(plin.data,3)/2)+1;
     figure('WindowState','maximized');
-    hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,round(size(plin.data,3)/2)+1,depth)*1E-3,'-','LineWidth',2)
-    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.contrastdata(i_start:i_end,round(size(plin.data,3)/2)+1,depth)*1E-3, '--','LineWidth',2)
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,x_idx,depth)*1E-3,'-','LineWidth',2)
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.data(i_start:i_end,x_idx,depth)*1E-3, '--','LineWidth',2)
     xlabel('Time [usec]')
     ylabel('Pressure [kPa]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
-    legend('Linear','With MBs')
+    hl = legend('Linear','With MBs');
     grid on;
-    title(['INCS Results after 10 Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(round(size(plin.data,3)/2)+1)),', ',num2str(0),', ', num2str(domain.par{3}(depth)),') [mm]'])
+    title(['INCS Results after 10 Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(x_idx)),', ',num2str(dslice.pos(dslice.num)),', ', num2str(domain.par{3}(depth)),') [mm]'])
     
-    F_s = 1/(2*domain.dtpar);                          % [Hz] , 1/dt
-    [f_p,Sp_p] = Freq_Calc(plin.data(i_start:i_end,round(size(plin.data,3)/2)+1,depth),1/(2*domain.dtpar));            % Spectrum of simulation
+    F_s = 1/(domain.dtpar);                          % [Hz] , 1/dt
+    [f_p,Sp_p] = Freq_Calc(plin.data(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
     figure('WindowState','maximized');
     hold on;  plot(f_p*1E-6,Sp_p,'-','LineWidth',2)
-    [f_s,Sp_s] = Freq_Calc(pnl.contrastdata(i_start:i_end,round(size(plin.data,3)/2)+1,depth),1/(2*domain.dtpar));            % Spectrum of simulation
+    [f_s,Sp_s] = Freq_Calc(pnl.data(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
     hold on;  plot(f_s*1E-6,Sp_s,'--','LineWidth',2)
     xlabel('Frequency [MHz]')
     ylabel('Amplitude [dB]')
@@ -65,7 +66,7 @@ if (Bubble.N <=10 && Bubble.N>0)
         % Load pressure values from file
         %             filename_pres = filename_pres(1:end-1);
         filename_pres = split(cellstr(ls([file.dirname '/Bubbles/' 'v_dd_norm_001*.txt'])));
-        for ifile =56:56
+        for ifile = 1:1
             fileID_pres = fopen([file.dirname '/Bubbles/' filename_pres{ifile} ],'r');
             size_pres = [1 Inf];
             formatSpec = '%f';
@@ -75,12 +76,13 @@ if (Bubble.N <=10 && Bubble.N>0)
             n_pad = (length(V_dd_sim_loaded)/domain.tdimpar-2)/2;
             n_pad = 2;
             tdimpar_file = size(Bubble.Contrast,2);
-            iBubble_ofinterest =  10;
+            iBubble_ofinterest =  1;
 %             if (length(V_dd_sim_loaded)>(1+2*domain.tdimpar+2*n_pad*domain.tdimpar)); iBubble_ofinterest = 1;end
             V_dd_sim = V_dd_sim_loaded((iBubble_ofinterest-1)*(2*tdimpar_file+2*n_pad*tdimpar_file) + 1 :iBubble_ofinterest*(2*tdimpar_file+2*n_pad*tdimpar_file));
+            iBubble = V_dd_sim_loaded((iBubble_ofinterest-1)*(2*tdimpar_file+2*n_pad*tdimpar_file) + 1)
             
             V_dd_Time = V_dd_sim(1:tdimpar_file);
-            V_dd_Pres = V_dd_sim(tdimpar_file + 1 : 2*tdimpar_file) * medium.rho0;
+            V_dd_Pres = V_dd_sim(tdimpar_file + 1 : 2*tdimpar_file)* medium.rho0;
             V_dd_TimePad = V_dd_sim(2*tdimpar_file + 1:(n_pad+2)*tdimpar_file);
             V_dd_PresPad = V_dd_sim((n_pad+2)*tdimpar_file + 1 : (n_pad+2)*tdimpar_file+n_pad*tdimpar_file)* medium.rho0;
             
@@ -92,11 +94,12 @@ if (Bubble.N <=10 && Bubble.N>0)
             xlabel('Time [usec]')
             ylabel('Contrast Source term [Pa/m^2]')
             
-            F_s = 1/(2*domain.dtpar/n_pad);                          % [Hz] , 1/dt
-            [f_p,Sp_p] = Freq_Calc(V_dd_Pres,1/(2*domain.dtpar));            % Spectrum of simulation
+            F_s = 1/(domain.dtpar/n_pad);                          % [Hz] , 1/dt
+            [f_p,Sp_p] = Freq_Calc(V_dd_Pres,1/(domain.dtpar));            % Spectrum of simulation
             [f_ppad,Sp_ppad] = Freq_Calc(V_dd_PresPad,F_s);                % Spectrum of analytical pulse
             figure('WindowState','maximized');
-            hold on;  plot(f_p(1:domain.tdimpar)*1E-6,Sp_p(1:domain.tdimpar)-max(Sp_p),f_ppad(1:domain.tdimpar)*1E-6,Sp_ppad(1:domain.tdimpar)-max(Sp_ppad))
+            hold on;  plot(f_p*1E-6,Sp_p-max(Sp_p),f_ppad*1E-6,Sp_ppad-max(Sp_ppad))
+            xlim([0 1/2/domain.dtpar*1E-6])
             legend('Initial Pulse', 'Resampled Pulse')
             set(gca,'FontSize',20)
             set(gcf,'Color','white')
@@ -110,18 +113,17 @@ if (Bubble.N <=10 && Bubble.N>0)
         end
         fclose('all')
         %%
-        filename_pres = split(cellstr(ls([file.dirname '/Bubbles/output_file_pressure_001*.txt'])));
-        for ifile =56:56
+        filename_pres = split(cellstr(ls([file.dirname '/Bubbles/output_file_pressure_004*.txt'])));
+        for ifile = 1:1
             fileID_pres = fopen([file.dirname '/Bubbles/' filename_pres{ifile} ],'r');
             size_pres = [1 Inf];
             formatSpec = '%f';
             
             BubbleVal_loaded = fscanf(fileID_pres,formatSpec,size_pres);
-            
-            n_pad = ((length(BubbleVal_loaded)-1)/domain.tdimpar-2)/2;
+         
             n_pad = 2;
             tdimpar_file = size(Bubble.Contrast,2);
-            iBubble_ofinterest = 10;
+            iBubble_ofinterest = 1;
 %             if (length(BubbleVal_loaded)>(1+2*tdimpar_file+2*n_pad*tdimpar_file)); iBubble_ofinterest = 20;end
             BubbleVal = BubbleVal_loaded((iBubble_ofinterest-1)*(1+2*tdimpar_file+2*n_pad*tdimpar_file) + 2 :iBubble_ofinterest*(1+2*tdimpar_file+2*n_pad*tdimpar_file));
             iBubble = BubbleVal_loaded((iBubble_ofinterest-1)*(1+2*tdimpar_file+2*n_pad*tdimpar_file) + 1)
@@ -139,16 +141,17 @@ if (Bubble.N <=10 && Bubble.N>0)
             ylabel('Pressure [Pa]')
             grid on;
             
-            F_s = 1/(2*domain.dtpar/n_pad);                          % [Hz] , 1/dt
-            [f_p,Sp_p] = Freq_Calc(BubblePres,1/(2*domain.dtpar));            % Spectrum of simulation
+            F_s = 1/(domain.dtpar/n_pad);                          % [Hz] , 1/dt
+            [f_p,Sp_p] = Freq_Calc(BubblePres,1/domain.dtpar);            % Spectrum of simulation
             [f_ppad,Sp_ppad] = Freq_Calc(BubblePresPad,F_s);                % Spectrum of analytical pulse
             figure('WindowState','maximized');
-            hold on;  plot(f_p(1:domain.tdimpar)*1E-6,Sp_p(1:domain.tdimpar)-max(Sp_p),f_ppad(1:domain.tdimpar)*1E-6,Sp_ppad(1:domain.tdimpar)-max(Sp_ppad))
+            hold on;  plot(f_p*1E-6,Sp_p-max(Sp_p),f_ppad*1E-6,Sp_ppad-max(Sp_ppad))
             legend('Initial Pulse', 'Resampled Pulse')
             set(gca,'FontSize',20)
             set(gcf,'Color','white')
             xlabel('Frequency [MHz]')
             ylabel('Normalized amplitude [dB]')
+            xlim([0 1/2/domain.dtpar*1E-6])
             grid on;
             
             % Create Simulation Contrast, correct if n_padded in INCS code
@@ -202,19 +205,19 @@ if (Bubble.N <=10 && Bubble.N>0)
     time_signature  =   (4/3*pi*R_rigid.^3)/(medium.c0^2);
     medium.rho1     =   10;
     medium.c1       =   100;
-    time_signature  =   (4/3*pi*R_rigid.^3)*medium.rho0.*(1./(medium.rho1*medium.c1.^2)- 1/(medium.rho0*medium.c0^2));
+    time_signature  =   -(4/3*pi*R_rigid.^3)*medium.rho0.*(1./(medium.rho1*medium.c1.^2)- 1/(medium.rho0*medium.c0^2));
     
     %======== Driving Frequency ======================
     freq        = medium.freq0;
     w_driving   = 2*pi*freq;
-    gauss_dl    = 3/freq;
-    gauss_win   = 1.5/freq;
+    gauss_dl    = 6/freq;
+    gauss_win   = 3/freq;
       
     domain.tpar_OS = interp(domain.tpar,OSFactor);
     domain.dtpar_OS = domain.tpar_OS(2) - domain.tpar_OS(1);
     domain.tdimpar_OS = length(domain.tpar_OS);
     
-    Inc_Press   = repmat(1E4*exp( - ((domain.tpar_OS-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(domain.tpar_OS-gauss_dl)),Bubble.N,1);
+    Inc_Press   = repmat(2E5*exp( - ((domain.tpar_OS-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(domain.tpar_OS-gauss_dl)),Bubble.N,1);
     Fs          = 1/domain.dtpar_OS;  dF = Fs/domain.tdimpar_OS;
     if mod(domain.tdimpar_OS,2) == 0 % Nt is even
         f = -Fs/2 : dF : Fs/2-dF;
@@ -278,10 +281,10 @@ if (Bubble.N <=10 && Bubble.N>0)
 %     %
 %     m_init = idx1;
 %     k_init = idx3;
-    m_init      =   139;49;77;
-    m_end       =   m_init;
-    k_init      =   10;11;58;
-    k_end       =   k_init;
+%     m_init      =   42;49;77;
+%     m_end       =   m_init;
+%     k_init      =   76;11;58;
+%     k_end       =   k_init;
 %         %
     RRMS_ErrorG_semi_an = zeros(k_end,m_end);
     RRMS_ErrorG_an = zeros(k_end,m_end);
@@ -310,7 +313,7 @@ if (Bubble.N <=10 && Bubble.N>0)
                 r_from_scatterer = sqrt((Bubble.LocGlob(:,domain.dimval(2)) - domain.par{domain.dimval(2)}(SliceIndex(1))).^2+(Bubble.LocGlob(:,domain.dimval(1)) - dslice.pos(dslice.num)).^2 ...
                     +(Bubble.LocGlob(:,domain.dimval(3))-domain.par{domain.dimval(3)}(SliceIndex(3))).^2)*1e-3;
                 z_shift = domain.par{domain.dimval(3)}(SliceIndex(3)) *1e-3;
-                
+%                 r_from_scatterer = 2E-6;
                 Greens_function = (exp(-1i*omega.*r_from_scatterer/medium.c0)./(4*pi*r_from_scatterer)); % 1/(4πr) and the time shift due to wave travel
                 Greens_function(isinf(Greens_function)) = 0;
                 
@@ -342,9 +345,9 @@ if (Bubble.N <=10 && Bubble.N>0)
                 %================================================== SEMI-ANALYTIC RESULTS SHIFTED =============================================================
                 % This phase shift is due to the shift that was implemented in the incident pressure field in the beginning
                 % When a comoving time window is used then all the results need to be shifted in the correct position
-%                 pnl.semi_an = Bubble.Contrast ; % Semi - analytic because checking only the Green's function
-%                 pnl.semi_an = real(ifft(fft(pnl.semi_an,[],2).*Greens_function,[],2));
-%                 pnl.semi_anN_cluster(:,k,m) = sum(pnl.semi_an,1)';%interp(pnl.semi_an,OSFactor)'; % Normalize to calculate error
+                pnl.semi_an = [zeros(1,domain.tdimpar - length(Bubble.Contrast)) Bubble.Contrast] ; % Semi - analytic because checking only the Green's function
+                pnl.semi_an = real(ifft(fft(pnl.semi_an,[],2).*Greens_function,[],2));
+                pnl.semi_anN_cluster(:,k,m) = sum(pnl.semi_an,1)';%interp(pnl.semi_an,OSFactor)'; % Normalize to calculate error
                 
                 %================================================== SIMULATION RESULTS =============================================================
                 pnl.sim = squeeze(pdiff(:,SliceIndex(1),SliceIndex(3)));
@@ -353,7 +356,7 @@ if (Bubble.N <=10 && Bubble.N>0)
                 pnl.simN_cluster(:,k,m) = pnl.sim;%interp(pnl.sim,OSFactor); % Normalize to calculate error
                 
                 [RRMS_ErrorG_an(k,m),Rel_ErrorG_an(k,m)] = Error(pnl.anN_cluster(:,k,m),pnl.simN_cluster(:,k,m));
-%                 [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an(k,m)] = Error(pnl.semi_anN_cluster(:,k,m),pnl.simN_cluster);
+                [RRMS_ErrorG_semi_an(k,m),Rel_ErrorG_semi_an(k,m)] = Error(pnl.semi_anN_cluster(:,k,m),pnl.simN_cluster(:,k,m));
                 
                 %Safety measure , max 10 plots
                 if ( (k_end-k_init+1)*(m_end-m_init+1)<10)
@@ -372,14 +375,14 @@ if (Bubble.N <=10 && Bubble.N>0)
     %% ========================================= PLOT ERROR IN 2D SLICE ==================================================================
     %     if ( k_end == domain.dimlen(1) && m_end == domain.dimlen(3))
     RRMS_Err_Corr = RRMS_ErrorG_an;
-    RRMS_Err_Corr(abs(RRMS_Err_Corr)>0.2)=0;
+    RRMS_Err_Corr(abs(RRMS_Err_Corr)>0.5)=0;
 %         RRMS_Err_Corr(abs(RRMS_Err_Corr)>0.2)=0;
     figure('WindowState','maximized');
     ax1 = axes;
     length_z = 1;
     length_x = 1;
     contourf(domain.par{3}(length_z:end-length_z-1),domain.par{1}(length_x:end-length_x-1),RRMS_Err_Corr(length_x:end-length_x-1,length_z:end-length_z-1)*100);
-    contourf(RRMS_Err_Corr*100)
+%     contourf(RRMS_Err_Corr*100)
 %     RRMS_Err_Corr(abs(RRMS_Err_Corr)>=0.1)=0.1;
 %     RRMS_Err_Corr(abs(RRMS_Err_Corr)>=0.01 & abs(RRMS_Err_Corr)<0.1)=0.01;
 %     RRMS_Err_Corr(abs(RRMS_Err_Corr)>=0.001 & abs(RRMS_Err_Corr)<0.01)=0.001;
@@ -443,7 +446,7 @@ function [RRMS_ErrorG_an,Rel_ErrorG_an] = Error(p_an,p_sim)
 % shift = (max2-max1);
 % if (shift>0);p_an = [zeros(shift-1,1); p_an(1:end-shift+1)];elseif(shift<0);p_sim = [zeros(-shift-1,1) ;p_sim(1:end+shift+1) ];end
 err1 = find(abs(p_sim)>=min(abs(p_sim)));
-meanval = 0;max(p_an(err1));
+meanval = 0;%max(p_an(err1));
 RRMS_ErrorG_an = sqrt( sum((p_sim(err1) - p_an(err1)).^2,1)./sum((p_an(err1)-meanval).^2 ));
 
 [~,i_maxdiff] = max(abs(p_sim-p_an));
@@ -492,7 +495,7 @@ end
 
 function Plot_Spectral_Response(domain,pnl,OSFactor,k,m)
 
-F_s = 1/(domain.dtpar/OSFactor*2);                          % [Hz] , 1/dt
+F_s = 1/(domain.dtpar/OSFactor);                          % [Hz] , 1/dt
 [f_p,Sp_psim] = Freq_Calc(pnl.simN_cluster(:,k,m),F_s);            % Spectrum of simulation
 [~,Sp_pan] = Freq_Calc(pnl.anN_cluster(:,k,m),F_s);                % Spectrum of analytical pulse
 [~,Sp_psemi_an] = Freq_Calc(pnl.semi_anN_cluster(:,k,m),F_s);      % Spectrum of semi_analytical pulse
@@ -521,9 +524,10 @@ end
 % Calculate the frequency spectrum based on a sampling frequency and the pressure values
 function [f_p,S_p] = Freq_Calc(Pres,F_s)
 
-Nfft_p = 2^nextpow2(2*length(Pres));                      % Zero-padding to improve fft performance until length equal to 2N
+Nfft_p = 2*length(Pres)-1;%2^nextpow2(2*length(Pres));                      % Zero-padding to improve fft performance until length equal to 2N
 Y_p = abs(fft(Pres,Nfft_p));                              % Convert the driving pulse to the frequency domain
-f_p = linspace(0,1,Nfft_p/2+1)*F_s;                     % [Hz] Frequency sample Number
+f_p = linspace(0,1,Nfft_p/2+1)*F_s/2;                     % [Hz] Frequency sample Number
+    
 % Define the frequency domain for half of sampling Frequency [0,Fs/2] - Nyquist, equally spaced values between  0 and 1
 % Other way to define frequency domain : f_p = Fs*(0:(Nfft_p/2))/Nfft_p
 Np = 1:Nfft_p/2+1;                                         % Creating a length vector in order to get the one-sided fft values , It is equal with [1:length(f_p)]

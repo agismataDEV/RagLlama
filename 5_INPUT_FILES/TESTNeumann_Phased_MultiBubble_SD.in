@@ -15,11 +15,11 @@
 *************************************************
 ***   domain and discretization parameters    ***
 *************************************************
-1.100000E+001		*** Lx in [mm]
-0.500000E+001		*** Ly in [mm]
-2.400000E+001		*** Lt in [cycles]
+1.020000E+001		*** Lx in [mm]
+1.020000E+001		*** Ly in [mm]
+4.000000E+001		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
-1.500000E+001		*** Lz in [mm]	(length of the field in z)
+1.000000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 7.853982E-001		*** Thetat [rad]
@@ -45,9 +45,9 @@ bubble
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 4		*** Number of slices to be stored
-y -1.482    
+y -2.5  
 y 0.0000
-y 1.482
+y 1.5
 x 0
 ***************************
 ***  source parameters  ***
@@ -72,11 +72,11 @@ phasedarray
 *** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), PhaseApodFilename
 20			*** Number of elements
 0.45000000	*** Element width
-5.00      	*** Element height
+10.00      	*** Element height
 0.05000000	*** Kerf
 0.0000000	*** Focus x
-350000000.0000000	*** Focus z
-350000000.00000000	*** Elevation focus
+5.0000000	*** Focus z
+5.00000000	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
 none
 ***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
@@ -126,32 +126,30 @@ none
 **********************************
 *** Parameters-Bubble Cluster  ***
 **********************************
-3.00000000E-8   *** Kappa_s	= Surface dilatational viscosity of shell [kg/sec]
-0.07200000E+0   *** sigma_w	= Surface tension of water  [N/m]
-0.03600000E+0   *** sigma_R0 	= Initial surface tension   [N/m]
-1.07000000E+0   *** kappa	= Gas polytropic exponent
-0.40000000E+0	*** chi		= Shell elasticity  
+5.800000E-009   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
+0.072000E+000   *** sigma_w	 = Surface tension of water  [N/m]
+0.010000E+000   *** sigma_R0 = Initial surface tension   [N/m]
+1.070000E+000   *** kappa	 = Gas polytropic exponent
+0.500000E+000	*** chi		 = Shell elasticity  
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
-none			*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
+Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-1E+5	  	*** No. of Bubbles consisting the cluster
+2.00000E+003	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
-2E-6 		*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  : Bubble Radius Range (polydisperse)
-0.25 0.75  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.25 0.75 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.3 0.8		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
-20e-6		*** MinDist 	= Minimum Distance between the bubbles [m]
-0			*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
-*** calculate pressure in every gridpoint "all" or to the gridpoints close to scatterers "close"
+1E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
+0.25 0.75	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
+0.25 0.75	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
+0.3 0.7			*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+20e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
+0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
+*** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
 close
 ***************************
 *** Residuals Directory ***
 ***************************
 Neumann *** IMPORTANT!!! No spaces!
-
-z z z z z z z z z z z z			*** Dimension of each slice. One for every slice
 
 
 

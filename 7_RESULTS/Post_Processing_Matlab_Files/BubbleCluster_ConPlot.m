@@ -88,7 +88,7 @@ for i = 1:i_end
     set(gcf, 'Color', 'w');
     hold on
     
-    plin_plot  = plin.fund ; 20*log10(squeeze(max(abs(plin.data))));
+    plin_plot  = plin.fund;20*log10(squeeze(max(abs(pnl.data))));
     plot(domain.par{domain.dimval(3)},plin_plot(round(dims(1)/2)+1,:),'--','Color','black')
     for i = 1: harmonics
         eval(['p=plot(domain.par{domain.dimval(3)},pnl.harm' num2str(i) '(round(dims(1)/2)+1,:));']);
@@ -106,53 +106,62 @@ for i = 1:i_end
     %====================================================== Harmonic Plot =================================================
     Nsubplot = 4;
     splot_div =2;
-    dBVALUES=30;
+    dBVALUES=40;
     Add = 0;
     
     FontSize = 20;
-    
+%     set(0,'defaultTextInterpreter','latex'); %trying to set the default
     f2=figure('WindowState','maximized');
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
     hold on;
-    caxis([max(max(plin.fund))-dBVALUES max(max(plin_plot))]+Add)
+    caxis([max(max(plin_plot))-dBVALUES max(max(plin_plot))]+Add)
     title('Linear Pressure Field')
     xlabel(dslice.xlabel )
     ylabel(dslice.ylabel )
     BubbleCluster_Colormaps(file)
     c = colorbar;
     c.Label.String = 'Pressure [dB]'; c.Label.FontSize = FontSize;
+    c.Label.Interpreter = 'latex';
+    c.TickLabelInterpreter='latex';
+    set(gca,'LooseInset', max(get(gca,'TightInset'), 0.03))
     set(gca,'YDir','normal')
     if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
     set(gcf, 'Color', 'white');
     set(gca,'FontSize',FontSize);
+    set(gca,'TickLabelInterpreter','latex')
     hold off;
     
     f4=figure('WindowState','maximized');
+    set(gca,'TickLabelInterpreter','latex')
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
     hold on;
-    caxis([max(max(plin.fund))-dBVALUES max(max(plin_plot ))]+Add)
+    caxis([max(max(plin_plot))-dBVALUES max(max(plin_plot ))]+Add)
     if Bubble.N >6
         rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
     elseif Bubble.N>=1
         plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
     end
-    title('Linear Pressure Field')
-    xlabel(dslice.xlabel )
-    ylabel(dslice.ylabel )
+    title('Linear Pressure Field', 'interpreter', 'latex')
+    xlabel(dslice.xlabel , 'interpreter', 'latex')
+    ylabel(dslice.ylabel , 'interpreter', 'latex')
     BubbleCluster_Colormaps(file)
     c = colorbar;
     c.Label.String = 'Pressure [dB]'; c.Label.FontSize = FontSize;
+    c.Label.Interpreter = 'latex';
+    c.TickLabelInterpreter='latex';
+    set(gca,'LooseInset', max(get(gca,'TightInset'), 0.03))
     set(gca,'YDir','normal')
     if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
     set(gcf, 'Color', 'white');
     set(gca,'FontSize',FontSize);
     hold off;
-    
+    %%
 %     caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
     for i = 1: harmonics
         if (i-4*floor((i-1)/4)==1); f3=figure('WindowState','maximized');end
         pnl_harmi = eval(['pnl.harm' num2str(i)]);
         subplot(Nsubplot/splot_div,Nsubplot/(Nsubplot/splot_div),i-4*floor((i-1)/4))
+        set(gca,'TickLabelInterpreter','latex')
         imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
         
         hold on;
@@ -163,13 +172,15 @@ for i = 1:i_end
         elseif Bubble.N>=1
             plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
         end
-        title([num2str(i) 'H'])
-        if (i==1) ;title('F0'); end
-        xlabel(dslice.xlabel )
-        ylabel(dslice.ylabel )
+        title([num2str(i) 'H'] , 'interpreter', 'latex')
+        if (i==1) ;title('F0' , 'interpreter', 'latex'); end
+        xlabel(dslice.xlabel , 'interpreter', 'latex' )
+        ylabel(dslice.ylabel , 'interpreter', 'latex' )
         BubbleCluster_Colormaps(file)
         c = colorbar;
         c.Label.String = 'Pressure [dB]'; c.Label.FontSize = FontSize;
+        c.Label.Interpreter = 'latex';
+        c.TickLabelInterpreter='latex';
         set(gca,'YDir','normal')
         if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
         
