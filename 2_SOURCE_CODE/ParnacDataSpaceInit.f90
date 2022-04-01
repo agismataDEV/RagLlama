@@ -1919,7 +1919,7 @@ SUBROUTINE InitGridDistrLookupTables(cSpace)
 		iMemAllocated=iMemAllocated + (PRODUCT(SHAPE(cSpace%cGrid%aiD0Loc)) ) * i4bS
         do i = 0, cSpace%cGrid%iD0LocN-1
                 ! We have i = x + y * iDimX + z * iDimX * iDimY
-				j        = i + (cSpace%cGrid%iProcID) * cSpace%cGrid%iD0LocN; 
+				j        = i + (cSpace%cGrid%iProcID) * cSpace%cGrid%iD0LocN; !THIS CHANGED BY A.M 21/09/2020
                 cSpace%cGrid%aiD0Loc(1+i, 1)        = mod(j, cSpace%iDimX);;
                 j         = (j - mod(j, cSpace%iDimX)) / cSpace%iDimX;
                 
@@ -1962,7 +1962,7 @@ SUBROUTINE InitGridDistrLookupTables(cSpace)
         cSpace%cGrid%iD2XL                = cSpace%iDimX;
         cSpace%cGrid%iD2YL                = cSpace%iDimY;
         cSpace%cGrid%iD2ZL                = cSpace%iDimZ;
-        cSpace%cGrid%iD2GlobN             = cSpace%iDimT+1;  	  ! Added by A.M 28/06/2020
+        cSpace%cGrid%iD2GlobN             = (cModelParams%PPW/2)*cSpace%iDimT+1;  	  ! Added by A.M 28/06/2020
         cSpace%cGrid%iD2LocN              = cSpace%cGrid%iD2GlobN / cSpace%cGrid%iProcN;
         cSpace%cGrid%iD2LocSize           = cSpace%cGrid%iD2LocN * cSpace%iDimX * cSpace%iDimY * cSpace%iDimZ;
 		!KH We have i = x + y * iDimX + z * iDimX * iDimY 

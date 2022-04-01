@@ -3522,8 +3522,6 @@ MODULE ParnacContrastFunctions
     real(dp) 					:: alpha1,alpha2,alpha3,alpha4,alpha5,b_att0,b_att1,b_att2,b_att3,b_att4,b_att5
     complex(dpc), allocatable 	:: acBuffer(:), AttenContrast1(:),AttenContrast2(:),AttenContrast3(:),AttenContrast4(:),AttenContrast5(:)
     real(dp), allocatable 		:: dTaperSupportWindow(:),dTaperMaxFreqWindow(:), dMultFactor(:), ContrastFiltered(:,:,:) !! L.D. 03-11-2009
-    integer(i4b)                                 :: iErr;
-    character(len=1024)                          :: acTemp, filename
     
     ! *****************************************************************************
     !
@@ -3798,36 +3796,6 @@ MODULE ParnacContrastFunctions
     !call PrintToLog("AttenuationEval4", 2);
     call TransformTInv_sml(pcGrid) 
     call ReorderDistr1ToDistr0(pcGrid)
-    
-    
-	do i=1,cModelParams%numslices
-        if ((cModelParams%xyzslicebeam(i)==0).or.(cModelParams%xyzslicebeam(i)==-1)) then
-            filename = trim(trim(sOutputDir) // trim('MediumNLPressure') // int2str(cModelParams%iIter))//'_'//cModelParams%xyzslicedim(i)//&
-                int2str(i)//int2str(0)
-                
-            if (cModelParams%xyzslicedim(i)=='t') then
-                call ExportSlice(trim(filename),"p",cSpace, &
-                    (/ cModelParams%xyzsliceindex(i), 0_i8b, 0_i8b, 0_i8b /), &
-                    (/ 1_i8b, cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ /), &
-                    cModelParams.xyzsliceindex, cSpace%iDimT, .true.);
-            elseif (cModelParams%xyzslicedim(i)=='x') then
-                call ExportSlice(trim(filename),"p",cSpace, &
-                    (/ 0_i8b, cModelParams%xyzsliceindex(i), 0_i8b, 0_i8b /), &
-                    (/ cSpace%iDimT, 1_i8b, cSpace%iDimY, cSpace%iDimZ /), &
-                    cModelParams.xyzsliceindex, cSpace%iDimX, .true.);
-            elseif (cModelParams%xyzslicedim(i)=='y') then
-                call ExportSlice(trim(filename),"p",cSpace, &
-                    (/ 0_i8b, 0_i8b, cModelParams%xyzsliceindex(i), 0_i8b /), &
-                    (/ cSpace%iDimT, cSpace%iDimX, 1_i8b, cSpace%iDimZ /), &
-                    cModelParams.xyzsliceindex, cSpace%iDimY, .true.);
-            elseif (cModelParams%xyzslicedim(i)=='z') then
-                call ExportSlice(trim(filename),"p",cSpace, &
-                    (/ 0_i8b, 0_i8b, 0_i8b, cModelParams%xyzsliceindex(i) /), &
-                    (/ cSpace%iDimT, cSpace%iDimX, cSpace%iDimY, 1_i8b /), &
-                    cModelParams.xyzsliceindex, cSpace%iDimZ, .true.);
-            end if
-        end if
-    end do
   END SUBROUTINE NonlinContrastOperator_Ali
   
   !----------------
@@ -5935,7 +5903,7 @@ MODULE ParnacContrastFunctions
              end do
           end do
        end do
-    elseif (iContrastID == iCI_BUBBLE) then
+    elseif (iContrastID == iCI_SCATTERER) then
        do iIndexX = 0, pcGridLarge%iD2XL-1
           do iIndexY = 0, pcGridLarge%iD2YL-1
              do iIndexZ = 0, pcGridLarge%iD2ZL-1
@@ -11122,6 +11090,9 @@ MODULE ParnacContrastFunctions
     
     real(dp), allocatable                        :: dTaperSupportWindow(:),dTaperMaxFreqWindow(:),dTaperMaxFreqWindowP(:)
     real(dp)                                     :: dLeftBand, dRightBand, dFFTFactor, dDOmega
+	
+	real(dp) 										:: dTaperX(cSpace%iDimX),dTaperY(cSpace%iDimY),dTaperZ(cSpace%iDimZ), dTaperWidth
+    integer(i8b)									:: iIndexX,iIndexY,iIndexZ, iOmega
     
     
     ! *****************************************************************************
@@ -11144,15 +11115,19 @@ MODULE ParnacContrastFunctions
     call PrintToLog("Compute the Lagrangian Density",1)
     
     pcGrid=>cSpace%cGrid
-    
-	call InitSpace(cSpaceTemp, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
-					cSpace%iDimT,cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
-					cSpace%iStartT,cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ, &
-					0_i8b,0_i8b,0_i8b, &
-					cSpace%dFnyq, cSpace%dTanX, cSpace%dTanY, cSpace%dTanT)
-	call InitGrid(cSpaceTemp, pcGrid%iProcN, pcGrid%iProcID, (/ .false., .false., .false., .false./));
-    call GridDistr0CreateEmpty(cSpaceTemp%cGrid);
-    cSpaceTemp%cGrid%parD0  = pcGrid%parD0
+	
+    call ReorderDistr0ToDistr1(pcGrid);
+	call MapVt(cSpace)
+	call ReorderDistr1ToDistr0(pcGrid);
+	
+	! call InitSpace(cSpaceTemp, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
+					! cSpace%iDimT,cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
+					! cSpace%iStartT,cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ, &
+					! 0_i8b,0_i8b,0_i8b, &
+					! cSpace%dFnyq, cSpace%dTanX, cSpace%dTanY, cSpace%dTanT)
+	! call InitGrid(cSpaceTemp, pcGrid%iProcN, pcGrid%iProcID, (/ .false., .false., .false., .false./));
+    ! call GridDistr0CreateEmpty(cSpaceTemp%cGrid);
+    ! cSpaceTemp%cGrid%parD0  = pcGrid%parD0
     
 	call InitSpace(phi, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
 					cSpace%iDimT,cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
@@ -11292,7 +11267,7 @@ MODULE ParnacContrastFunctions
         ! Each complex value stores two values of t, so we have to differentiate them both
         ! As differentiation is a simple scalar multiplication and addition,
         ! this happens automatically (real -> real, imag -> imag)
-       call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorX, .false., 1)
+       call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorX, .true., 1)
 	   
 	   arBuffer1square = real(pcGrid%pacD2(iStart+1:iStart+iDimX),dp)
 	   arBuffer2square = dimag(pcGrid%pacD2(iStart+1:iStart+iDimX))
@@ -11315,45 +11290,45 @@ MODULE ParnacContrastFunctions
 	
     call PrintToLog("Multiply the velocity potential with the ky",2)
     
-	ALLOCATE(   arBuffer(iDimY_Wrap))
-    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D     , iDimY_Wrap, arBuffer, arBuffer , fftw_forward , fftw_estimate)
-    call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D_inv , iDimY_Wrap, arBuffer, arBuffer , fftw_backward, fftw_estimate)
-    arBuffer = 0;
+	! ! ALLOCATE(   arBuffer(iDimY_Wrap))
+    ! ! call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D     , iDimY_Wrap, arBuffer, arBuffer , fftw_forward , fftw_estimate)
+    ! ! call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D_inv , iDimY_Wrap, arBuffer, arBuffer , fftw_backward, fftw_estimate)
+    ! ! arBuffer = 0;
 	
-    do iLt = 0, phi%cGrid%iD2LocN-1 ! This is the loop for time instants stored locally
+    ! ! do iLt = 0, phi%cGrid%iD2LocN-1 ! This is the loop for time instants stored locally
 	
-       ! This is the index that takes into account for the different starting point corresponding to a given time index
-       Timestart  = 0 + iDimX * iDimY * iDimZ * iLt
+       ! ! ! This is the index that takes into account for the different starting point corresponding to a given time index
+       ! ! Timestart  = 0 + iDimX * iDimY * iDimZ * iLt
 	   
-       do iLx = 0, iDimX-1 ! This is the loop for x points
-          iStart  = 0 + iLx + Timestart  ! This is the index
+       ! ! do iLx = 0, iDimX-1 ! This is the loop for x points
+          ! ! iStart  = 0 + iLx + Timestart  ! This is the index
           
-          ! Now we calculate dxk p^2 so that afterwards we can apply the derivative to this term
-          do iIndex = 0,iDimZ-1 ! This is the loop for z points
-			 arBuffer(1:iDimY)   = phi%cGrid%pacD2( iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS)
-             if (cSpace%bYSymm == .true.) then;  arBuffer(iDimY+1:iDimY_Wrap) = arBuffer(2:iDimY); arBuffer(1:iDimY) = arBuffer(iDimY_Wrap:iDimY:-1); endif
-             call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorY, .false., 1)
+          ! ! ! Now we calculate dxk p^2 so that afterwards we can apply the derivative to this term
+          ! ! do iIndex = 0,iDimZ-1 ! This is the loop for z points
+			 ! ! arBuffer(1:iDimY)   = phi%cGrid%pacD2( iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS)
+             ! ! if (cSpace%bYSymm == .true.) then;  arBuffer(iDimY+1:iDimY_Wrap) = arBuffer(2:iDimY); arBuffer(1:iDimY) = arBuffer(iDimY_Wrap:iDimY:-1); endif
+             ! ! call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorY, .false., 1)
             
-             if (cSpace%bYSymm == .true.) arBuffer(1:iDimY) = arBuffer(iDimY:iDimY_Wrap) 
-             pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS) = &
-			 pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS) + (real(arBuffer(1:iDimY),dp)**2 + im * dimag(arBuffer(1:iDimY))**2) 
+             ! ! if (cSpace%bYSymm == .true.) arBuffer(1:iDimY) = arBuffer(iDimY:iDimY_Wrap) 
+             ! ! pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS) = &
+			 ! ! pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2ZS : phi%cGrid%iD2YS) + (real(arBuffer(1:iDimY),dp)**2 + im * dimag(arBuffer(1:iDimY))**2) 
 														
-             iStart		= iStart 	+	phi%cGrid%iD2ZS
+             ! ! iStart		= iStart 	+	phi%cGrid%iD2ZS
              
-          end do
+          ! ! end do
           
           
-       end do
-	enddo
-    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D )
-    call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D_inv)
-	DEALLOCATE( arBuffer )
+       ! ! end do
+	! ! enddo
+    ! ! call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D )
+    ! ! call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D_inv)
+	! ! DEALLOCATE( arBuffer )
 	
-	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
-	write(*,*) "Y,",MAXVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
-	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
-	write(*,*) "Y_MIN,",MINVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
-	call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	! ! call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	! ! write(*,*) "Y,",MAXVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
+	! ! call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+	! ! write(*,*) "Y_MIN,",MINVAL(REAL(pcGrid%pacD2,dp)),  cSpace%cGrid%iProcID
+	! ! call MPI_BARRIER(MPI_COMM_WORLD, iErr)
 	  
     
     ! ! ! ============================= COMPUTE THE Z COMPONENT ============================================================
@@ -11373,7 +11348,7 @@ MODULE ParnacContrastFunctions
           iStart  = 0 + iLx + Timestart  ! This is the index for all the possible x,y for the same z
           arBuffer = phi%cGrid%pacD2(iStart+1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS)
           ! Compute the 1st spatial derivative  in the z direction
-          call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorZ, .false., 1)
+          call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorZ, .true., 1)
             
           pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS)  = &
 		  pcGrid%pacD2(iStart + 1 : iStart + phi%cGrid%iD2IS : phi%cGrid%iD2ZS) + (real(arBuffer,dp)**2 + im * dimag(arBuffer)**2)
@@ -11633,6 +11608,55 @@ MODULE ParnacContrastFunctions
     ! pcGrid%parD0 = pcGrid%parD0 + cSpaceTemp%cGrid%parD0
     call DestructSpace(cSpaceTemp)
     
+    call ReorderDistr0ToDistr1(pcGrid)
+    call TransformT_sml(pcGrid)
+    
+    if (cModelParams.UseFreqTapering .EQV. .true.) then
+       ! Tapering of the highest frequency part; otherwise the chopoff noise around the 
+       ! Nyquist frequency is being distributed over the entire frequency axis by the p**2
+       ! and is blown up by the double derivative...
+       
+       ! build tapering window, the highest .1*f0 are tapered in the contrast source
+       dLeftBand = 0
+       dRightBand = 0.1_dp
+       dTaperMaxFreqWindow(1:iDimW) = dTaperingWindow(iDimW,1.0_dp/(cSpace%iDimT*cSpace%dDt),dLeftBand,dRightBand)	
+       ! multiply the field with it
+       iStart = 0
+       do iIndex=0,pcGrid%iD1LocN-1
+          pcGrid%pacD1(iStart+1:iStart+iDimW) = &
+          pcGrid%pacD1(iStart+1:iStart+iDimW) * dTaperMaxFreqWindow(1:iDimW) / real(iDimT,dp)
+          
+          iStart=iStart+pcGrid%iD1IS
+       end do
+       
+    end if
+    
+    ! Now, transform back to T-domain as though it was a grid with wraparound regions
+    ! however, the wraparound regions are now used as anti-aliasing regions...
+    call TransformTInv_sml(pcGrid)
+	call ReorderDistr1ToDistr2(pcGrid)
+	dTaperWidth = 1.0D0
+	
+    dTaperX = dTaperingWindow(cSpace%iDimX,cSpace%dDx,dTaperWidth,dTaperWidth)
+    dTaperY = dTaperingWindow(cSpace%iDimY,cSpace%dDx,dTaperWidth,dTaperWidth)
+    dTaperZ = dTaperingWindow(cSpace%iDimZ,cSpace%dDx,dTaperWidth,dTaperWidth)
+	do iOmega = 0,pcGrid%iD2locN-1
+		do iIndexX = 0, cSpace%cGrid%iD2XL-1
+		   do iIndexY = 0, cSpace%cGrid%iD2YL-1
+			  do iIndexZ = 0, cSpace%cGrid%iD2ZL-1
+				 
+				 iIndex = 1 + iOmega * cSpace%cGrid%iD2IS+ iIndexX*cSpace%cGrid%iD2XS + iIndexY*cSpace%cGrid%iD2YS + iIndexZ*cSpace%cGrid%iD2ZS
+				 
+				 cSpace%cGrid%pacD2(iIndex) = cSpace%cGrid%pacD2(iIndex) * (dTaperX(1+iIndexX) * dTaperY(1+iIndexY) * dTaperZ(1+iIndexZ))
+				 
+			  end do
+		   end do
+		end do
+	ENDDO
+	call ReorderDistr2ToDistr1(pcGrid)
+	call MapVtInv(cSpace)
+	call ReorderDistr1ToDistr0(pcGrid);
+	
   END SUBROUTINE LagrangianDensity_Ali
 
   SUBROUTINE SpatialDerivative_w_wo_Ali(cSpace, cDerivLookup, arBuffer, dKVectorXYZ, Alias, Order)
@@ -12243,5 +12267,5 @@ MODULE ParnacContrastFunctions
     ! call DestructSpace(cSpaceTemp)
       
   END SUBROUTINE LagrangianDensity_Simpl_Ali
-
+  
   END MODULE ParnacContrastFunctions

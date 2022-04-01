@@ -460,8 +460,8 @@
         cModelParams.ContrastSourceType=iCI_SPHERE
     else if (trim(acTemp)=='blob') then
         cModelParams.ContrastSourceType=iCI_BLOB
-    else if (trim(acTemp)=='bubble') then
-        cModelParams.ContrastSourceType=iCI_BUBBLE
+    else if (trim(acTemp)=='scatterer') then
+        cModelParams.ContrastSourceType=iCI_SCATTERER
     else
         cModelParams.ContrastSourceType=0 ! Doesn't exist
     end if
@@ -576,12 +576,27 @@
 				read(iImportUNIT,*)
 				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tdelay
 				errstatus = errstatus + readstatus
+			else if (trim(acTemp)=='integrable') then
+				cSourceParams.srcsigntype = iGI_INTEGRABLE
+
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Pstart
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tpulse
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*)
+				read(iImportUNIT,*)
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Twidth
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Tdelay
+				errstatus = errstatus + readstatus
+				read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.Power
+				errstatus = errstatus + readstatus
 			else
 				! otherwise, assume that we have a filename
 				cSourceParams.srcsigntype = iGI_FILE
 				cSourceParams.srcsignfilename = acTemp
 			end if
-
+			
 			if (cModelParams.PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams.PrimarySourceType/=iEI_POINTSOURCECLOUD) then
 				!read source shape parameters
 				read(iImportUNIT,*)
@@ -715,49 +730,58 @@
 		read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.SOS5
 		read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.KAPPA5
 		read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.BETA5
-		read(iImportUNIT,*)
-		read(iImportUNIT,*)
-		read(iImportUNIT,*)
-		if (cModelParams.ContrastSourceType==iCI_BUBBLE) then
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%kappa_s
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%sigma_w
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%sigma_R0
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%gama
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%chi
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%Solver_Method
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%Solver_Normalize
-			read(iImportUNIT,*)
-				    	
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%N
-			ALLOCATE(BubbleParams%R0(BubbleParams%N))
+		if (cModelParams.ContrastSourceType==iCI_SCATTERER) then
+		
 			read(iImportUNIT,*)
 			read(iImportUNIT,*)
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%Distribution
-			call remove_CR(BubbleParams%Distribution)
-			if (trim(BubbleParams%Distribution) == 'monodisperse') then
-				read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%R0(1)
-				BubbleParams%R0(:) = BubbleParams%R0(1)
-			elseif (trim(BubbleParams%Distribution) == 'polydisperse') then
-				read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%PDRange
-				!CALL RANDOM_NUMBER(BubbleParams%R0)
-				!BubbleParams%R0 = BubbleParams%R0*BubbleParams%PDRange(2) + (1-BubbleParams%R0)*BubbleParams%PDRange(1)
+			read(iImportUNIT,*)
+			
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%ScType
+			call remove_CR(ScattererParams%ScType)
+			if (trim(ScattererParams%ScType) == 'microbubble') then
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%kappa_s
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%sigma_w
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%sigma_R0
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%gama
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%chi
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%Solver_Method
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%Solver_Normalize
+			elseif (trim(ScattererParams%ScType) == 'linear') then
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%rho1
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%c1
+			endif	
+	    	
+			read(iImportUNIT,*)
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%N
+			ALLOCATE(ScattererParams%R0(ScattererParams%N))
+			read(iImportUNIT,*)
+			read(iImportUNIT,*)
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%Distribution
+			call remove_CR(ScattererParams%Distribution)
+			if (trim(ScattererParams%Distribution) == 'monodisperse') then
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%R0(1)
+				ScattererParams%R0(:) = ScattererParams%R0(1)
+			elseif (trim(ScattererParams%Distribution) == 'polydisperse') then
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%PDRange
+				!CALL RANDOM_NUMBER(ScattererParams%R0)
+				!ScattererParams%R0 = ScattererParams%R0*ScattererParams%PDRange(2) + (1-ScattererParams%R0)*ScattererParams%PDRange(1)
 				errstatus = vslnewstream( STREAM2, VSL_BRNG_MCG31, 1 )
-				errstatus = vdrnggamma( VSL_RNG_METHOD_GAMMA_GNORM_ACCURATE, STREAM2, INT(BubbleParams%N), BubbleParams%R0 , 1.2D0, 0.0D0, 1.0D0 )
-				BubbleParams%R0 = (BubbleParams%R0-MINVAL(BubbleParams%R0))
-				BubbleParams%R0 = BubbleParams%R0/MAXVAL(BubbleParams%R0)*(BubbleParams%PDRange(2)-BubbleParams%PDRange(1))+BubbleParams%PDRange(1)
+				errstatus = vdrnggamma( VSL_RNG_METHOD_GAMMA_GNORM_ACCURATE, STREAM2, INT(ScattererParams%N), ScattererParams%R0 , 1.2D0, 0.0D0, 1.0D0 )
+				ScattererParams%R0 = (ScattererParams%R0-MINVAL(ScattererParams%R0))
+				ScattererParams%R0 = ScattererParams%R0/MAXVAL(ScattererParams%R0)*(ScattererParams%PDRange(2)-ScattererParams%PDRange(1))+ScattererParams%PDRange(1)
 			endif
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%ClusterDimsRatio(:,1)
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%ClusterDimsRatio(:,2)
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%ClusterDimsRatio(:,3)
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%MinInBetweenDist
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%ClusterSlicesN
-				ALLOCATE(BubbleParams%ClusterSliceDim(BubbleParams%ClusterSlicesN))
-			if (BubbleParams%ClusterSlicesN > 0) then
-				read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%ClusterSliceDim
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%ClusterDimsRatio(:,1)
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%ClusterDimsRatio(:,2)
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%ClusterDimsRatio(:,3)
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%MinInBetweenDist
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%ClusterSlicesN
+				ALLOCATE(ScattererParams%ClusterSliceDim(ScattererParams%ClusterSlicesN))
+			if (ScattererParams%ClusterSlicesN > 0) then
+				read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%ClusterSliceDim
 			endif
 			read(iImportUNIT,*)
-			read(iImportUNIT,*,IOSTAT = readstatus) BubbleParams%GridPointsPressure
-			call remove_CR(BubbleParams%GridPointsPressure)
+			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%GridPointsPressure
+			call remove_CR(ScattererParams%GridPointsPressure)
 	 	endif
 		read(iImportUNIT,*)
 		read(iImportUNIT,*)
@@ -766,7 +790,6 @@
 		call remove_CR(acTemp)
 		errstatus = errstatus + readstatus
 		cSourceParams.residualdirectory = trim(sOutputDir)//acTemp !'\\srv256\NASSHARE\ldemi\DATA\OFDM Second Round\MixingComponents\'
-
     end if
 
     close(unit=iImportUNIT)
@@ -825,7 +848,9 @@
 
     write ( *, '("Configuration input file: ",A)') trim(sInputDir)//trim(sInputName)
     write ( *, '(" ")')
+    write ( *, '("---------------------------------------------------------------------------")')
     write ( *, '("Input file, version ",F10.2)') fileversion
+    write ( *, '("---------------------------------------------------------------------------")')
     write ( *, '(" ")')
     write ( *, '("rho0:  ",E10.3)') cMediumParams.rho0
     write ( *, '("c0:    ",E10.3)') cMediumParams.c0
@@ -847,17 +872,17 @@
     write ( *, '("freq0:  ",E10.3)') cModelParams.freq0
     write ( *, '("Fnyq:   ",E10.3)') cModelParams.Fnyq
     write ( *, '(" ")')
-    write ( *, '("PrimSType:  ",I3)') cModelParams.PrimarySourceType
-    write ( *, '("ContSType:  ",I3)') cModelParams.ContrastSourceType
+    write ( *, '("PrimSType:  ",I4)') cModelParams.PrimarySourceType
+    write ( *, '("ContSType:  ",I4)') cModelParams.ContrastSourceType
     write ( *, '("FDTorder:   ",I4)') cModelParams.FDTorder
     write ( *, '("FDXorder:   ",I4)') cModelParams.FDXorder
     write ( *, '("Debuglvl:   ",I4)') iDebugLvl
     write ( *, '("A-Aliasing: ",L4)') cModelParams.UseAntiAliasing
     write ( *, '("SupTaper:   ",L4)') cModelParams.UseSupportTapering
     write ( *, '("FreqTaper:  ",L4)') cModelParams.UseFreqTapering
-    write ( *, '("Numbeams:   ",I5)') cModelParams.Numbeams
+    write ( *, '("Numbeams:   ",I4)') cModelParams.Numbeams
     do i=1,cModelParams%Numbeams
-        write ( *, '(" NumIt(",I2,"):    ",I4)') i,cModelParams.numiterations(i)
+        write ( *, '(" NumIt(",I2,"):   ",I4)') i,cModelParams.numiterations(i)
     end do
     write ( *, '("Slicesavespecifier: ",I5)') cModelParams.slicesavespecifier
     write ( *, '("Numslices:          ",I5)') cModelParams.Numslices
@@ -898,15 +923,15 @@
                 write ( *, '(" Triangxcenter: ",E10.3)') cSourceParams.triangxcenter
             else if (cSourceParams.srcshapetype == iHI_POINTSOURCE) then
             else if (cSourceParams.srcshapetype == iHI_PHASEDARRAY) then
-                write ( *, '(" Numel:    ",I3)') cSourceParams.numel
-                write ( *, '(" Elwidth:  ",E10.3)') cSourceParams.elwidth
-                write ( *, '(" Elheight: ",E10.3)') cSourceParams.elheight
-                write ( *, '(" Kerf:     ",E10.3)') cSourceParams.kerf
-                write ( *, '(" Focusx:   ",E10.3)') cSourceParams.focusx
-                write ( *, '(" Focusz:   ",E10.3)') cSourceParams.focusz
-                write ( *, '(" Elfocus:  ",E10.3)') cSourceParams.elevationfocusz
-                write ( *, '(" TD file:  ",A)') cSourceParams.td_filename
-                write ( *, '(" Apodfile: ",A)') cSourceParams.phaseapodfilename
+                write ( *, '(" Numel:        ",I3)') cSourceParams.numel
+                write ( *, '(" Elwidth:      ",E10.3)') cSourceParams.elwidth
+                write ( *, '(" Elheight:     ",E10.3)') cSourceParams.elheight
+                write ( *, '(" Kerf:         ",E10.3)') cSourceParams.kerf
+                write ( *, '(" Focusx:       ",E10.3)') cSourceParams.focusx
+                write ( *, '(" Focusz:       ",E10.3)') cSourceParams.focusz
+                write ( *, '(" Elfocus:      ",E10.3)') cSourceParams.elevationfocusz
+                write ( *, '(" TD file:       ",A)') cSourceParams.td_filename
+                write ( *, '(" Apodfile:      ",A)') cSourceParams.phaseapodfilename
                 !KH		else if (cSourceParams.srcshapetype == iHI_MATRIXARRAY) then
                 !KH				write ( *, '(" Numelx:    ",I3)') cSourceParams.matnumelx
                 !KH				write ( *, '(" Numely:    ",I3)') cSourceParams.matnumely
@@ -919,9 +944,9 @@
                 !KH				write ( *, '(" Focusz:   ",E10.3)') cSourceParams.matfocusz
                 !KH!				write ( *, '(" Apodfile: ",A)') cSourceParams.phaseapodfilename
                 write ( *, '(" ")')
-                write ( *, '("-------------------------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '(" ")')
-                write ( *, '(" Symmetry in the Y axis:				",I3)') abs(cModelParams%UseYSymmetry*-1)
+                write ( *, '(" Symmetry in the Y axis:             ",I3)') abs(cModelParams%UseYSymmetry)
                 write ( *, '(" Nonlinear Compressibility Contrast: ",I3)') cSourceParams.NKC
                 write ( *, '(" Linearized Contrast Source Method:  ",I3)') cSourceParams.LCSM
                 write ( *, '(" Bi-CGSTAB:                          ",I3)') cSourceParams.BiCGSTAB
@@ -930,10 +955,12 @@
                 write ( *, '(" Dual Frequency Modality:            ",I3)') cSourceParams.DFM
                 write ( *, '(" Shift for Dual Frequency Modality:  ",I3)') cSourceParams.SHIFT
                 write ( *, '(" ")')
-                write ( *, '("-------------------------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
 
                 write ( *, '(" ")')
-                write ( *, '("Parameters Section ----------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
+                write ( *, '("Parameters Section ")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '(" ")')
                 write ( *, '(" alpha1: ",E10.3)') cSourceParams.alpha1
                 write ( *, '(" b1:     ",E10.3)') cSourceParams.b1
@@ -965,51 +992,56 @@
                 write ( *, '(" KAPPA5: ",E10.3)') cSourceParams.KAPPA5
                 write ( *, '(" BETA5:  ",E10.3)') cSourceParams.BETA5
                 write ( *, '(" ")')
-                write ( *, '("-------------------------------------")')
+                write ( *, '("--------------------------------------------------------------------------")')
                 write ( *, '("Residual :",A)') trim(cSourceParams.residualdirectory)
-                write ( *, '("-------------------------------------")')
+                write ( *, '("--------------------------------------------------------------------------")')
             
             
             end if
             
         end if
-        if (cModelParams.ContrastSourceType==iCI_BUBBLE) then
-            	write ( *, '(" ")')
-                write ( *, '("--------------------------------------")')
-                write ( *, '("Bubble Parameters for Marmottant Model")')
-                write ( *, '("--------------------------------------")')
-                write ( *, '(" ")')
-                write ( *, '(" kappa_s:   ",E10.3)') BubbleParams%kappa_s
-                write ( *, '(" sigma_w:   ",E10.3)') BubbleParams%sigma_w
-                write ( *, '(" sigma_R0:  ",E10.3)') BubbleParams%sigma_R0
-                write ( *, '(" gamma:     ",E10.3)') BubbleParams%gama
-                write ( *, '(" chi:       ",E10.3)') BubbleParams%chi
-                write ( *, '(" Marmottant Solver:       ",A)') trim(BubbleParams%Solver_Method)
-                write ( *, '(" Normalize in:       ",A)') trim(BubbleParams%Solver_Normalize)
-                write ( *, '(" ")')
-                write ( *, '("------------------")')
+        if (cModelParams.ContrastSourceType==iCI_SCATTERER) then
+                write ( *, '("---------------------------------------------------------------------------")')
+                write ( *, '("Parameters for scatterer")')
+                write ( *, '("---------------------------------------------------------------------------")')
+                write ( *, '(" Type: 	     ",A)'	  		) trim(ScattererParams%ScType)
+				if (  trim(ScattererParams%ScType) == 'microbubble') then 
+					write ( *, '(" kappa_s:   ",E10.3)') ScattererParams%kappa_s
+					write ( *, '(" sigma_w:   ",E10.3)') ScattererParams%sigma_w
+					write ( *, '(" sigma_R0:  ",E10.3)') ScattererParams%sigma_R0
+					write ( *, '(" gamma:     ",E10.3)') ScattererParams%gama
+					write ( *, '(" chi:       ",E10.3)') ScattererParams%chi
+					write ( *, '(" Marmottant Solver:       ",A)') trim(ScattererParams%Solver_Method)
+					write ( *, '(" Normalize in:       ",A)') trim(ScattererParams%Solver_Normalize)
+					write ( *, '(" ")')
+				elseif (  trim(ScattererParams%ScType) == 'linear') then 
+					write ( *, '(" rho1:   ",E10.3)') ScattererParams%rho1
+					write ( *, '(" c1:   ",E10.3)') ScattererParams%c1
+				endif
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '("Cluster Parameters")')
-                write ( *, '("------------------")')
+                write ( *, '("---------------------------------------------------------------------------")')
                 write ( *, '(" ")')
-                write ( *, '(" Distribution: 	     ",A)'	  		) trim(BubbleParams%Distribution)
-            if (trim(BubbleParams%Distribution) == 'monodisperse') then
-	    		write ( *, '(" Radius:		 	     ",E10.3)'	  	) BubbleParams%R0(1)
-            elseif (trim(BubbleParams%Distribution) == 'polydisperse') then
-	    		write ( *, '(" Radius Range:	     ",E10.3,E10.3)') MINVAL(BubbleParams%R0),MAXVAL(BubbleParams%R0)
+                write ( *, '(" Distribution: 	     ",A)'	  		) trim(ScattererParams%Distribution)
+            if (trim(ScattererParams%Distribution) == 'monodisperse') then
+	    		write ( *, '(" Radius:		 	     ",E10.3)'	  	) ScattererParams%R0(1)
+            elseif (trim(ScattererParams%Distribution) == 'polydisperse') then
+	    		write ( *, '(" Radius Range:	     ",E10.3,E10.3)') MINVAL(ScattererParams%R0),MAXVAL(ScattererParams%R0)
                 endif
-                write ( *, '(" No. of Bubbles:       ",I<int(log10(real(BubbleParams%N,dp))+1)>)'  ) BubbleParams%N
-                write ( *, '(" [X_Bmin X_Bmax]/ Lx:  ",E10.3,E10.3)') BubbleParams%ClusterDimsRatio(:,1)
-                write ( *, '(" [Y_Bmin Y_Bmax]/ Ly:  ",E10.3,E10.3)') BubbleParams%ClusterDimsRatio(:,2)
-                write ( *, '(" [Z_Bmin Z_Bmax]/ Lz:  ",E10.3,E10.3)') BubbleParams%ClusterDimsRatio(:,3)
-                write ( *, '(" Minimum Bubble Dist:  ",E10.3)') BubbleParams%MinInBetweenDist
-                write ( *, '(" Calculate Pressure to ",A," gridpoints")') trim(BubbleParams%GridPointsPressure)
+                write ( *, '(" No. of Bubbles:       ",I<int(log10(real(ScattererParams%N,dp))+1)>)'  ) ScattererParams%N
+                write ( *, '(" [X_Bmin X_Bmax]/ Lx:  ",E10.3,E10.3)') ScattererParams%ClusterDimsRatio(:,1)
+                write ( *, '(" [Y_Bmin Y_Bmax]/ Ly:  ",E10.3,E10.3)') ScattererParams%ClusterDimsRatio(:,2)
+                write ( *, '(" [Z_Bmin Z_Bmax]/ Lz:  ",E10.3,E10.3)') ScattererParams%ClusterDimsRatio(:,3)
+                write ( *, '(" Minimum Bubble Dist:  ",E10.3)') ScattererParams%MinInBetweenDist
+                write ( *, '(" Calculate Pressure to ",A," gridpoints")') trim(ScattererParams%GridPointsPressure)
         endif
     end if
     write ( *, '(" ")')
+     write ( *, '("---------------------------------------------------------------------------")')
 
     END SUBROUTINE ConfigFileInfo
 
-    SUBROUTINE SpecialChecksConfigParameters
+SUBROUTINE SpecialChecksConfigParameters
 
     ! =============================================================================
     !
@@ -2254,16 +2286,16 @@
 
     END SUBROUTINE remove_CR
 
-    SUBROUTINE BubbleInit()
+    SUBROUTINE ScattererInit()
     
-    BubbleParams%sBubbleDir = 'Bubbles/'
+    ScattererParams%sBubbleDir = 'Bubbles/'
     
-	BubbleParams%time_norm = 1.0D0
-	BubbleParams%rad_norm  = 1.0D0
+	ScattererParams%time_norm = 1.0D0
+	ScattererParams%rad_norm  = 1.0D0
 	
     !------------ Experimental Values
-    BubbleParams.coeff_fit =(/ -326138851.8775966167449951171875Q0, 3329551876.01073455810546875Q0, -15287331213.0629024505615234375Q0, 41570311455.0132293701171875Q0, -74140077882.8638153076171875Q0, 90617932686.12164306640625Q0, -76870588777.044830322265625Q0, 44688537547.7557373046875Q0, -17039124392.086650848388671875Q0, 3847686270.230488300323486328125Q0, -390758718.15616351366043090820312Q0 /)
-    BubbleParams.A0c  = 0.0Q0;
-    END SUBROUTINE BubbleInit
+    ScattererParams.coeff_fit =(/ -326138851.8775966167449951171875Q0, 3329551876.01073455810546875Q0, -15287331213.0629024505615234375Q0, 41570311455.0132293701171875Q0, -74140077882.8638153076171875Q0, 90617932686.12164306640625Q0, -76870588777.044830322265625Q0, 44688537547.7557373046875Q0, -17039124392.086650848388671875Q0, 3847686270.230488300323486328125Q0, -390758718.15616351366043090820312Q0 /)
+    ScattererParams.A0c  = 0.0Q0; 
+    END SUBROUTINE ScattererInit
 
     END MODULE ParnacParamInit

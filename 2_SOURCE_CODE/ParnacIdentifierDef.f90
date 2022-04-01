@@ -128,7 +128,7 @@ MODULE ParnacIdentifierDef
 	integer(i8b), parameter :: iCI_NONLINKAPPADIRECTIONDX=16
 	integer(i8b), parameter :: iCI_NONLINKAPPADIRECTIONDY=17
 	integer(i8b), parameter :: iCI_NONLINKAPPADIRECTIONDZ=18
-	integer(i8b), parameter :: iCI_BUBBLE=19
+	integer(i8b), parameter :: iCI_SCATTERER=19
 	    
 
 	!identifiers for the Slicesave Identifier
@@ -140,6 +140,7 @@ MODULE ParnacIdentifierDef
 	integer(i8b), parameter :: iGI_GAUSSIAN=1
 	integer(i8b), parameter :: iGI_BLACKMAN=2
 	integer(i8b), parameter :: iGI_FILE=3
+	integer(i8b), parameter :: iGI_INTEGRABLE=4
 
 	!identifiers for the Source shape Identifier
 	integer(i8b), parameter :: iHI_CYLINDRICAL=1

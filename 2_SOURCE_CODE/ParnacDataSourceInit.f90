@@ -284,7 +284,7 @@ SUBROUTINE InitSource_Planewave(cSource)
 !   error     i8b    error number
 !   Excitation  dp   3D array containing the source description in (t,x,y)
 !
-	integer(i8b)::			iLt 
+	integer(i8b)::			iLt
 	integer(i8b) ::	        Ksource,LSource, MSource
 	character(len=1024) ::	acTemp
 	integer(i8b) ::			error
@@ -307,7 +307,7 @@ SUBROUTINE InitSource_Planewave(cSource)
 !   
 ! =============================================================================
 
-	write (acTemp, '("InitSource")');	call PrintToLog(acTemp, 1);
+	write (acTemp, '("InitSource_Planewave")');	call PrintToLog(acTemp, 1);
 	
 	if(cSource.iSpaceIdentifier/=iSI_PRIMARYSOURCE) then
 		call PrintToLog("Error. Cannot create a source in a non-source space", -1)
@@ -329,7 +329,6 @@ SUBROUTINE InitSource_Planewave(cSource)
 		call PrintToLog(acTemp,-1)
 		stop
 	end if
-
 	allocate(Excitation(1:cSource%iDimT,1:cSource%iDimX,1:cSource%iDimY),STAT=error)
 	call alloctest(error,'Excitation in InitSource_Planewave')
 
@@ -346,7 +345,7 @@ SUBROUTINE InitSource_Planewave(cSource)
 		cSource%cGrid%parD0(1 + iLt*cSource%cGrid%iD0TS) = &
 			Excitation(1+iLt,1,1);
 	end do
-
+	
 	! Deallocate the array allocated in init_source_2
 	if (allocated(Excitation)) then
 		deallocate(Excitation);
@@ -452,7 +451,7 @@ SUBROUTINE SourceDimensions(iDimT,iDimX,iDimY,dDt,dDx)
     ! source sizes. Each time, we also include an extra margin for possible 
     ! filtering effects
 
-		if (cSourceParams%srcsigntype==iGI_GAUSSIAN) then
+		if (cSourceParams%srcsigntype==iGI_GAUSSIAN .OR. cSourceParams%srcsigntype==iGI_INTEGRABLE ) then
 			iDimT = ceiling((cSourceParams%Tpulse+cSourceParams%maxphasedelay)/dDt)
 		else if (cSourceParams%srcsigntype==iGI_BLACKMAN) then
 			iDimT = ceiling((1.1_dp*cSourceParams%Tpulse+cSourceParams%maxphasedelay)/dDt)
@@ -989,7 +988,7 @@ SUBROUTINE InitSourceSignature(Signature, dDt)
 !   acTemp         char  temporary char array for output log messages
 !
 	integer(i8b) :: i, Ksource, Ktsource
-	real(dp), allocatable :: taxis(:), Signaturetemp(:)
+	real(dp), allocatable :: taxis(:), Signaturetemp(:), A_const(:)
 	character(LEN = 2048) ::		acTemp;
 
 	!blackman pulse, constants
@@ -1026,26 +1025,32 @@ SUBROUTINE InitSourceSignature(Signature, dDt)
 	Ksource = size(Signature,1)
     Signature = 0.0_dp
 	
-	allocate(taxis(1:Ksource))
+	allocate(taxis(1:Ksource),A_const(1:Ksource))
 	taxis=real((/ (i,i=0,Ksource-1) /),dp) * dDt
 
 	if (cSourceParams%srcsigntype==iGI_GAUSSIAN) then
     ! Generate a harmonic signal with a gaussian envelope
 
-		Signature= cSourceParams.Pstart*exp(-((taxis(1:Ksource)-cSourceParams%Tdelay)/&
+		Signature= cSourceParams%Pstart*exp(-((taxis(1:Ksource)-cSourceParams%Tdelay)/&
 										  (cSourceParams%Twidth/2.0_dp))**cSourceParams%power)&
 			   * sin(two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay))						&
 			   * (1.0_dp + dsign(1.0_dp,taxis(1:Ksource)))/2.0_dp	
-		
+
 	else if (cSourceParams%srcsigntype==iGI_BLACKMAN) then
-    ! Generate a blackman pulse	
-			   
-		Signature = cSourceParams.Pstart * sin(two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)) &
-					*(b0+ b1*cos(1.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse)	&
+    ! Generate a blackman pulse
+
+		Signature= cSourceParams.Pstart*(b0+ b1*cos(1.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse)	&
 					+ b2*cos(2.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse) 		&
 					+ b3*sin(3.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse) )		&
 				*(dsign(1.0_dp,taxis(1:Ksource)-cSourceParams%Tdelay)-dsign(1.0_dp,taxis(1:Ksource)-cSourceParams%Tdelay-cSourceParams%Tpulse))/2.0_dp
- 
+	else if (cSourceParams%srcsigntype==iGI_INTEGRABLE) then
+	taxis((cSourceParams%Twidth+cSourceParams%Tdelay)/dDt:Ksource) = 0;
+		A_const = ((taxis-cSourceParams%Tdelay)/(cSourceParams%Twidth/2.0_dp))
+		! Signature = cSourceParams%Pstart* exp(-A_const**cSourceParams%power)&
+			   ! * (sin(two_pi*(taxis-cSourceParams%Tdelay))*(-A_const**(cSourceParams%power-1))/(cSourceParams%Twidth/2.0_dp) &
+    			! +(cos(two_pi*(taxis-cSourceParams%Tdelay))) ) &
+			   ! * (1.0_dp + dsign(1.0_dp,taxis))/2.0_dp	
+		Signature = cSourceParams%Pstart* sin(two_pi*(taxis-cSourceParams%Tdelay))
 	else if (cSourceParams%srcsigntype==iGI_FILE) then
 	!load stored source signature file
 
@@ -1066,7 +1071,7 @@ SUBROUTINE InitSourceSignature(Signature, dDt)
 		deallocate(Signaturetemp)
 	end if
 
-	deallocate(taxis)
+	deallocate(taxis,A_const)
 
 END SUBROUTINE InitSourceSignature
 

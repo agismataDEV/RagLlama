@@ -51,20 +51,12 @@
         iBeamOffsetT, iBeamOffsetX, iBeamOffsetY
     USE ParnacDataMap, ONLY : &
         MapVt, MapVtInv
-    USE ParnacContrastFunctions, ONLY : &
-        NonlinearKappaOperatorDXAli,NonlinearKappaOperatorDYAli,&
-		NonlinearKappaOperatorDZAli, NonlinContrastOperator, &
-		NonlinearKappaOperatorDirectionDXAli,NonlinearKappaOperatorDirectionDYAli,&
-		NonlinearKappaOperatorDirectionDZAli, NonlinearKappaOperatorLinDXAli,&
-		NonlinearKappaOperatorLinDYAli,NonlinearKappaOperatorLinDZAli, &
-		NonlinContrastOperator_Ali, Theta2CG_Ali ,ConversionCG_Ali, &
-		NonlinContrastOperatorlin_Ali, NonlinContrastOperatorCG_Ali, &
-        InhomContrastOperator, InhomContrastOperator_Ali, LagrangianDensity_Ali, LagrangianDensity_Simpl_Ali
+    USE ParnacContrastFunctions
     USE ParnacConvolution, ONLY : &
         ConvolutionGreen,ConvolutionGreenConj
-   USE ParnacTransformFilter, ONLY : &
-       TransformT, TransformTInv, TransformT_sml, TransformTInv_sml, &
-       TransformXYZ, TransformXYZInv, TransformXYZ_sml, TransformXYZInv_sml, &
+    USE ParnacTransformFilter, ONLY : &
+        TransformT, TransformTInv, TransformT_sml, TransformTInv_sml, &
+        TransformXYZ, TransformXYZInv, TransformXYZ_sml, TransformXYZInv_sml, &
         FFilterSpaceSpatial3D, dTaperingWindow
     USE ParnacDataRedist, ONLY : &
         ReorderDistr0ToDistr1, ReorderDistr1ToDistr0, &
@@ -481,12 +473,9 @@
     ! 2) Transform source pulse in time
     call PrintToLog("Convert the source from distribution 0 to 1", 3)
     call ReorderDistr0ToDistr1(cSource%cGrid);
-    call MapVt(cSource)
+	call MapVt(cSource)
     call PrintToLog("Compute the Fourier Transform with respect to the T-axis", 3)
-    !print *, size( cSource%cGrid%pacD1(:))
-    !print *, "Punto di Interesse 1"
-    call TransformT(cSource%cGrid)
-    !print *, size( cSource%cGrid%pacD1(:))
+    !print *, size( cSource%cGrid%pacD1(:)) 
     !print *, "Punto di Interesse 2"
 
     ! 3) Create cSpace grid and fill it with source pulse delayed in z
@@ -496,6 +485,7 @@
     call GridDistr1CreateEmpty(cSpace%cGrid);
 
     dDiffT = (cSpace%iStartT - cSource%iStartT)*cSpace%dDt
+    
     do iLi = 0, cSpace%cGrid%iD0LocN-1
 
         !Z Position
@@ -526,7 +516,7 @@
     call SWStop(cswLinStep);
 
     END SUBROUTINE PlanewaveField
-
+    
     SUBROUTINE PointSourceCloudField(cSpace)
 
     ! =============================================================================
@@ -683,10 +673,9 @@
         case (iCI_NONLINKAPPADZ)
             call NonlinearKappaOperatorDZAli(cSpace);
         case (iCI_NONLIN)
+            ! call NonlinContrastOperator_Ali(cSpace);
 			call LagrangianDensity_Ali(cSpace)
-			! call LagrangianDensity_Simpl_Ali(cSpace)
-            ! call NonlinContrastOperator_Ali(cSpace);  
-        case(iCI_BUBBLE)                                                                    ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                                    ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator_Ali(cSpace);
@@ -694,12 +683,11 @@
     else
         select case (iContrastID)
         case (iCI_NONLIN)
+            ! call NonlinContrastOperator(cSpace);
 			call LagrangianDensity_Ali(cSpace)
-			! call LagrangianDensity_Simpl_Ali(cSpace)
-            ! call NonlinContrastOperator_Ali(cSpace);
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator(cSpace,cInhomContrast);
-        case(iCI_BUBBLE)                                                                   ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                      ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         end select
     end if
@@ -792,7 +780,7 @@
         select case (iContrastID)
         case (iCI_NONLIN)
             call NonlinContrastOperator_Ali(cSpace);
-        case(iCI_BUBBLE)                                                                    ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                                   ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         case (iCI_LINCONTRA)                                        !! LCSM L.D. 12-07-2010 6
@@ -840,7 +828,7 @@
         select case (iContrastID)
         case (iCI_NONLIN)
             call NonlinContrastOperator(cSpace);
-        case(iCI_BUBBLE)                                                                    ! A.M Added 29/01/2020
+        case(iCI_SCATTERER )                                                   ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator(cSpace,cInhomContrast);
@@ -1289,7 +1277,7 @@
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**30;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
 
@@ -1387,7 +1375,7 @@
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**28;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
     real(dp), allocatable::                  parBuffer(:);
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
@@ -1410,7 +1398,7 @@
     ! =============================================================================
 
     call PrintToLog("LoadField",1)
-
+	
     if (cSpace%cGrid%iDistr /= 0) then
         write (acTemp, '("Error occurred during the execution of LoadField, aborting program")');
         call PrintToLog(acTemp, -1);
@@ -1450,6 +1438,117 @@
     call PrintToLog("Free buffer", 3)
 
     END SUBROUTINE LoadField
+	
+	SUBROUTINE LoadField_FF(cSpace,acStoredFieldName)
+
+    ! =============================================================================
+    !
+    !   Programmer: Koos Huijssen
+    !
+    !   Language: Fortran 90
+    !
+    !   Version Date    Comment
+    !   ------- -----   -------
+    !   1.0     090505  Original code (KH)
+    !
+    ! *****************************************************************************
+    !
+    !   DESCRIPTION
+    !
+    !   The subroutine LoadField loads the field from a temporary file in the temp
+    !   dir to a given space. The data array is in Distr. 0, it is assumed
+    !   that all other information in the space is correct. The storing was done in
+    !   a blockwise fashion.
+    !
+    ! *****************************************************************************
+    !
+    !   INPUT/OUTPUT PARAMETERS
+    !
+    !   cSpace             io   type(space)  Space to which the data array needs
+    !                                        to be loaded.
+    !   acStoredFieldName  io   char         Filename of the temp storage file.
+    !
+    type(Space), intent(inout)::            cSpace
+    character(*), intent(in):: acStoredFieldName
+
+    ! *****************************************************************************
+    !
+    !   LOCAL PARAMETERS
+    !
+    !   iErr            i8b    Error number
+    !   iLi             i8b    Loop counter over the blocks to load
+    !   iLast           i8b    Index of the last full block
+    !   iBlockL         i8b    Size of the blocks
+    !   parBuffer       dp     Temporary buffer for a block load
+    !   acFilename      char   Total filename including path and suffix
+    !   acTemp          char   Temporary char array for output log messages
+    !
+    integer(i8b)::                          iErr
+    integer(i8b)::                          iLi, iLast;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
+    real(dp), allocatable::                  parBuffer(:);
+    character(len=1024)::                   acFileName
+    character(len=1024)::                   acTemp;
+
+    ! *****************************************************************************
+    !
+    !   I/O
+    !
+    !   log file entries and loading of the data array from temporary file
+    !
+    ! *****************************************************************************
+    !
+    !   SUBROUTINES/FUNCTIONS CALLED
+    !
+    !   SwStartAndCount
+    !   PrintToLog
+    !   int2str
+    !   SWStop
+    !
+    ! =============================================================================
+
+    call PrintToLog("LoadField",1)
+
+    if (cSpace%cGrid%iDistr /= 0) then
+        write (acTemp, '("Error occurred during the execution of LoadField, aborting program")');
+        call PrintToLog(acTemp, -1);
+        write (acTemp, '("the grid provided as input is not in distribution 0, but in distribution ", I3, "")') cSpace%cGrid%iDistr;
+        call PrintToLog(acTemp, -1);
+        stop
+    end if
+
+    ! We read the original values and put them in cSpace
+	
+    allocate(parBuffer(iBlockL));
+   	iMemAllocated=iMemAllocated +  PRODUCT(SHAPE(parBuffer)) * dpS
+   	
+    call PrintToLog("Buffer allocated", 3)
+    call PrintToLog('Read Stored field from disk', 2);
+    call SwStartAndCount(cswDiskAcces)
+    acFileName        = trim(sOutputDir)//acStoredFieldName//int2str(cSpace%cGrid%iProcID);
+    open (unit=iExportUNIT,file=trim(acFileName),status="OLD",form="UNFORMATTED",iostat=iErr)
+    if(iErr/=0) then
+        write(acTemp,"('Error in LoadField, file ',A,' does not exist')") trim(acStoredFieldName)
+        call PrintToLog(acTemp,-1)
+        stop
+    end if
+    iLast = int(cSpace%cGrid%iD0LocSize/iBlockL);
+    do iLi = 0, iLast-1
+        read (unit=iExportUNIT, iostat=iErr) parBuffer;
+        cSpace%cGrid%parD0(1+iLi*iBlockL:(iLi+1)*iBlockL) = parBuffer
+    end do
+    read (unit=iExportUNIT, iostat=iErr) parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL);
+    cSpace%cGrid%parD0(1+iLast*iBlockL:cSpace%cGrid%iD0LocSize) = parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL)
+    close (unit=iExportUNIT);
+    call SWStop(cswDiskAcces)
+
+    call SWStop(cswDisk)
+   	iMemAllocated=iMemAllocated -  PRODUCT(SHAPE(parBuffer)) * dpS
+
+    deallocate(parBuffer);
+    call PrintToLog("Free buffer", 3)
+
+    END SUBROUTINE LoadField_FF
 
     SUBROUTINE AddStoredtoField(cSpace,acStoredFieldName)
 
@@ -1497,7 +1596,7 @@
     !
     integer(i8b)::                          iErr
     integer(i8b)::                          iLi, iLast;
-    integer(i8b), parameter::               iBlockL                = 2**28;
+    integer(i8b), parameter::               iBlockL                = real(2**20,dp);
     real(dp), allocatable::                 parBuffer(:)
     character(len=1024)::                   acFileName
     character(len=1024)::                   acTemp;
@@ -1543,6 +1642,7 @@
         call PrintToLog(acTemp,-1)
         stop
     end if
+    
     iLast = int(cSpace%cGrid%iD0LocSize/iBlockL);
     do iLi = 0, iLast-1
         read (unit=iExportUNIT, iostat=iErr) parBuffer;
@@ -1551,6 +1651,7 @@
     read (unit=iExportUNIT, iostat=iErr) parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL);
     cSpace%cGrid%parD0(1+iLast*iBlockL:cSpace%cGrid%iD0LocSize) = cSpace%cGrid%parD0(1+iLast*iBlockL:cSpace%cGrid%iD0LocSize) + parBuffer(1:cSpace%cGrid%iD0LocSize-iLast*iBlockL)
     close (unit=iExportUNIT);
+    
     call SWStop(cswDiskAcces)
 
     call SWStop(cswDisk)
@@ -3289,27 +3390,22 @@
     ! =============================================================================
 
     if(cSpace%cGrid%iDistr==0) then
-        do iLi=1,cSpace%cGrid%iD0LocSize
-            if (.not.(cSpace%cGrid%ParD0(iLi)<1E100_dp)) then
+            if (.not. ALL(cSpace%cGrid%ParD0<1E100_dp)) then
                 !write (acTemp, '("Error: NaN or very large number encountered!!!" ,I3," - Processor checking in.")') cSpace.cGrid.iProcID; call PrintToLog(acTemp, 0);
                 call PrintToLog("Error: NaN or very large number encountered!!!", 1)
                 stop
             end if
-        end do
     elseif(cSpace%cGrid%iDistr==1) then
-        do iLi=1,cSpace%cGrid%iD1LocSize
-            if (.not.(real(cSpace%cGrid%PacD1(iLi),dp)<1E100_dp)) then
+        
+            if (.not. ALL(real(cSpace%cGrid%PacD1,dp)<1E100_dp) .OR. .NOT.  ALL(dimag(cSpace%cGrid%PacD1)<1E100_dp) ) then
                 call PrintToLog("Error: NaN or very large number encountered!!!",1)
                 stop
             end if
-        end do
     elseif(cSpace%cGrid%iDistr==2) then
-        do iLi=1,cSpace%cGrid%iD2LocSize
-            if (.not.(real(cSpace%cGrid%PacD2(iLi),dp)<1E100_dp)) then
+            if (.not. ALL(real(cSpace%cGrid%PacD2,dp)<1E100_dp) .OR. .NOT.  ALL(dimag(cSpace%cGrid%PacD2)<1E100_dp)) then
                 call PrintToLog("Error: NaN or very large number encountered!!!",1)
                 stop
             end if
-        end do
     end if
 
     END SUBROUTINE test_isnan

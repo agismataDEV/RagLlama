@@ -4,7 +4,7 @@
     USE ParnacDataDef
     USE ParnacParamDef
     USE ParnacParamInit, ONLY : &
-        BubbleInit
+        ScattererInit
     USE Constants
 	 USE ParnacTransformFilter, ONLY : &
        dTaperingWindow, INTERP1DFREQ
@@ -70,7 +70,7 @@
 	
 	logical					:: log_isnan
     
-    call BubbleInit()
+    call ScattererInit()
     call R_exp(iBubble)
     
 	flag = 1 			!  This is for RK
@@ -84,57 +84,61 @@
 	! IWORK(6) = 2000; 
 	IWORK(7) = 0;
 	IWORK(7) = 1;
-	CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call
+	! CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call
     
-	! If BubbleParams%rad_norm = BubbleParams%R0 , The result of the RP Solver is normalized to x = R/BubbleParams%rad_norm = R/R0 , so the solved value is multiplied by BubbleParams%R0 at the end of the code
+	! If ScattererParams%rad_norm = ScattererParams%R0 , The result of the RP Solver is normalized to x = R/ScattererParams%rad_norm = R/R0 , so the solved value is multiplied by ScattererParams%R0 at the end of the code
     ! atol and rtol shoudld be 1E-5
-    ! If BubbleParams%rad_norm =  1.0D0, the result of the RP solver ir R, so the solved value should not be multiplied with any factor
+    ! If ScattererParams%rad_norm =  1.0D0, the result of the RP solver ir R, so the solved value should not be multiplied with any factor
     ! atol and rtol shoudld be 1E-9. DLSODE input should change to MARMOTTANT_R
 
-	if (trim(BubbleParams%Solver_Normalize) =='time') BubbleParams%time_norm = cModelParams%freq0
-	if (trim(BubbleParams%Solver_Normalize) =='radius') BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
-	if (trim(BubbleParams%Solver_Normalize) =='time_and_radius') then
-		 BubbleParams%time_norm = cModelParams%freq0
-		 BubbleParams%rad_norm  = BubbleParams%R0(iBubble)
+	if (trim(ScattererParams%Solver_Normalize) =='time') ScattererParams%time_norm = cModelParams%freq0
+	if (trim(ScattererParams%Solver_Normalize) =='radius') ScattererParams%rad_norm  = ScattererParams%R0(iBubble)
+	if (trim(ScattererParams%Solver_Normalize) =='freq0_and_radius') then
+		 ScattererParams%time_norm = cModelParams%freq0
+		 ScattererParams%rad_norm  = ScattererParams%R0(iBubble)
+	elseif (trim(ScattererParams%Solver_Normalize) =='Minnaert_and_radius') then
+		 ScattererParams%time_norm = SQRT(cMediumParams%P0/cMediumParams%rho0/ScattererParams%R0(iBubble)**2)
+		 ScattererParams%rad_norm  = ScattererParams%R0(iBubble)
 	endif
-	
-    rtol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
-    atol = 10.0**(floor(log10(BubbleParams%R0(iBubble)/BubbleParams%rad_norm))-5.0D0)
+	 
+    rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm))-6.0D0)
+    atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm))-6.0D0)
 	
 	dTaperSupportWindowN = dTaperingWindow(n_samples,(RealTimeIn(2)-RealTimeIn(1))* cModelParams%freq0,2.0_dp,2.0_dp)
 	
-	BubbleParams%P_driv = RealPressIn * dTaperSupportWindowN
-	BubbleParams%T_driv = RealTimeIn * BubbleParams%time_norm;
+	ScattererParams%P_driv = RealPressIn * dTaperSupportWindowN
+	ScattererParams%T_driv = RealTimeIn * ScattererParams%time_norm;
 		  
 	! Medium parameters (water, Room temperature =20° and 1 atm ambient pressure) 
-    BubbleParams.P_g0 = cMediumParams%P0+2.0D0*BubbleParams.sigma_R0/BubbleParams.R0(iBubble)
+    ScattererParams.P_g0 = cMediumParams%P0+2.0D0*ScattererParams.sigma_R0/ScattererParams.R0(iBubble)
 
     ! Marmottant model parameters
-    BubbleParams.R_b =  BubbleParams.R0(iBubble)*1.0D0/sqrt(BubbleParams.sigma_R0*1.0D0/BubbleParams.chi+1.0D0)
-    BubbleParams.R_r =  BubbleParams.R_b*sqrt(BubbleParams.sigma_w*1.0D0/BubbleParams.chi+1.0D0)  
+    ScattererParams.R_b =  ScattererParams.R0(iBubble)*1.0D0/sqrt(ScattererParams.sigma_R0*1.0D0/ScattererParams.chi+1.0D0)
+    ScattererParams.R_r =  ScattererParams.R_b*sqrt(ScattererParams.sigma_w*1.0D0/ScattererParams.chi+1.0D0)  
      
-    y(1) = BubbleParams%R0(iBubble)/BubbleParams%rad_norm                     
+    y(1) = ScattererParams%R0(iBubble)/ScattererParams%rad_norm - 1.0D0                    
     y(2) = 0.0d0 ; y(3) = 0.0d0 ; y(4) = iBubble*1.0D0;
     R_bub(1,:) = y(1:3)
     
-    tout = BubbleParams%T_driv(1)
-    t = BubbleParams%T_driv(1)
-    RealTimeOut(1) = BubbleParams%T_driv(1)
-	! if (BubbleParams%Solver_Method=='RK') then !For the case of Runge Kutta Solver
-		! do iout = 2,n_samples
-			! tout = RealTimeIn(iout) ; 
-			! call R8_RKF45(MARMOTTANT_NORM, NEQN_RK, y, yp, t, tout, rtol, atol, flag )
-			! R_bub(iout,:) = y(1:3) 
-			! RealTimeOut(iout) = t 
-		! enddo
-	! else		!For the case of ODEPACK solver
+    tout = ScattererParams%T_driv(1)
+    t = ScattererParams%T_driv(1)
+	RealTimeOut = 0;
+    RealTimeOut(1) = ScattererParams%T_driv(1)
+	if (ScattererParams%Solver_Method=='RK') then !For the case of Runge Kutta Solver
+		do iout = 2,n_samples
+			tout = RealTimeIn(iout) ; 
+			call R8_RKF45(MARMOTTANT_NORM, NEQN_RK, y, yp, t, tout, rtol, atol, flag )
+			R_bub(iout,:) = y(1:3) 
+			RealTimeOut(iout) = t 
+		enddo
+	else		!For the case of ODEPACK solver
     	do iout = 2,n_samples
 				ATOL_UP = ATOL
 				RTOL_UP = RTOL
-			    t  = RealTimeIn(iout-1) 
-				tout = BubbleParams%T_driv(iout) ;
+			    ! t  = RealTimeIn(iout-1) 
+				tout = ScattererParams%T_driv(iout)
 				call slsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
-				do while (ISTATE == -2 .OR. ISTATE == -1)
+				do while (ISTATE <0)
 					if (ISTATE == -2) then
 						TOLSF = RWORK(14) 
 						write(*,*) "Initial tolerance : ", ATOL_UP,RTOL_UP
@@ -149,22 +153,34 @@
 						RTOL_UP = RTOL_UP * 2.0D0
 						write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
 						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+					elseif(ISTATE == -3) then
+						! RWORK(6)  = ScattererParams%T_driv(2) - ScattererParams%T_driv(1)
+						RWORK(5:7) = 0 ; IWORK(5:7) = 0;
+						tout = MAX(ScattererParams%T_driv(iout), RealTimeOut(iout-1))
+						write(*,*) "TOUT CHANGED TO = ", tout
+						write(*,*) "ISTATE = " ,ISTATE
+					elseif(ISTATE == -4) then
+						RWORK(5:7) = 0 ; IWORK(5:7) = 0;
+						ATOL_UP = ATOL
+						RTOL_UP = RTOL
+						write(*,*) "RESET DEFAULT VALUES"
+						write(*,*) "ISTATE = " ,ISTATE
 					else
 						write(*,*) "ISTATE = " ,ISTATE
 					endif
 					ISTATE = 3
 					call slsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
-					IF (ISTATE>0) RWORK(5:7) = 0 
-					IF (ISTATE>0) IWORK(5:7) = 0 
+					IF (ISTATE>0) RWORK(5:7:2) = 0 
+					IF (ISTATE>0) IWORK(5:6) = 0 
 				end do
 				R_bub(iout,:) = y(1:3)
 				RealTimeOut(iout) = t
 		enddo
-	! endif 
+	endif 
 	
-    norm_factor = BubbleParams%time_norm**(/0.0D0,1.0D0,2.0D0/)*BubbleParams%rad_norm
-    R_bub(:,1) = R_bub(:,1)*norm_factor(1) ; R_bub(:,2) = R_bub(:,2)*norm_factor(2) ;R_bub(:,3) = R_bub(:,3)*norm_factor(3)
-    RealTimeOut = RealTimeOut*1.0D0/BubbleParams%time_norm
+    norm_factor = ScattererParams%time_norm**(/0.0D0,1.0D0,2.0D0/)*ScattererParams%rad_norm
+    R_bub(:,1) = (R_bub(:,1) + 1.0D0)*norm_factor(1) ; R_bub(:,2) = R_bub(:,2)*norm_factor(2) ;R_bub(:,3) = R_bub(:,3)*norm_factor(3)
+    RealTimeOut = RealTimeOut*1.0D0/ScattererParams%time_norm
 	
 	! Check to see if results are realistic
 	log_isnan = sum(isnan(R_bub(:,1))*-1) + sum(isnan(R_bub)*-1) + sum(isnan(R_bub(:,3))*-1)
@@ -223,31 +239,29 @@
 	real(dp) P_elas, P_vis, P_gas, Damp_ac, Damp_visc
 
     iBubble= NINT(R(4))
-    call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
+    call interp1D(ScattererParams%T_driv,ScattererParams%P_driv,real((/t/),dp), P_interp);
     ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
     ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)
 
-    if (R(1)*BubbleParams%rad_norm .lt. BubbleParams%R_b) then                        	!rupture state
+    if ( (R(1)+1) *ScattererParams%rad_norm .lt. ScattererParams%R_b) then                        	!rupture state
        sigma_R = 0.0D0
-    else if (R(1)*BubbleParams%rad_norm .ge. BubbleParams%R_b .AND. &
-    		 R(1)*BubbleParams%rad_norm .le. BubbleParams%R_r) then 					!Elastic state
-        sigma_R = BubbleParams%chi*((BubbleParams%rad_norm*R(1)/BubbleParams%R_b)**2-1.0D0)
+    else if ( (R(1)+1) *ScattererParams%rad_norm .ge. ScattererParams%R_b .AND. &
+    		  (R(1)+1) *ScattererParams%rad_norm .le. ScattererParams%R_r) then 					!Elastic state
+        sigma_R = ScattererParams.sigma_R0 + ScattererParams%chi*((ScattererParams%rad_norm * (R(1)+1) /ScattererParams%R_b)**2-1.0D0)
     else  																				!buckled state
-        sigma_R = BubbleParams%sigma_w
+        sigma_R = ScattererParams%sigma_w
     end if
 	
-    ! sigma_R = sigma_R0  + 2*BubbleParams%chi*(R(1)/BubbleParams%R0(iBubble)-1)
-	P_gas     =  BubbleParams%P_g0*(BubbleParams%R0(iBubble)/(R(1)*BubbleParams%rad_norm))**(3.0D0*BubbleParams%gama)
-	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*R(2)*BubbleParams%time_norm
-	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*BubbleParams%time_norm/R(1)
-    P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm*R(1))
-	BubbleParams%kappa_s  = 1.5D-9*EXP(8.0D5*BubbleParams%R0(iBubble))
-    P_vis     =  4.0D0*BubbleParams%kappa_s*R(2)*BubbleParams%time_norm/(BubbleParams%rad_norm*R(1)**2)
+    P_gas     =  ScattererParams%P_g0*(ScattererParams%R0(iBubble)/ScattererParams%rad_norm * 1.0D0/(R(1) + 1) )**(3.0D0*ScattererParams%gama)
+	Damp_ac   =  1.0D0-3.0D0*ScattererParams%gama/cMediumParams%c0*ScattererParams%rad_norm*ScattererParams%time_norm*R(2)
+	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*ScattererParams%time_norm/(1+R(1))
+    P_elas    =  2.0D0*sigma_R/(ScattererParams%rad_norm * (R(1)+1) )
+	ScattererParams%kappa_s  = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
+    P_vis     =  4.0D0*ScattererParams%kappa_s*R(2)*ScattererParams%time_norm/(ScattererParams%rad_norm * (R(1) + 1.0D0) ** 2)
 	
     Rdot(1) = R(2)  
-    Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/R(1)
+    Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - R(5) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * ScattererParams%rad_norm**2* ScattererParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/(R(1)+1)
     R(3) = Rdot(2)
-	return
     END SUBROUTINE MARMOTTANT_NORM
     
     !===================================== Experimental Solver ==========================================
@@ -285,27 +299,27 @@
     
     ! ==================== Experimental values
     integer(i8b)		::  iBubble
-    real(dp) 		 	::	Rexp(2*int(BubbleParams%R0(iBubble)*1.0D+9/2.0))
-    real(qp)			::	sigma_RExp(2*int(BubbleParams%R0(iBubble)*1.0D+9/2.0))
-    real(qp)			::	A(2*int(BubbleParams%R0(iBubble)*1.0D+9/2.0)), A0, A_m(2*int(BubbleParams%R0(iBubble)*1.0D+9/2.0))
+    real(dp) 		 	::	Rexp(2*int(ScattererParams%R0(iBubble)*1.0D+9/2.0))
+    real(qp)			::	sigma_RExp(2*int(ScattererParams%R0(iBubble)*1.0D+9/2.0))
+    real(qp)			::	A(2*int(ScattererParams%R0(iBubble)*1.0D+9/2.0)), A0, A_m(2*int(ScattererParams%R0(iBubble)*1.0D+9/2.0))
     integer(i8b)		::	i, j, b
     
     ! ======================  Proceedure for A0 corrected
-    Rexp = [( i*1.0D0/1000.0+BubbleParams%R0(iBubble)*1.0E+6 , i = -int(BubbleParams%R0(iBubble)*1E+9/2.0),int(BubbleParams%R0(iBubble)*1E+9/2.0) )] 
+    Rexp = [( i*1.0D0/1000.0+ScattererParams%R0(iBubble)*1.0E+6 , i = -int(ScattererParams%R0(iBubble)*1E+9/2.0),int(ScattererParams%R0(iBubble)*1E+9/2.0) )] 
 
-    A0      = 4.0D0*pi*(BubbleParams%R0(iBubble)*1.0E+6)**2;
+    A0      = 4.0D0*pi*(ScattererParams%R0(iBubble)*1.0E+6)**2;
     A  	    = 4.0D0*pi*(Rexp)**2
     A_m     = A*1.0D0/A0
  
     ! First case is created by doing the multiplication for every R_test
     sigma_RExp = 0.0D0
-    do i = 1,size(BubbleParams%coeff_fit)
-    	sigma_RExp = sigma_RExp + BubbleParams%coeff_fit(i)*A_m**(11 - i)
+    do i = 1,size(ScattererParams%coeff_fit)
+    	sigma_RExp = sigma_RExp + ScattererParams%coeff_fit(i)*A_m**(11 - i)
     end do
-    sigma_RExp = sigma_RExp*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + BubbleParams%sigma_w * abs(A_m > 1.116D0)
+    sigma_RExp = sigma_RExp*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + ScattererParams%sigma_w * abs(A_m > 1.116D0)
 
-	b = minloc(  abs(sigma_RExp - BubbleParams%sigma_R0) ,1)
-    BubbleParams%A0c = 2.0D0*A0 - 4.0D0*pi*(Rexp(b))**2;
+	b = minloc(  abs(sigma_RExp - ScattererParams%sigma_R0) ,1)
+    ScattererParams%A0c = 2.0D0*A0 - 4.0D0*pi*(Rexp(b))**2;
     
     END SUBROUTINE R_EXP
     
@@ -317,30 +331,30 @@
 	real(dp) 		::	P_elas, P_vis, P_gas, Damp_ac, Damp_visc, P_interp(1) 
 
     iBubble= NINT(R(4))
-	call interp1D(BubbleParams%T_driv,BubbleParams%P_driv,real((/t/),dp), P_interp);
+	call interp1D(ScattererParams%T_driv,ScattererParams%P_driv,real((/t/),dp), P_interp);
 	
-    A_R = 4.0D0*pi*(BubbleParams%R0(iBubble)*R(1)*1.0D+6)**2.0D0;
-    A_m = A_R*1.0D0/BubbleParams%A0c;
+    A_R = 4.0D0*pi*(ScattererParams%R0(iBubble)*R(1)*1.0D+6)**2.0D0;
+    A_m = A_R*1.0D0/ScattererParams%A0c;
     
     ! First case is created by doing the multiplication for every R_test
     sigma_R = 0.0D0
-    do i = 1,size(BubbleParams%coeff_fit)
-    	sigma_Rcoeff(i)  =  BubbleParams%coeff_fit(i)*A_m**(11 - i)
+    do i = 1,size(ScattererParams%coeff_fit)
+    	sigma_Rcoeff(i)  =  ScattererParams%coeff_fit(i)*A_m**(11 - i)
     end do
     sigma_R = sum(sigma_Rcoeff)
-    sigma_R = sigma_R*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + BubbleParams%sigma_w * abs(A_m > 1.116D0)
+    sigma_R = sigma_R*abs(A_m >= 0.9216D0 .AND. A_m <= 1.116D0) + 0.0D0 * abs(A_m < 0.9216D0) + ScattererParams%sigma_w * abs(A_m > 1.116D0)
 
-	P_gas     =  BubbleParams%P_g0*(BubbleParams%R0(iBubble)/(R(1)*BubbleParams%rad_norm))**(3.0D0*BubbleParams%gama)
-	Damp_ac   =  1.0D0-3.0D0*BubbleParams%gama/cMediumParams%c0*BubbleParams%rad_norm*R(2)*BubbleParams%time_norm
-	Damp_visc =  4.0D0*cMediumParams%mu*R(2)*BubbleParams%time_norm/R(1)
-    P_elas    =  2.0D0*sigma_R/(BubbleParams%rad_norm*R(1))
-	BubbleParams%kappa_s  = 1.5D-9*EXP(8.0D5*BubbleParams%R0(iBubble))
-    P_vis     =  4.0D0*BubbleParams%kappa_s*R(2)*BubbleParams%time_norm/(BubbleParams%rad_norm*R(1)**2)
+	! COmpute the pressure values for each component in RP Equation
+	P_gas     =  ScattererParams%P_g0*(ScattererParams%R0(iBubble)/ScattererParams%rad_norm * 1.0D0/(R(1) + 1) )**(3.0D0*ScattererParams%gama)
+	Damp_ac   =  1.0D0-3.0D0*ScattererParams%gama/cMediumParams%c0*ScattererParams%rad_norm*R(2)*ScattererParams%time_norm
+	Damp_visc =  4.0D0*cMediumParams%mu*ScattererParams%time_norm * R(2)/(1+R(1))
+    P_elas    =  2.0D0*sigma_R/(ScattererParams%rad_norm * (R(1)+1) )
+	ScattererParams%kappa_s  = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
+    P_vis     =  4.0D0*ScattererParams%kappa_s*ScattererParams%time_norm/ScattererParams%rad_norm * R(2) / (R(1) + 1) ** 2
 	
     Rdot(1) = R(2)  
-    Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * BubbleParams%rad_norm**2* BubbleParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/R(1)
+    Rdot(2) = ((P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)/(cMediumParams%rho0 * ScattererParams%rad_norm**2* ScattererParams%time_norm**2)-(3.0D0/2.0D0)*R(2)**2)*1.0D0/(R(1)+1)
     R(3) = Rdot(2)
-	return
     END SUBROUTINE MARMOTTANT_EXP
     
 !    !===================================== END OF Experimental Solver ==========================================
@@ -349,26 +363,26 @@
 !    integer neq, ml, mu, nrowpd
 !    double precision t, pd(nrowpd,neq)
 
-!    if (R(1) .lt. BubbleParams%R_b) then                               !buckled state
+!    if (R(1) .lt. ScattererParams%R_b) then                               !buckled state
 !        sigma_R = 0.0
-!    else if (R(1) .gt. BubbleParams%R_r) then                        !rupture state
-!        sigma_R = BubbleParams%sigma_w
+!    else if (R(1) .gt. ScattererParams%R_r) then                        !rupture state
+!        sigma_R = ScattererParams%sigma_w
 !    else                                            !Elastic state
-!        sigma_R = BubbleParams%chi*((R(1)**2)/(BubbleParams%R_b**2)-1.0)
+!        sigma_R = ScattererParams%chi*((R(1)**2)/(ScattererParams%R_b**2)-1.0)
 !    end if
 
 !    P_elas =  2*sigma_R*1.0_dp/R(1)
-!    P_vis  =  4*BubbleParams%kappa_s*R(2)*1.0_dp/(R(1)**2)
+!    P_vis  =  4*ScattererParams%kappa_s*R(2)*1.0_dp/(R(1)**2)
 
 !    pd(1,1) = 0.0d0
 !    pd(1,2) = 1.0d0
-!    pd(2,1) = (-(3*BubbleParams.gama)*(1 - 3*BubbleParams.gama*R(2)/cMediumParams%c0)*(BubbleParams.P_g0*(BubbleParams.R0/R(1)) &
-!        **((3*BubbleParams.gama)*(1 - 3*BubbleParams.gama*R(2)/cMediumParams%c0)-1)  + 4*cMediumParams%mu*R(2)/(R(1)**2)+ &
-!        2*sigma_R/(R(1) **2) + 8*BubbleParams.kappa_s*R(2)/(R(1)**3))/cMediumParams%rho0- 3.0/2.0*R(2)**2)/R(1) &
-!        -((BubbleParams.P_g0*(BubbleParams.R0/R(1))**(3*BubbleParams.gama)*(1-3*BubbleParams.gama*R(2)/cMediumParams%c0) - &
+!    pd(2,1) = (-(3*ScattererParams.gama)*(1 - 3*ScattererParams.gama*R(2)/cMediumParams%c0)*(ScattererParams.P_g0*(ScattererParams.R0/R(1)) &
+!        **((3*ScattererParams.gama)*(1 - 3*ScattererParams.gama*R(2)/cMediumParams%c0)-1)  + 4*cMediumParams%mu*R(2)/(R(1)**2)+ &
+!        2*sigma_R/(R(1) **2) + 8*ScattererParams.kappa_s*R(2)/(R(1)**3))/cMediumParams%rho0- 3.0/2.0*R(2)**2)/R(1) &
+!        -((ScattererParams.P_g0*(ScattererParams.R0/R(1))**(3*ScattererParams.gama)*(1-3*ScattererParams.gama*R(2)/cMediumParams%c0) - &
 !        cMediumParams%P0- R(3) -4*cMediumParams%mu*R(2)/R(1)-P_elas-P_vis)/cMediumParams%rho0-3/2*R(2)**2)/(R(1)**2)
-!    pd(2,2) = (BubbleParams.P_g0*(BubbleParams.R0/R(1))**(3*BubbleParams.gama)*( -3*BubbleParams.gama/cMediumParams%c0)-  &
-!        4*cMediumParams%mu/R(1) - 4*BubbleParams.kappa_s/(R(1)**2))/cMediumParams%rho0 - 3*R(2)
+!    pd(2,2) = (ScattererParams.P_g0*(ScattererParams.R0/R(1))**(3*ScattererParams.gama)*( -3*ScattererParams.gama/cMediumParams%c0)-  &
+!        4*cMediumParams%mu/R(1) - 4*ScattererParams.kappa_s/(R(1)**2))/cMediumParams%rho0 - 3*R(2)
 !    return
 !    END SUBROUTINE JAC1
     END MODULE RP
