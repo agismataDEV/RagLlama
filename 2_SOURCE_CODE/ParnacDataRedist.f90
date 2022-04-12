@@ -977,8 +977,8 @@ SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
 	! and exclude y=0 from the copy (since we have already calculated the influence
 	! of the contrast source at y=0 in the un-mirrored block...
 	do iLX = 0, cGridS%iD2XL-1
-		do iLY = 0, cGridS%iD2YL-1
-			do iLZ = 0, cGridS%iD2ZL-1
+		do iLZ = 0, cGridS%iD2ZL-1
+			do iLY = 0, cGridS%iD2YL-1
 				iIndS= 1 + iOmega * cGridS%iD2IS + iLX * cGridS%iD2XS + (cGridS%iD2YL-1-iLY) * cGridS%iD2YS + iLZ * cGridS%iD2ZS
 				iIndD= 1 + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
 				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);

@@ -522,6 +522,7 @@ SUBROUTINE TransformXYZInv(cGrid, bFullZ)
 		call dfftw_execute_dft(cGrid%cTransforms%iPlanTransformZ_inv, cGrid%pacD2(:), cGrid%pacD2(:));
 		call dfftw_execute_dft(cGrid%cTransforms%iPlanTransformXY_relevantZ_inv, cGrid%pacD2(:), cGrid%pacD2(:));
 	end if
+	
 	call SWStop(cswTrans);	call SWStop(cswTransXYZInv)
 END SUBROUTINE TransformXYZInv
 

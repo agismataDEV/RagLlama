@@ -21,7 +21,7 @@
 
 function [pnl,plin] = xAM_ConPlot(medium,domain,dslice,file,plin,pnl)
 file.plot_waves = 'ind';
-harmonics = 1;
+harmonics = 2;
 if strcmp(file.plot_waves , 'ind')
     i_end = 3;
     name = {'xwave' 'rightwave' 'leftwave'};
@@ -60,10 +60,10 @@ for i = 1:i_end
     pnl.fund  = maxhilbert_vec(pnl.xwave_data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
     for k = 1: harmonics
         eval(['pnl.harm_' name{i}  num2str(k) '=maxhilbert_vec(pharm,domain.dtpar,' num2str(k-0.3) '*medium.freq0,' num2str(k+0.3) '*medium.freq0,order);']);
-        eval(['pnl.diff_' name{i}  num2str(k) '=maxhilbert_vec(pnl.xwave_data-plin.data,domain.dtpar,' num2str(k-0.3) '*medium.freq0,' num2str(k+0.3) '*medium.freq0,order);']);
+        eval(['pnl.diff_' name{i}  num2str(k) '=maxhilbert_vec(20*log10(abs(pnl.xwave_data-plin.data)),domain.dtpar,' num2str(k-0.5) '*medium.freq0,' num2str(k+0.5) '*medium.freq0,order);']);
     end
     %% PLOT THE WAVEFORM SHAPE OF THE 3 DIFFERENT CASES (X,R,L) @ SPECIFIC DEPTH
-    p_interest = pnl.contrastdata;
+%     p_interest = pnl.contrastdata;
     disp(['Ploting the signal and frequency spectrum at specific depth ...'])
     colors = { '#0072BD';'#D95319';	'#4DBEEE';	'#77AC30';'#7E2F8E';'#EDB120';'#A2142F';'#009999'};
     
@@ -245,6 +245,7 @@ for i = 1:i_end
     Nsubplot = 1;
     splot_div = 1;
     Add = 0;
+    dBVALUES=3;
     
     FontSize = 20;
     
@@ -271,11 +272,10 @@ for i = 1:i_end
         else; figure('WindowState','maximized');end
     
 %     pnl_harmi = eval(['pnl.harm_' name{i}  num2str(k)])*1E-3;
-%     pnl_harmi= eval(['pnl.diff_' name{i}  num2str(k)])*1E-3;
-    pnl_harmi = 20*log10(squeeze(max(abs(plin.data))));
+    pnl_harmi= eval(['pnl.diff_' name{i}  num2str(k)]);
+%     pnl_harmi = 20*log10(squeeze(max(abs(plin.data))));
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
     
-    dBVALUES=10;max(max(pnl_harmi))/1.2;
     hold on;
     caxis([max(max(pnl_harmi))-dBVALUES max(max(pnl_harmi))]+Add)
 %     title(['Beam Profile - Pressure, ' num2str(domain.angle) ' deg, ' name{i} ', ' num2str(k) 'H, 60% Butterworth Filter'])

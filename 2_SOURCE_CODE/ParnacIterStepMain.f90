@@ -673,8 +673,8 @@
         case (iCI_NONLINKAPPADZ)
             call NonlinearKappaOperatorDZAli(cSpace);
         case (iCI_NONLIN)
-            ! call NonlinContrastOperator_Ali(cSpace);
-			call LagrangianDensity_Ali(cSpace)
+            call NonlinContrastOperator_Ali(cSpace);
+			! call LagrangianDensity_Ali(cSpace)
         case(iCI_SCATTERER )                                                                    ! A.M Added 29/01/2020
             call BubbleContrastOperator(cSpace)
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
@@ -683,8 +683,8 @@
     else
         select case (iContrastID)
         case (iCI_NONLIN)
-            ! call NonlinContrastOperator(cSpace);
-			call LagrangianDensity_Ali(cSpace)
+            call NonlinContrastOperator(cSpace);
+			! call LagrangianDensity_Ali(cSpace)
         case(iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
             call InhomContrastOperator(cSpace,cInhomContrast);
         case(iCI_SCATTERER )                                                      ! A.M Added 29/01/2020

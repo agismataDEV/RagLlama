@@ -60,7 +60,7 @@ if (strcmp(file.play_movies,'yes'))
   %%
     i_end = sizeP(1) + sizeP(3);
     plot_value = (20*log10(abs(pnl.xwave_data)));
-    dBVALUES = 0.3*max(max(max(plot_value)));
+    dBVALUES = 15;0.3*max(max(max(plot_value)));
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots

@@ -1044,13 +1044,15 @@ SUBROUTINE InitSourceSignature(Signature, dDt)
 					+ b3*sin(3.0_dp*two_pi*(taxis(1:Ksource)-cSourceParams%Tdelay)/cSourceParams%Tpulse) )		&
 				*(dsign(1.0_dp,taxis(1:Ksource)-cSourceParams%Tdelay)-dsign(1.0_dp,taxis(1:Ksource)-cSourceParams%Tdelay-cSourceParams%Tpulse))/2.0_dp
 	else if (cSourceParams%srcsigntype==iGI_INTEGRABLE) then
-	taxis((cSourceParams%Twidth+cSourceParams%Tdelay)/dDt:Ksource) = 0;
-		A_const = ((taxis-cSourceParams%Tdelay)/(cSourceParams%Twidth/2.0_dp))
+		! taxis((cSourceParams%Twidth+cSourceParams%Tdelay )/dDt:Ksource) = 0;
+		Signature = cSourceParams%Pstart * sin(two_pi*(taxis-cSourceParams%Tdelay))
+		Signature((cSourceParams%Twidth+cSourceParams%Tdelay )/dDt:Ksource) = 0; 
+		
+		! A_const = ((taxis-cSourceParams%Tdelay)/(cSourceParams%Twidth/2.0_dp))
 		! Signature = cSourceParams%Pstart* exp(-A_const**cSourceParams%power)&
 			   ! * (sin(two_pi*(taxis-cSourceParams%Tdelay))*(-A_const**(cSourceParams%power-1))/(cSourceParams%Twidth/2.0_dp) &
     			! +(cos(two_pi*(taxis-cSourceParams%Tdelay))) ) &
 			   ! * (1.0_dp + dsign(1.0_dp,taxis))/2.0_dp	
-		Signature = cSourceParams%Pstart* sin(two_pi*(taxis-cSourceParams%Tdelay))
 	else if (cSourceParams%srcsigntype==iGI_FILE) then
 	!load stored source signature file
 
@@ -1796,7 +1798,7 @@ SUBROUTINE InitPhasedArrayAperture(fAperture, dDx, dDw, dKcutoff)
 			end if
 			call ASCII_read1Darray(trim(sInputDir)//trim(cSourceParams%td_filename),sourcetdtemp)
 		end if
-		el_tdelay=sourcetdtemp*cModelParams.freq0*1E-6; ! Normalize microsec 
+		el_tdelay=sourcetdtemp*cModelParams%freq0*1E-6; ! Normalize microsec 
 		deallocate(sourcetdtemp)
 	end if
 	el_tdelay=el_tdelay-minval(el_tdelay)

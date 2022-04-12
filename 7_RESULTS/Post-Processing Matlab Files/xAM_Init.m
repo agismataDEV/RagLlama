@@ -57,7 +57,8 @@ domain.symmetry             = 0;
 
 %% File Parameters
 file.lin_name            = 'TESTNeumann';
-file.dirname             = '../David_210deg_x_sin_64el_W10um_H4mm_apod';
+file.dirname             = '../David_100deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL';
+% file.dirname             = '../David_210deg_right_gaussian_64el_W10um_H4mm_apod';
 % file.dirname             = '../David_0deg_x_integrable_64el_long_high_apod';
 file.dirname_left        = '../David_150deg_left_high_amp';
 file.dirname_right       = '../David_150deg_left_high_amp';

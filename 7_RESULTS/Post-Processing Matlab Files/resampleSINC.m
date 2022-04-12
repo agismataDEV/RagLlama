@@ -43,7 +43,10 @@ function yp = resampleSINC(y,m)
 %   $Revision: 2.0 $  $Date: 2016/09/06 13:03:00 $
 u = linspace(1,length(y),length(y)*m); 
 x = linspace(1,length(y),length(y));
-
+winlen = 20;
+% window =[zeros(round(u(i))-winlen/2,1); tukeywin(winlen,0.2); zeros(length(x) - (round(u(i))-winlen/2 + winlen),1)];
+window = [zeros(length(x)-winlen/2,1); tukeywin(winlen,0.8); zeros(length(x) - winlen/2,1)]';
 for i=1:length(u)
-    yp(i) = sum(y.*sinc(u(i) - x));           
+    window_centered  = window(length(x)- round(u(i))+1 : 2*length(x) - round(u(i)));
+    yp(i) = sum(y.*sinc(u(i) - x).*window_centered);           
 end

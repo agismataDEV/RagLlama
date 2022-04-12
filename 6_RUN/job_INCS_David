@@ -1,15 +1,15 @@
 #!/bin/bash
  
-#SBATCH --job-name=David_210deg_x_sin_64el_W10um_H4mm_apod_FFT
+#SBATCH --job-name=David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL
 #SBATCH --partition=imphys,general
-#SBATCH --qos=short
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=48
+#SBATCH --qos=long
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=50
 #SBATCH --cpus-per-task=1
-#SBATCH --mem=400G
-#SBATCH --time=04:00:00
-#SBATCH --output=../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT/INCS_David_210deg_x_sin_64el_W10um_H4mm_apod_FFT.out
-#SBATCH --error=../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT/INCS_David_210deg_x_sin_64el_W10um_H4mm_apod_FFT.err
+#SBATCH --mem=500G
+#SBATCH --time=20:00:00
+#SBATCH --output=../7_RESULTS/David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL/INCS_David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL.out
+#SBATCH --error=../7_RESULTS/David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL/INCS_David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL.err
 ##SBATCH --exclusive
  
 module use /opt/insy/modulefiles
@@ -28,4 +28,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT/INCS_Agis_David_210deg_x_sin_64el_W10um_H4mm_apod_FFT TESTNeumann_David_small_phased_array.in TESTNeumann ../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT ../7_RESULTS/David_210deg_x_sin_64el_W10um_H4mm_apod_FFT
+srun ../7_RESULTS/David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL/INCS_Agis_David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL TESTNeumann_David_phased_array.in TESTNeumann ../7_RESULTS/David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL ../7_RESULTS/David_0deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL

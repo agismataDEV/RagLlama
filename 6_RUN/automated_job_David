@@ -41,12 +41,12 @@ echo "#!/bin/bash" 									 															 > job_INCS_David
 echo " " 											 															>> job_INCS_David
 echo "#SBATCH --job-name=${OUTPUT_FOLDER_DAVID}" 	 																		>> job_INCS_David
 echo "#SBATCH --partition=imphys,general" 					 															>> job_INCS_David
-echo "#SBATCH --qos=short"          				 																>> job_INCS_David
-echo "#SBATCH --nodes=1"           					 															>> job_INCS_David
-echo "#SBATCH --ntasks-per-node=48" 				 															>> job_INCS_David
+echo "#SBATCH --qos=long"          				 																>> job_INCS_David
+echo "#SBATCH --nodes=2"           					 															>> job_INCS_David
+echo "#SBATCH --ntasks-per-node=50" 				 															>> job_INCS_David
 echo "#SBATCH --cpus-per-task=1"    				 															>> job_INCS_David
-echo "#SBATCH --mem=400G"           				 															>> job_INCS_David
-echo "#SBATCH --time=04:00:00"      				 															>> job_INCS_David
+echo "#SBATCH --mem=500G"           				 															>> job_INCS_David
+echo "#SBATCH --time=20:00:00"      				 															>> job_INCS_David
 echo "#SBATCH --output=$OUT_FILE" 					 															>> job_INCS_David
 echo "#SBATCH --error=$ERR_FILE"     				 															>> job_INCS_David
 echo "##SBATCH --exclusive"          				 															>> job_INCS_David
@@ -72,4 +72,4 @@ echo "srun ../7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_Agis_${OUTPUT_FOLDER_DAVID} $I
 sbatch ../6_RUN/job_INCS_David &
 
 sleep 5
-squeue --format="%.18i %.9P %.30j %.8u %.8T %.10M %.9l %.6D %R" --me
+squeue --format="%.18i %.9P %.80j %.8u %.8T %.10M %.9l %.6D %R" --me

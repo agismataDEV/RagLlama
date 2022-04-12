@@ -1428,115 +1428,115 @@
         !--------------------------------------------------------------------------------------
         !Needed only when the domain is splitted in more than a single computational domain
 
-        !!!
-        !!!		if (iBeam>0 .and. cModelParams%Numiterations(1+iBeam)>1) then
-        !!!			!Apply the previous beam solution to the current one
-        !!!			call PrintToLog("************************************************************",0)
-        !!!			write(acTemp,'("****** Calculate Beam-to-Beam correction for Beam ",I3," ******")') iBeam
-        !!!			call PrintToLog(acTemp,0)
-        !!!			call PrintToLog("************************************************************",0)
-        !!!
-        !!!			!First deallocate the linear field solution to clear memory
-        !!!			call GridDistr0Deallocate(cBeam%cGrid)
-        !!!
-        !!!			! Obtain the new starting positions for the previous beam
-        !!!			iStartT = cRefBeam.iStartT + iBeamOffsetT(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
-        !!!			iStartX = cRefBeam.iStartX + iBeamOffsetX(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
-        !!!			iStartY = cRefBeam.iStartY + iBeamOffsetY(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
-        !!!			iStartZ = cRefBeam.iStartZ + (iBeam-1)*cRefBeam%iDimZ
-        !!!
-        !!!		    ! Initialize the contrast source beam on the previous beam position
-        !!!			call InitSpace(cBeamCS, iSI_FIELD, cRefBeam%bYSymm, &
-        !!!							cRefBeam%iDimT, cRefBeam%iDimX, cRefBeam%iDimY, cRefBeam%iDimZ,  &
-        !!!							iStartT, iStartX, iStartY, iStartZ,  &
-        !!!							0_i8b, 0_i8b, 0_i8b, &
-        !!!							cRefBeam%dFnyq, cRefBeam%dTanX, cRefBeam%dTanY, cRefBeam%dTanT )
-        !!!			call InitGrid(cBeamCS, iProcN, iProcID, (/ .false., .false., .false., .false./));                                ! Define the structure to store the data on the near-field
-        !!!			call GridDistr0CreateEmpty(cBeamCS%cGrid)
-        !!!
-        !!!			call LoadField(cBeamCS, "PrevBeam")
-        !!!
-        !!!			if (iBeam>1) then
-        !!!				! First z-plane in cBeamCS is set to zero; this plane is already
-        !!!				! included in the CSPlane calculation
-        !!!				call ZeroFirstPlane(cBeamCS)
-        !!!			end if
-        !!!
-        !!!			call FieldtoContrastSource(cBeamCS, cModelParams.ContrastSourceType, cInhomContrast);
-        !!!
-        !!!            ! Test whether there is a NaN in cBeamCS - indication of an error,
-        !!!            ! no use to continue the program
-        !!!            call test_isnan(cBeamCS)
-        !!!
-        !!!			! Calculate the field correction
-        !!!			!Memory-efficient method, using out-place/in-place evaluation of the spaces
-        !!!			call ContrastSourcetoField(cBeamCS, cBeam, .true.);
-        !!!
-        !!!            ! Test whether there is a NaN in cBeamCS - indication of an error,
-        !!!            ! no use to continue the program
-        !!!            call test_isnan(cBeam)
-        !!!
-        !!!			! Destroy the contrast source beam
-        !!!			!! First de-reference pacD2 pointer in cBeamCS - don't deallocate pacD0 grid, pacD0 pointer
-        !!!			! in cBeam now points to memory that was originally in cBeamCS
-        !!!			nullify(cBeamCS%cGrid%pacD2)
-        !!!			call DestructSpace(cBeamCS)
-        !!!
-        !!!			! Store the previous beam solution in a special temp file for use in the iterative scheme
-        !!!			call StoreField(cBeam,"PrevBeamContributions");
-        !!!
-        !!!			if (iBeam>1) then
-        !!!				!Apply the correction plane solution to the current one
-        !!!				call PrintToLog("***************************************************************",0)
-        !!!				write(acTemp,'("****** Calculate CFPlane-to-Beam correction for Beam ",I3," ******")') iBeam
-        !!!				call PrintToLog(acTemp,0)
-        !!!				call PrintToLog("***************************************************************",0)
-        !!!
-        !!!				call GridDistr0Deallocate(cBeam%cGrid)
-        !!!
-        !!!				! Obtain the new starting positions for the previous beam
-        !!!				iStartT = cRefBeam.iStartT + iBeamOffsetT(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
-        !!!				iStartX = cRefBeam.iStartX + iBeamOffsetX(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
-        !!!				iStartY = cRefBeam.iStartY + iBeamOffsetY(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
-        !!!				iStartZ = cRefBeam.iStartZ + (iBeam-1)*cRefBeam%iDimZ
-        !!!
-        !!!				! Initialize the contrast source beam on the 2nd previous beam position
-        !!!                ! Although we only have a single plane in z, i.e. iDimZ=1, we need to create a complete
-        !!!                ! space since it was obtained and stored from an entire space. In Distr. 0, each
-        !!!                ! processor contains a limited number of xyz positions, and to get the right ones in the
-        !!!                ! right places we need a space with the same dimensions as from which the plane was
-        !!!                ! obtained. Later, when the data is in Distr. 2, we will define a space with iDimZ=1.
-        !!!				call InitSpace(cPlaneCF, iSI_FIELDSLICE, cRefBeam%bYSymm, &
-        !!!								cRefBeam%iDimT, cRefBeam%iDimX, cRefBeam%iDimY, cRefBeam%iDimZ,  &
-        !!!								iStartT, iStartX, iStartY, iStartZ,  &
-        !!!								0_i8b, 0_i8b, 0_i8b, &
-        !!!								cRefBeam%dFnyq, cRefBeam%dTanX, cRefBeam%dTanY, cRefBeam%dTanT )
-        !!!				call InitGrid(cPlaneCF, iProcN, iProcID, (/ .false., .false., .false., .false./));                                ! Define the structure to store the data on the near-field
-        !!!
-        !!!				call GridDistr0CreateEmpty(cPlaneCF%cGrid)
-        !!!				call LoadPlane(cPlaneCF, "PrevPlane")
-        !!!
-        !!!				! Calculate the field correction
-        !!!				call CFPlaneSourcetoField(cPlaneCF, cBeam);
-        !!!
-        !!!                ! Test whether there is a NaN in cBeam - indication of an error,
-        !!!                ! no use to continue the program
-        !!!                call test_isnan(cBeam)
-        !!!
-        !!!				! Destroy the contrast source slice
-        !!!				call DestructSpace(cPlaneCF)
-        !!!
-        !!!				! Add the CF-plane solution to the correction
-        !!!				! of the previous beam solution and store the result
-        !!!				call AddStoredToField(cBeam,"PrevBeamContributions");
-        !!!				call StoreField(cBeam,"PrevBeamContributions");
-        !!!
-        !!!			end if
-        !!!
-        !!!			! Add the Primary field solution to the previous beam contributions
-        !!!			call AddStoredToField(cBeam,"BeamSol0");
-        !!!
-        !!!		end if
+        
+        		! ! ! if (iBeam>0 .and. cModelParams%Numiterations(1+iBeam)>1) then
+        			! ! ! ! Apply the previous beam solution to the current one
+        			! ! ! call PrintToLog("************************************************************",0)
+        			! ! ! write(acTemp,'("****** Calculate Beam-to-Beam correction for Beam ",I3," ******")') iBeam
+        			! ! ! call PrintToLog(acTemp,0)
+        			! ! ! call PrintToLog("************************************************************",0)
+        
+        			! ! ! ! First deallocate the linear field solution to clear memory
+        			! ! ! call GridDistr0Deallocate(cBeam%cGrid)
+        
+        			! ! ! ! Obtain the new starting positions for the previous beam
+        			! ! ! iStartT = cRefBeam.iStartT + iBeamOffsetT(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
+        			! ! ! iStartX = cRefBeam.iStartX + iBeamOffsetX(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
+        			! ! ! iStartY = cRefBeam.iStartY + iBeamOffsetY(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
+        			! ! ! iStartZ = cRefBeam.iStartZ + (iBeam-1)*cRefBeam%iDimZ
+        
+        		    ! ! ! ! Initialize the contrast source beam on the previous beam position
+        			! ! ! call InitSpace(cBeamCS, iSI_FIELD, cRefBeam%bYSymm, &
+        							! ! ! cRefBeam%iDimT, cRefBeam%iDimX, cRefBeam%iDimY, cRefBeam%iDimZ,  &
+        							! ! ! iStartT, iStartX, iStartY, iStartZ,  &
+        							! ! ! 0_i8b, 0_i8b, 0_i8b, &
+        							! ! ! cRefBeam%dFnyq, cRefBeam%dTanX, cRefBeam%dTanY, cRefBeam%dTanT )
+        			! ! ! call InitGrid(cBeamCS, iProcN, iProcID, (/ .false., .false., .false., .false./));                                ! Define the structure to store the data on the near-field
+        			! ! ! call GridDistr0CreateEmpty(cBeamCS%cGrid)
+        
+        			! ! ! call LoadField(cBeamCS, "PrevBeam")
+        
+        			! ! ! if (iBeam>1) then
+        				! ! ! ! First z-plane in cBeamCS is set to zero; this plane is already
+        				! ! ! ! included in the CSPlane calculation
+        				! ! ! call ZeroFirstPlane(cBeamCS)
+        			! ! ! end if
+        
+        			! ! ! call FieldtoContrastSource(cBeamCS, cModelParams.ContrastSourceType, cInhomContrast);
+        
+                   ! ! ! ! Test whether there is a NaN in cBeamCS - indication of an error,
+                   ! ! ! ! no use to continue the program
+                   ! ! ! call test_isnan(cBeamCS)
+        
+        			! ! ! ! Calculate the field correction
+        			! ! ! ! Memory-efficient method, using out-place/in-place evaluation of the spaces
+        			! ! ! call ContrastSourcetoField(cBeamCS, cBeam, .true.);
+        
+                   ! ! ! ! Test whether there is a NaN in cBeamCS - indication of an error,
+                   ! ! ! ! no use to continue the program
+                   ! ! ! call test_isnan(cBeam)
+        
+        			! ! ! ! Destroy the contrast source beam
+        			! ! ! First de-reference pacD2 pointer in cBeamCS - don't deallocate pacD0 grid, pacD0 pointer
+        			! ! ! ! in cBeam now points to memory that was originally in cBeamCS
+        			! ! ! nullify(cBeamCS%cGrid%pacD2)
+        			! ! ! call DestructSpace(cBeamCS)
+        
+        			! ! ! ! Store the previous beam solution in a special temp file for use in the iterative scheme
+        			! ! ! call StoreField(cBeam,"PrevBeamContributions");
+        
+        			! ! ! if (iBeam>1) then
+        				! ! ! ! Apply the correction plane solution to the current one
+        				! ! ! call PrintToLog("***************************************************************",0)
+        				! ! ! write(acTemp,'("****** Calculate CFPlane-to-Beam correction for Beam ",I3," ******")') iBeam
+        				! ! ! call PrintToLog(acTemp,0)
+        				! ! ! call PrintToLog("***************************************************************",0)
+        
+        				! ! ! call GridDistr0Deallocate(cBeam%cGrid)
+        
+        				! ! ! ! Obtain the new starting positions for the previous beam
+        				! ! ! iStartT = cRefBeam.iStartT + iBeamOffsetT(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
+        				! ! ! iStartX = cRefBeam.iStartX + iBeamOffsetX(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
+        				! ! ! iStartY = cRefBeam.iStartY + iBeamOffsetY(cRefBeam, (iBeam-1)*cRefBeam%iDimZ)
+        				! ! ! iStartZ = cRefBeam.iStartZ + (iBeam-1)*cRefBeam%iDimZ
+        
+        				! ! ! ! Initialize the contrast source beam on the 2nd previous beam position
+                       ! ! ! ! Although we only have a single plane in z, i.e. iDimZ=1, we need to create a complete
+                       ! ! ! ! space since it was obtained and stored from an entire space. In Distr. 0, each
+                       ! ! ! ! processor contains a limited number of xyz positions, and to get the right ones in the
+                       ! ! ! ! right places we need a space with the same dimensions as from which the plane was
+                       ! ! ! ! obtained. Later, when the data is in Distr. 2, we will define a space with iDimZ=1.
+        				! ! ! call InitSpace(cPlaneCF, iSI_FIELDSLICE, cRefBeam%bYSymm, &
+        								! ! ! cRefBeam%iDimT, cRefBeam%iDimX, cRefBeam%iDimY, cRefBeam%iDimZ,  &
+        								! ! ! iStartT, iStartX, iStartY, iStartZ,  &
+        								! ! ! 0_i8b, 0_i8b, 0_i8b, &
+        								! ! ! cRefBeam%dFnyq, cRefBeam%dTanX, cRefBeam%dTanY, cRefBeam%dTanT )
+        				! ! ! call InitGrid(cPlaneCF, iProcN, iProcID, (/ .false., .false., .false., .false./));                                ! Define the structure to store the data on the near-field
+        
+        				! ! ! call GridDistr0CreateEmpty(cPlaneCF%cGrid)
+        				! ! ! call LoadPlane(cPlaneCF, "PrevPlane")
+        
+        				! ! ! ! Calculate the field correction
+        				! ! ! call CFPlaneSourcetoField(cPlaneCF, cBeam);
+        
+                       ! ! ! ! Test whether there is a NaN in cBeam - indication of an error,
+                       ! ! ! ! no use to continue the program
+                       ! ! ! call test_isnan(cBeam)
+        
+        				! ! ! ! Destroy the contrast source slice
+        				! ! ! call DestructSpace(cPlaneCF)
+        
+        				! ! ! ! Add the CF-plane solution to the correction
+        				! ! ! ! of the previous beam solution and store the result
+        				! ! ! call AddStoredToField(cBeam,"PrevBeamContributions");
+        				! ! ! call StoreField(cBeam,"PrevBeamContributions");
+        
+        			! ! ! end if
+        
+        			! ! ! ! Add the Primary field solution to the previous beam contributions
+        			! ! ! call AddStoredToField(cBeam,"BeamSol0");
+        
+        		! ! ! end if
 
 
         !-------------------------------------------------------------------------------------
@@ -2356,7 +2356,6 @@
 				!-----------------------------------------------------------
 				!LCSM - Linearized Neumann
 				!-----------------------------------------------------------
-
 				if (LCSM==1) then
 				    call AddStoredtoField(cBeam,"BeamStatic");
 				    call StoreField(cBeam,"BeamUpgrande")
