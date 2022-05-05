@@ -108,14 +108,14 @@ for i = 1:i_end
     splot_div =2;
     dBVALUES=40;
     Add = 0;
-    
+    plin_plot = squeeze(20*log10(max(abs(pnl.data))));
     FontSize = 20;
 %     set(0,'defaultTextInterpreter','latex'); %trying to set the default
     f2=figure('WindowState','maximized');
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
     hold on;
     caxis([max(max(plin_plot))-dBVALUES max(max(plin_plot))]+Add)
-    title('Linear Pressure Field')
+    title('Total Pressure Field')
     xlabel(dslice.xlabel )
     ylabel(dslice.ylabel )
     BubbleCluster_Colormaps(file)
@@ -159,7 +159,7 @@ for i = 1:i_end
 %     caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
     for i = 1: harmonics
         if (i-4*floor((i-1)/4)==1); f3=figure('WindowState','maximized');end
-        pnl_harmi = eval(['pnl.harm' num2str(i)]);
+        pnl_harmi = 20*log10(squeeze(max(abs(pnl.data))));%eval(['pnl.harm' num2str(i)]);
         subplot(Nsubplot/splot_div,Nsubplot/(Nsubplot/splot_div),i-4*floor((i-1)/4))
         set(gca,'TickLabelInterpreter','latex')
         imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)

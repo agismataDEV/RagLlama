@@ -1934,7 +1934,7 @@ SUBROUTINE InitGridDistrLookupTables(cSpace)
 !KH r2c stuff: is it always plus 1, also with odd iDimT?? no, don"t think so...
 !KH Does this assume a double length T axis already? yes, do think so...
 !KH Change for periodical T
-        cSpace%cGrid%iD1TL                = (cModelParams%PPW/2)*cSpace%iDimT+1;	  ! Added by A.M 28/06/2020
+        cSpace%cGrid%iD1TL                = cSpace%iDimT+1;	  ! Added by A.M 28/06/2020
         cSpace%cGrid%iD1GlobN             = cSpace%iDimX * cSpace%iDimY * cSpace%iDimZ;
         cSpace%cGrid%iD1LocN              = cSpace%cGrid%iD1GlobN / cSpace%cGrid%iProcN;
         cSpace%cGrid%iD1LocSize           = cSpace%cGrid%iD1LocN * cSpace%cGrid%iD1TL;
@@ -1962,7 +1962,7 @@ SUBROUTINE InitGridDistrLookupTables(cSpace)
         cSpace%cGrid%iD2XL                = cSpace%iDimX;
         cSpace%cGrid%iD2YL                = cSpace%iDimY;
         cSpace%cGrid%iD2ZL                = cSpace%iDimZ;
-        cSpace%cGrid%iD2GlobN             = (cModelParams%PPW/2)*cSpace%iDimT+1;  	  ! Added by A.M 28/06/2020
+        cSpace%cGrid%iD2GlobN             = cSpace%iDimT+1;  	  ! Added by A.M 28/06/2020
         cSpace%cGrid%iD2LocN              = cSpace%cGrid%iD2GlobN / cSpace%cGrid%iProcN;
         cSpace%cGrid%iD2LocSize           = cSpace%cGrid%iD2LocN * cSpace%iDimX * cSpace%iDimY * cSpace%iDimZ;
 		!KH We have i = x + y * iDimX + z * iDimX * iDimY 

@@ -59,7 +59,7 @@ file.rootname            = 'TESTNeumann';
 file.dirname             = '../1MBs_Validation_sinc_all';
 file.dirname             = '../width_3cycl_round2/PW_2E5Pa_2micron_1MHz_2E4LS';
 file.dirname             = '../width_3cycl_round2/Phased_2E5Pa_2micron_1MHz_1E2MBs';
-file.dirname             = '../test/Phased_2E5Pa_2micron_1MHz_1E2MBs';
+file.dirname             = '../test/PW_1MB_convergence_3';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 

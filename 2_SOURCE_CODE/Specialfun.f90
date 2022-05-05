@@ -599,6 +599,7 @@
     !
     real(dp), intent(in) :: dArg(:)
     real(dp) :: dSinc(size(dArg))
+	integer(i8b)		:: i
 
     ! *****************************************************************************
     !
@@ -623,8 +624,8 @@
     ! Logical acts give -1 if TRUE and 0 if FALSE
     dSinc = 0.0D0
     ! If the argument is 0 then change it to 1D-30/1D-30 in order to avoid 0/0 = 1
-    dSinc = dsin(dArg+EPSILON(1.0D0))/real(dArg+EPSILON(1.0D0),dp)
-   
+    dSinc = sin(dArg+EPSILON(1.0D-10))/(dArg+EPSILON(1.0D-10))
+	
     END FUNCTION dSinc
 
     SUBROUTINE LINSPACE(x,x_start,x_end,x_len)

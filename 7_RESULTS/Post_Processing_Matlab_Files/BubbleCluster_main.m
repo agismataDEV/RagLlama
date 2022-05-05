@@ -2,7 +2,7 @@
 % clear all
 % fclose('all')
 % close all;
-for slicenum1 = [2]%[12,3,4,5,6]
+for slicenum1 = [4]%[12,3,4,5,6]
     
     clearvars -except slicenum1 atten atten_fund Loc pnl7
     %     close all
@@ -14,11 +14,11 @@ for slicenum1 = [2]%[12,3,4,5,6]
     [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');
     PS=Bubble ; domainPS = domain; domainPS.beamiterations=0;[PS] = BubbleCluster_LocCon(medium,domainPS,file,PS,'PS');
     %%  Bubble Cluster Positions
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','o',3);
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx',0.8);
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','o',12);
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx',12);
     
     %% PlayMovies
-     Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble)
+     Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,PS)
     %% CREATING MATRICES FOR NONLINEAR AND CONTRAST DATA
     [pnl,plin] = BubbleCluster_ConPlot(medium,domain,dslice,file,plin,pnl,Bubble);
 %     atten(dslice.num,:) = pnl.attenuation(dslice.num,:);

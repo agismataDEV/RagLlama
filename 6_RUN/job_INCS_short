@@ -1,6 +1,6 @@
 #!/bin/bash
  
-#SBATCH --job-name=Phased_2E5Pa_2micron_1MHz_1E5MBs
+#SBATCH --job-name=PW_1MB_convergence_3
 #SBATCH --partition=imphys,general
 #SBATCH --qos=short
 #SBATCH --nodes=1
@@ -8,8 +8,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=10G
 #SBATCH --time=04:00:00
-#SBATCH --output=../7_RESULTS/test/Phased_2E5Pa_2micron_1MHz_1E5MBs/INCS_Phased_2E5Pa_2micron_1MHz_1E5MBs.out
-#SBATCH --error=../7_RESULTS/test/Phased_2E5Pa_2micron_1MHz_1E5MBs/INCS_Phased_2E5Pa_2micron_1MHz_1E5MBs.err
+#SBATCH --output=../7_RESULTS/test/PW_1MB_convergence_3/INCS_PW_1MB_convergence_3.out
+#SBATCH --error=../7_RESULTS/test/PW_1MB_convergence_3/INCS_PW_1MB_convergence_3.err
  
 module use /opt/insy/modulefiles
 module load intel
@@ -30,4 +30,4 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel
 #export MKL_DYNAMIC=FALSE
 #export MKL_VERBOSE=1
-srun ../7_RESULTS/test/Phased_2E5Pa_2micron_1MHz_1E5MBs/INCS_Agis_Phased_2E5Pa_2micron_1MHz_1E5MBs TESTNeumann_Phased_MultiBubble.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test/Phased_2E5Pa_2micron_1MHz_1E5MBs
+srun ../7_RESULTS/test/PW_1MB_convergence_3/INCS_Agis_PW_1MB_convergence_3 TESTNeumann_Planewave_MultiLinear.in TESTNeumann ../5_INPUT_FILES ../7_RESULTS/test/PW_1MB_convergence_3

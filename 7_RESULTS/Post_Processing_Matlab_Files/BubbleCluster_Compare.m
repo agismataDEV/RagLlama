@@ -34,8 +34,8 @@ if (Bubble.N <=10 && Bubble.N>0)
     %%
     i_start = 1;
     i_end = domain.tdimpar;
-    depth =  100;
-    x_idx = 65;round(size(plin.data,3)/2)+1;
+    depth =  33;
+    x_idx = round(size(plin.data,2)/2)+1;
     figure('WindowState','maximized');
     hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,x_idx,depth)*1E-3,'-','LineWidth',2)
     hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.data(i_start:i_end,x_idx,depth)*1E-3, '--','LineWidth',2)
@@ -43,9 +43,9 @@ if (Bubble.N <=10 && Bubble.N>0)
     ylabel('Pressure [kPa]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
-    hl = legend('Linear','With MBs');
+    hl = legend('Linear','Total');
     grid on;
-    title(['INCS Results after 10 Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(x_idx)),', ',num2str(dslice.pos(dslice.num)),', ', num2str(domain.par{3}(depth)),') [mm]'])
+    title(['INCS Results after ',num2str(domain.beamiterations), ' Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(x_idx)),', ',num2str(dslice.pos(dslice.num)),', ', num2str(domain.par{3}(depth)),') [mm]'])
     
     F_s = 1/(domain.dtpar);                          % [Hz] , 1/dt
     [f_p,Sp_p] = Freq_Calc(plin.data(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
@@ -57,7 +57,7 @@ if (Bubble.N <=10 && Bubble.N>0)
     ylabel('Amplitude [dB]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
-    legend('Linear','With MBs')
+    legend('Linear','Total')
     grid on;
 %     ylim([max([Sp_p; Sp_s])-70 max([Sp_p; Sp_s])])
     %% ============== Comparison of time signature based on ODE Solvers ====================================
@@ -113,7 +113,7 @@ if (Bubble.N <=10 && Bubble.N>0)
         end
         fclose('all')
         %%
-        filename_pres = split(cellstr(ls([file.dirname '/Bubbles/output_file_pressure_004*.txt'])));
+        filename_pres = split(cellstr(ls([file.dirname '/Bubbles/output_file_pressure_001*.txt'])));
         for ifile = 1:1
             fileID_pres = fopen([file.dirname '/Bubbles/' filename_pres{ifile} ],'r');
             size_pres = [1 Inf];
@@ -201,7 +201,7 @@ if (Bubble.N <=10 && Bubble.N>0)
     %         close all
     
     OSFactor = 	1;
-    R_rigid = repmat(2E-6,Bubble.N,1); %R_rigid(1) = 0;
+    R_rigid = repmat(8E-6,Bubble.N,1); %R_rigid(1) = 0;
     time_signature  =   (4/3*pi*R_rigid.^3)/(medium.c0^2);
     medium.rho1     =   10;
     medium.c1       =   100;
@@ -281,10 +281,10 @@ if (Bubble.N <=10 && Bubble.N>0)
 %     %
 %     m_init = idx1;
 %     k_init = idx3;
-%     m_init      =   42;49;77;
-%     m_end       =   m_init;
-%     k_init      =   76;11;58;
-%     k_end       =   k_init;
+    m_init      =   42;49;77;
+    m_end       =   m_init;
+    k_init      =   76;11;58;
+    k_end       =   k_init;
 %         %
     RRMS_ErrorG_semi_an = zeros(k_end,m_end);
     RRMS_ErrorG_an = zeros(k_end,m_end);

@@ -51,6 +51,6 @@ export MKL_NUM_THREADS=1
 export MKL_THREADING_LAYER=intel																		
 export MKL_DYNAMIC="FALSE" 																			
 export MKL_VERBOSE=1																					
-srun --ntasks=32 --job-name=$OUTPUT_FILE_NAME --partition=general --qos=short --output=$OUT_FILE --error=$ERR_FILE --mem=100G --time=04:00:00 ../7_RESULTS/$OUTPUT_FOLDER/INCS_Agis_${OUTPUT_FILE_NAME} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER
+srun --nodes=1 --ntasks=32 --job-name=$OUTPUT_FILE_NAME --partition=general --qos=short --output=$OUT_FILE --error=$ERR_FILE --mem=100G --time=04:00:00 ../7_RESULTS/$OUTPUT_FOLDER/INCS_Agis_${OUTPUT_FILE_NAME} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER
 sleep 5
 squeue --format="%.18i %.9P %.30j %.8u %.8T %.10M %.9l %.6D %R" --me

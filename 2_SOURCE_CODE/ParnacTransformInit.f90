@@ -236,7 +236,7 @@ SUBROUTINE GridInitTransforms(cSpace)
     ! Change this to 2*pcGrid%iD0TL both in T_inv for  2PPW
 	call dfftw_plan_guru_dft_r2c(pcGrid%cTransforms%iPlanTransformT,		&
 				1, 						&
-				int((/ cModelParams%PPW*pcGrid%iD0TL /)),			&	! We take the length of the T-axis in distribution 1, the factor 2 is due to the fact that the input is real and the array in distribution 2 is complex
+				int((/ 2 * pcGrid%iD0TL /)),			&	! We take the length of the T-axis in distribution 1, the factor 2 is due to the fact that the input is real and the array in distribution 2 is complex
 				int((/ pcGrid%iD1TS   /)), 			&	!KH no: the factor 2 is due to the wraparound region
 				int((/ pcGrid%iD1TS   /)), 			&	! in complex, we have floor((2*iD0TL)/2)+1 numbers
 				1,						&	! for periodical T, we would need floor(iD0TL/2)+1 numbers in dist. 1
@@ -250,7 +250,7 @@ SUBROUTINE GridInitTransforms(cSpace)
 !KH For periodical T, change here..
 	call dfftw_plan_guru_dft_c2r(pcGrid%cTransforms%iPlanTransformT_inv,	&
 				1, 								&
-				int((/ cModelParams%PPW*pcGrid%iD0TL /)), 			&
+				int((/ 2*pcGrid%iD0TL /)), 			&
 				int((/ pcGrid%iD1TS   /)),			&
 				int((/ pcGrid%iD1TS   /)),			&
 				1,								&

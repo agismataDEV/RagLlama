@@ -203,7 +203,6 @@ SUBROUTINE InitSource(cSource)
 	
 	! Fill the Excitation with the source description
 	call InitSourceExcitation(Excitation, cSource)
-	Excitation = Excitation * (2.0/cModelParams%PPW)  ! Added by A.M 28/06/2020
 	
 	! Store Excitation in the first z-plane in cSource
 	! 	note that Excitation should always be centered around x=0,y=0, i.e. the zero position

@@ -914,7 +914,7 @@ SUBROUTINE ComputeConvolution(cSpaceS, cGridS, cSpaceD, cGridD)
 			write (acTemp, '("Start iOmega ", I5 ," out of ", I5)') iOmega, cGridS.iD2LocN-1
 			call PrintToLog(acTemp,3);
 
-			dOmega = two_pi * cGridS%aiD2Loc(1+iOmega) * cSpaceS%dFnyq / cSpaceS%iDimT  * (2.0/cModelParams%PPW) 
+			dOmega = two_pi * cGridS%aiD2Loc(1+iOmega) * cSpaceS%dFnyq / cSpaceS%iDimT
 			
 			!KH change for periodical T to 
 			!KH dOmega = two_pi * cGridS%aiD2Loc(1+iOmega) * 2.0_dp*cSpaceS%dFnyq/cSpaceS%iDimT
@@ -1583,7 +1583,7 @@ SUBROUTINE GreenXYZBlockFreqT_lossless(cGreen, cSource, dOmega, dKcutoff, iDiffT
 
 	viZ		= (/ (i, i=0,cGreen%iBeamIndexStartZ+cGreen%iDimZ-1), (i, i=cGreen%iBeamIndexStartZ,-1) /) &
 				+ cGreen%iStartZ-cSource%iStartZ;
-	
+
 	pcGrid%pacD2	= 0;
 	do iLz=0,cGreen%iDimZ-1
 		!Take care, iLz is the array index, iIndz is the beam index, viZ is the global index...
@@ -1603,7 +1603,7 @@ SUBROUTINE GreenXYZBlockFreqT_lossless(cGreen, cSource, dOmega, dKcutoff, iDiffT
 						+ iBeamOffSetY(cGreen,iIndZ) + cGreen%iStartY - cSource%iStartY;
 
 		! if we include the zero axis in time, we have to include a filter factor
-!KH Change here for periodical T, always use filter term
+		!KH Change here for periodical T, always use filter term
 		if (dStartT <= 0 .and. dEndT > 0) then
 			do iLX=0,cGreen%iDimX-1
 				do iLY=0,cGreen%iDimY-1
@@ -1613,18 +1613,18 @@ SUBROUTINE GreenXYZBlockFreqT_lossless(cGreen, cSource, dOmega, dKcutoff, iDiffT
 					if (dRad == 0) then
 						pcGrid.pacD2(1+iLX*pcGrid%iD2XS+iLY*pcGrid%iD2YS+iLZ*pcGrid%iD2ZS)  &
 								=  (dKcutoff/(2.0_dp*pi**2)&
-									+ dOmega/(4.0_dp*pi**2)*dlog((dKcutoff-dOmega)/(dKcutoff+dOmega)) &
+									+ dOmega/(4.0_dp*pi**2)*log((dKcutoff-dOmega)/(dKcutoff+dOmega)) &
 									- im*dOmega/(4.0_dp*pi))
 					else if ((dRad>=dStartT) .and. (dRad<=dEndT)) then
 						pcGrid.pacD2(1+iLX*pcGrid%iD2XS+iLY*pcGrid%iD2YS+iLZ*pcGrid%iD2ZS)  &
 							=(1.0_dp/(dRad*4.0_dp*pi)* &
-								( dcos(dOmega*dRad)*(dSi1+dSi2)&
-								 +dsin(dOmega*dRad)*(dCi1-dCi2-im*pi))/pi);
+								( cos(dOmega*dRad)*(dSi1+dSi2)&
+								 +sin(dOmega*dRad)*(dCi1-dCi2-im*pi))/pi);
 					else
 						pcGrid.pacD2(1+iLX*pcGrid%iD2XS+iLY*pcGrid%iD2YS+iLZ*pcGrid%iD2ZS)  &
 							= (1.0_dp/(dRad*4.0_dp*pi)* &
-								( dcos(dOmega*dRad)*(dSi1+dSi2-pi) &
-								 +dsin(dOmega*dRad)*(dCi1-dCi2))/pi);
+								( cos(dOmega*dRad)*(dSi1+dSi2-pi) &
+								 +sin(dOmega*dRad)*(dCi1-dCi2))/pi);
 					end if
 					
 				end do
@@ -1636,7 +1636,7 @@ SUBROUTINE GreenXYZBlockFreqT_lossless(cGreen, cSource, dOmega, dKcutoff, iDiffT
 					dRad =  cGreen%dDx * sqrt(real(viX(1+iLX)**2 + viY(1+iLY)**2 + viZ(1+iLZ)**2,dp))
 					if ((dRad >= dStartT).and.(dRad <= dEndT)) then
 						pcGrid.pacD2(1+iLX*pcGrid%iD2XS+iLY*pcGrid%iD2YS+iLZ*pcGrid%iD2ZS)  &
-								= 	(1.0_dp/(dRad*4.0_dp*pi)*(dcos(dOmega * dRad)-im*dsin(dOmega * dRad)));
+								= 	(1.0_dp/(dRad*4.0_dp*pi)*(cos(dOmega * dRad)-im*sin(dOmega * dRad)));
 					else 
 						pcGrid.pacD2(1+iLX*pcGrid%iD2XS+iLY*pcGrid%iD2YS+iLZ*pcGrid%iD2ZS)  &
 								= 0.0_dp;

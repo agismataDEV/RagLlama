@@ -48,12 +48,12 @@ if (strcmp(file.play_movies,'yes'))
     %% ========================= Initialize first frame=========================
     
     dBVALUES = 50;
-    plot_value = 20*log10(abs(plin.data));
+    plot_value = 20*log10(abs(pnl.contrastdata));
     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
-    mov = VideoWriter('PressureFieldEvolution_MBs_NL_20fps.avi','Motion JPEG AVI');
+    mov = VideoWriter('PressureField_1LS_rho10_c100.avi','Motion JPEG AVI');
     mov.FrameRate = 20; mov.Quality = 75;
     open(mov);
     
@@ -73,7 +73,7 @@ if (strcmp(file.play_movies,'yes'))
 %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
     end
     
-    title_txt = 'Scattered Pressure Field $\vert$ Microbubbles , $t_i = $';
+    title_txt = 'Scattered Pressure Field , $t_i = $';
 %     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
     %     if (sum(sum(sum(plot_value==Total_Field)))==numel(plot_value)) ;title_txt = 'Total Pressure Field, t_i = ';end
     title(ax,[title_txt,num2str(1)],'interpreter','latex')

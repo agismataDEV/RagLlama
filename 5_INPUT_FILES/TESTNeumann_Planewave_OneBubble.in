@@ -23,8 +23,8 @@
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E+000		*** Thetat [rad]
-1.700000E+006		*** freq0  = Fundamental frequency [Hz]
-6.00000E+0000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+1.000000E+006		*** freq0  = Fundamental frequency [Hz]
+9.00000E+0000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
@@ -67,8 +67,8 @@ gaussian
 1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
-1.500000E+000		*** Twidth = Width of gaussian window
-3.000000E+000		*** Tdelay = Delay of gaussian window
+3.000000E+000		*** Twidth = Width of gaussian window
+6.000000E+000		*** Tdelay = Delay of gaussian window
 2					*** Power  = Power of gaussian window		
 ***************************
 ***  Switches  		***
@@ -128,7 +128,7 @@ Minnaert_and_radius		    *** Normalize , 'none', 'time', 'radius', 'freq0_and_ra
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
-2.0E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
+8.0E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
 0.0 0.9	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
 0.0 0.9	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
 0.0 0.9  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len

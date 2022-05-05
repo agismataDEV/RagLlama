@@ -130,8 +130,8 @@ if (strcmp(file.plot_converr,'yes'))
         %  plot(0:IterationNumber,log([1,Error]))
         Error_prev_total(Bubblei,1:jj) = ([1,Error_prev_total(Bubblei,2:jj)]);
         Error_init_total(Bubblei,1:jj) = ([1,Error_init_total(Bubblei,2:jj)]);
-        Error_prev_contrast(Bubblei,1:jj) = ([1,Error_prev_contrast(Bubblei,2:jj)]);
-        Error_init_contrast(Bubblei,1:jj) = ([1,Error_init_contrast(Bubblei,2:jj)]);
+        Error_prev_contrast(Bubblei,1:jj-1) = ([1,Error_prev_contrast(Bubblei,2:jj-1)]);
+        Error_init_contrast(Bubblei,1:jj-1) = ([1,Error_init_contrast(Bubblei,2:jj-1)]);
     end
     %% Plot
     % hold on;
@@ -140,7 +140,7 @@ if (strcmp(file.plot_converr,'yes'))
     for i = 1:1
         
         f8=figure('WindowState','maximized');
-        eval(['plot',num2str(i),' = semilogy(0:size(Error_init_',txt_err{i},',2)-1,flipud(Error_prev_',txt_err{i},'))'])
+        eval(['plot',num2str(i),' = semilogy(0:size(Error_prev_',txt_err{i},',2)-1,flipud(Error_prev_',txt_err{i},'))'])
 
         set(eval(['plot',num2str(i),'(1)']),'DisplayName',[num2str(BubbleList(1)),' Bubble(s) Pres'],'Marker','o','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
             'Color','#994C00');
