@@ -108,5 +108,8 @@ ParnacParamInit.f90 :
 
 ParnacPointSourceCloud.f90 : 
 1. Now a cube, a cylinder or a sphere can be generated as the bubble cloud
-2. Changes were made in the TrilinearInterpolation function in order to not give an error in the case of a point scatterer placed really close to a gridpoint coordinate.
+2. Changes were made in the TrilinearInterpolation function in order to not give an error in the case of a point scatterer placed really close to a gridpoint coordinates.
+
+Removed PPW from everywhere!!
+Also from the input files!
 
