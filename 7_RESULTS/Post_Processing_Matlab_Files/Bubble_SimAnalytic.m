@@ -27,19 +27,20 @@ function [V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f)
 %% ========================Initialization==============================================================
 
 % -------------Bubble parameters
-par.R0 = 2e-6 ;                         % [μm],  initial bubble radius R0
+par.R0 = 2.4e-6 ;                         % [μm],  initial bubble radius R0
 par.S_vis = 5.8e-9         ;            % [Pa*sec] , Shell viscosity
 par.S_vis = 1.5E-9*exp(8E5*par.R0);
 
 %------------------ Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
 par.P0 = 1.01e+5 ;                             % [Pa], ambient pressure 1 [atm] = 10^5 [Pa]
 par.sigma_w  = 0.072 ;                      % [N/m] surface tension
-par.sigma_R0 = 0.010;                      % [N/m], surface tension at initial radius R0
+par.sigma_R0 = 0.036;                      % [N/m], surface tension at initial radius R0
 par.P_g0 = par.P0+2*par.sigma_R0/par.R0 ;   % [Pa] Initial gas pressure , (Sometimes = P0)
 par.gamma = 1.07   ;                           %  (or κ), dimensionless, polytropic exponent of the gas inside the bubble
 par.mu = 2e-3 ;                             % [Pa*sec], dynamic viscocity of medium
 par.c = c;
 par.rho = rho;
+par.f = f;
 %---------------Marmottant model parameters
 par.chi = 0.5   ;                                     % [N/m] shell elasticity
 par.R_b = par.R0/sqrt(par.sigma_R0/par.chi+1);     % buckling radius
@@ -48,7 +49,16 @@ par.R_r = par.R_b*sqrt(par.sigma_w/par.chi+1);       % upper limit radius after 
 par.f0 = 1/(2*pi*par.R0*sqrt(par.rho))*sqrt(3*par.gamma*par.P0+ (3*par.gamma-1)*2*par.sigma_R0/par.R0  + 4*par.chi/par.R0);
 par.omega = 3*par.P0*par.gamma/par.R0^2/par.rho+4*par.chi/par.R0^3/par.rho;
 par.delta = par.R0/par.c + 4*par.mu/(par.rho*par.R0^2*par.omega) + 4*par.S_vis/(par.rho*par.R0^3*par.omega);
-par.fresonance = par.f0*sqrt(1-par.delta^2/2)/1E6 ; %MHz
+par.fresonance = par.f0*sqrt(1-par.delta^2/2)/1E6  %MHz
+
+%% Create p_driv manually
+w_driving   = 2*pi*par.f;
+gauss_dl    = 12/par.f;
+gauss_win   = 6/par.f;
+dt = 1/(2*9*f);
+t_p_driv = [1:600]*dt;
+
+p_driv   = 1E2*exp( - ((t_p_driv-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t_p_driv-gauss_dl));
 %% ========================= Solve ODE with Marmottant ==================================================
 T_start = t_p_driv(1) ;
 T_end   = t_p_driv(end)   ;
@@ -76,9 +86,11 @@ R_ = R(:,1);
 
 V_dd_norm = (4*pi*R_.*(R_.*R_dd+2.*R_d.^2))';     % Should be divided by the total volume
 
-r = par.R0;
-psc = par.rho*R_./r.*((2*R_d.^2 + R_.*R_dd) - R_.^3.*R_d.^2./(2.*r^3));
-disp(['Pressure @ ' num2str(r) ' [um] is ', num2str(max(psc)) ' [Pa].'])
+r = R_;
+psc1 = par.rho*R_./r.*((2*R_d.^2 + R_.*R_dd) - R_.^3.*R_d.^2./(2.*r.^3));
+psc2 = par.rho*V_dd_norm/4/pi./r';
+psc2 = par.rho*V_dd_norm/4/pi./r' - par.rho*R_.d.^2.*(R_/r).^4;
+disp(['Pressure @ ' num2str(max(r)) ' [um] is ', num2str(max(psc1*1E-3)) ' [kPa].', num2str(max(psc2*1E-3)), '[kPa].'])
 %% ======================= Spectral Response ====================================================
 F_s = length(t_p_driv)/(abs(T_end) + abs(T_start));                    % [Hz] , 1/dt
 t_interval = [0 T_end]; % time interval to analyse
@@ -134,7 +146,7 @@ pr=plot(f_p,Sp_p-max(Sp_p),':','LineWidth', 1, 'color', fig_color);
 legend([m, pr], 'Radial', 'Driving pulse' )
 ylim([-45 max(Sp_r-max(Sp_r))]);
 ylabel('normalized amplitude [dB]'); title('power spectra'); box on;
-xlim([0 1e7]);
+xlim([0 3*f]);
 hold off;
 
 % Create Plot Radius-surface tension curve

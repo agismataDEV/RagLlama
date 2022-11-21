@@ -34,30 +34,31 @@ if (Bubble.N <=10 && Bubble.N>0)
     %%
     i_start = 1;
     i_end = domain.tdimpar;
-    depth =  33;
+    depth =  100;
     x_idx = round(size(plin.data,2)/2)+1;
     figure('WindowState','maximized');
-    hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,x_idx,depth)*1E-3,'-','LineWidth',2)
-    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.data(i_start:i_end,x_idx,depth)*1E-3, '--','LineWidth',2)
+%     hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.data(i_start:i_end,x_idx,depth)*1E-3, '-','LineWidth',2)
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,x_idx,depth)*1E-3,'-.','LineWidth',2)
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.contrastdata(i_start:i_end,x_idx,depth)*1E-3, '--','LineWidth',2)
     xlabel('Time [usec]')
     ylabel('Pressure [kPa]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
-    hl = legend('Linear','Total');
+    hl = legend('Linear','Contrast');
     grid on;
     title(['INCS Results after ',num2str(domain.beamiterations), ' Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(x_idx)),', ',num2str(dslice.pos(dslice.num)),', ', num2str(domain.par{3}(depth)),') [mm]'])
     
     F_s = 1/(domain.dtpar);                          % [Hz] , 1/dt
     [f_p,Sp_p] = Freq_Calc(plin.data(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
     figure('WindowState','maximized');
-    hold on;  plot(f_p*1E-6,Sp_p,'-','LineWidth',2)
-    [f_s,Sp_s] = Freq_Calc(pnl.data(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
-    hold on;  plot(f_s*1E-6,Sp_s,'--','LineWidth',2)
+    hold on;  plot(f_p*1E-6,Sp_p - max(Sp_p),'-','LineWidth',2)
+    [f_s,Sp_s] = Freq_Calc(pnl.contrastdata(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
+    hold on;  plot(f_s*1E-6,Sp_s - max(Sp_s),'--','LineWidth',2)
     xlabel('Frequency [MHz]')
     ylabel('Amplitude [dB]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
-    legend('Linear','Total')
+    legend('Linear','Scattered')
     grid on;
 %     ylim([max([Sp_p; Sp_s])-70 max([Sp_p; Sp_s])])
     %% ============== Comparison of time signature based on ODE Solvers ====================================
@@ -210,8 +211,8 @@ if (Bubble.N <=10 && Bubble.N>0)
     %======== Driving Frequency ======================
     freq        = medium.freq0;
     w_driving   = 2*pi*freq;
-    gauss_dl    = 6/freq;
-    gauss_win   = 3/freq;
+    gauss_dl    = 12/freq;
+    gauss_win   = 6/freq;
       
     domain.tpar_OS = interp(domain.tpar,OSFactor);
     domain.dtpar_OS = domain.tpar_OS(2) - domain.tpar_OS(1);
@@ -240,6 +241,7 @@ if (Bubble.N <=10 && Bubble.N>0)
     pnl.anN_map             = zeros(domain.tdimpar*OSFactor,1);
     
     [~,SliceIndex(2)] = min(abs(dslice.pos(dslice.num)-domain.par{domain.dimval(1)}));
+    [f_p,Sp_p] = Freq_Calc(Inc_Press(1,:),Fs);            % Spectrum of simulation
     % Iterate over k in x axis and m in z axis. This implementation is done for a y slice so the index in y equals always to the closest point of the slice position (SliceIndex(2))
     %% Generate the pressure that each microbubble understands at the iteration of interest
     P_scattered = zeros(Bubble.N,domain.tdimpar_OS);

@@ -34,8 +34,16 @@
 % ***********************************************************************************************************
 
 function [medium,domain,dslice,file,plin,pnl,Bubble] = BubbleCluster_Init(slicenumber)
+%SET EVERYTHING TO LATEX INTERPRETER
+list_factory = fieldnames(get(groot,'factory'));
+index_interpreter = find(contains(list_factory,'Interpreter'));
+for i = 1:length(index_interpreter)
+    default_name = strrep(list_factory{index_interpreter(i)},'factory','default');
+    set(groot, default_name,'latex');
+end
+
 %% Medium Parameters
-medium.freq0               = 1E6;                    %fundamental frequency
+medium.freq0               = 1.7E6;                    %fundamental frequency
 medium.c0                  = 1482;                     % Speed of Sound [m/sec]
 medium.rho0                = 1060;
 medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
@@ -46,7 +54,7 @@ Bubble.mindist           = 10e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 1;
+domain.beamiterations       = 3;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
@@ -56,10 +64,13 @@ domain.symmetry             = 0;
 
 %% File Parameters
 file.rootname            = 'TESTNeumann';
-file.dirname             = '../1MBs_Validation_sinc_all';
-file.dirname             = '../width_3cycl_round2/PW_2E5Pa_2micron_1MHz_2E4LS';
-file.dirname             = '../width_3cycl_round2/Phased_2E5Pa_2micron_1MHz_1E2MBs';
-file.dirname             = '../test/PW_1MB_convergence_3';
+file.dirname             = '../test/1E4P_12mPa_3cycles_1E3MBs_2_4um_9Fnyq';
+file.dirname             = '../Paper/Phased_2E5Pa_2micron_1MHz_1E5MBs';
+file.dirname             = '../ProtonBubbleSync/1PS_1MB_1_7MHz_10E3Pa';
+% file.dirname             = '../width_3cycl_round2/PW_2E5Pa_2micron_1MHz_2E4LS';
+% file.dirname             = '../width_3cycl_round2/Phased_2E5Pa_2micron_1MHz_1E2MBs';
+% file.dirname             = '../../../INCS_XWAVE/7_RESULTS/Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm';
+% file.dirname             = '../test/Cylinder';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 
@@ -85,9 +96,9 @@ if dslice.savedim(dslice.num) =='y'; domain.dimval = [2 1 3];end
 if dslice.savedim(dslice.num) =='x'; domain.dimval = [1 2 3];end
 if dslice.savedim(dslice.num) =='z'; domain.dimval = [3 1 2];end
 
-dslice.xlabel = ([upper(dslice.dims(domain.dimval(3))) ' [mm]']);
-dslice.ylabel = ([upper(dslice.dims(domain.dimval(2))) ' [mm]']);
-dslice.zlabel = ([upper(dslice.savedim(dslice.num)) ' [mm]']);
+dslice.xlabel = (['\textit{',(dslice.dims(domain.dimval(3))), '} [mm]']);
+dslice.ylabel = (['\textit{',(dslice.dims(domain.dimval(2))), '} [mm]']);
+dslice.zlabel = (['\textit{',(dslice.dims(domain.dimval(1))), '} [mm]']);
 
 file.focalplanename = [ dslice.savedim(dslice.num) int2string_ICS(dslice.num) ];
 

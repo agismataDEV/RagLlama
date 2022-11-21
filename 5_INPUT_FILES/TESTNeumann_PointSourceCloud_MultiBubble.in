@@ -24,7 +24,7 @@
 1.570796E+000		*** Thetay [rad]
 1.570796E+000		*** Thetat [rad]
 1.700000E+006		*** freq0  = Fundamental frequency [Hz]
-6.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+5.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
@@ -32,14 +32,14 @@
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave","pointsourcecloud"
 pointsourcecloud
 *** Parameters for point source cloud
-1.000000E+006	*** No. of Point Sources consisting the cluster
-1.000000E-001	*** Amplitude of One Point Source [Pa] (MonoEnergetic)
-1E-6			***	Distance from point source, where Pressure equal to above value [m] 
+1.000000E+000	*** No. of Point Sources consisting the cluster
+1.000000E+002	*** Amplitude of One Point Source [Pa] (MonoEnergetic)
+100E-6			***	Distance from point source, where Pressure equal to above value [m] 
 1E-6			*** R0		= Point Source Radius [m] 
-0.25 0.75	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.25 0.75	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.3 0.7  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
-1e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
+0.4 0.6	  	    *** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
+0.4 0.6 	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
+0.4 0.6  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+0.1E-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 *** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
 scatterer
 30		*** Order of the Temporal Finite Difference schemes
@@ -50,7 +50,7 @@ scatterer
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation
 0		***	Switch: Use Symmetry in the Y axis 
 1		*** Number of beams in which the total field is split
-25		*** Number of iterations of the first beam
+10		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 9		*** Number of slices to be stored
@@ -70,12 +70,12 @@ z 10.03
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-5.000000E+004		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
-1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
+1.000000E+003		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+60.00000E+000		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
-0.500000E+000		*** Twidth = Width of gaussian window
-6.000000E+000		*** Tdelay = Delay of gaussian window
+20.00000E+000		*** Twidth = Width of gaussian window
+20.00000E+000		*** Tdelay = Delay of gaussian window
 2					*** Power  = Power of gaussian window	
 ***************************
 ***  Switches  		***
@@ -125,24 +125,24 @@ gaussian
 microbubble		***	type of scatterer
 5.800000E-009   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
 0.072000E+000   *** sigma_w	 = Surface tension of water  [N/m]
-0.010000E+000   *** sigma_R0 = Initial surface tension   [N/m]
+0.036000E+000   *** sigma_R0 = Initial surface tension   [N/m]
 1.070000E+000   *** kappa	 = Gas polytropic exponent
 0.500000E+000	*** chi		 = Shell elasticity  
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius *** Normalize , 'none', 'time', 'radius', 'freq0_and_radius','Minnaert_and_radius'
 ****
-1.000000E+004	*** No. of Bubbles consisting the cluster
+1.000000E+000	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
 2.4E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
-0.25 0.75	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.25 0.75	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.3 0.5  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+0.4 0.6	  	    *** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
+0.4 0.6 	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
+0.4 0.6  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
 10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
-close
+all
 ***************************
 *** Residuals Directory ***
 ***************************

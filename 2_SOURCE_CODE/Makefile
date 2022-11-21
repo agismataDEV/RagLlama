@@ -27,7 +27,7 @@ LIBS		=  	$(LIBS_HDF5) $(LIBS_MPI) $(LIBS_FFTW3) -lz -lm -shared-intel
 CFLAGS_MKL 		= 	-mkl -liomp5 -lpthread -lm -qopenmp $(INC_PATH_MKL)
 CFLAGS_OPT 		= 	-O3 -funroll-all-loops #-xSSE4.2 -axAVX,CORE-AVX2 # -fast -ipo
 CFLAGS_DEBUG 	= 	-g -traceback -debug extended #-check all -fpe0 -warn 
-CFLAGS 			=  	-fpp -heap-arrays $(CFLAGS_DEBUG)  
+CFLAGS 			=  	-fpp -heap-arrays $(CFLAGS_OPT)  
 
 # For debugging use -g -check all -fpe0 -warn -traceback -debug extended
 FFTW_WRAPPERS   = 	-I fftw_wrappers.inc

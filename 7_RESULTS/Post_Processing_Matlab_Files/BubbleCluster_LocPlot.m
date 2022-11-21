@@ -65,12 +65,12 @@ if (Bubble.N >0 )
     ylim([min(domain.par{1}) max(domain.par{1})])
     zlim([min(domain.par{2}) max(domain.par{2})])
     
-    x = xlabel('Z [mm]');
+    x = xlabel('\textit{z} [mm]');
     set(x, 'Position',get(x, 'Position').*[1,1,1],'Rotation',10)
-    y = ylabel('X [mm]');
+    y = ylabel('\textit{x} [mm]');
     set(y, 'Position',get(y, 'Position').*[1,1,1],'Rotation',-21)
-    zlabel('Y [mm]')
-    title('Total Domain View')
+    zlabel('\textit{y} [mm]')
+    title('3D domain view')
     grid on
     hold off;
     
@@ -98,7 +98,7 @@ if (Bubble.N >0 )
     y = ylabel(dslice.ylabel);
     set(y, 'Position',get(y, 'Position').*[1,1,1],'Rotation',-21)
     zlabel(dslice.zlabel)
-    title([name,' Cluster Focused Region'])
+    title([upper(name(1)),lower(name(2:end)),' cluster focused region'])
     grid on
     hold off;
     
@@ -121,13 +121,13 @@ if (Bubble.N >0 )
         'EdgeColor','k', 'FaceColor' , [55 90 83]/255);%'#8BE5D3'); %% Visualization of slice
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ; r.FaceColor = [ 192 192 192]/255;end
     
-    xlim(round(10*([ domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(3))] + [-domain.dzpar domain.dzpar]))/10)
+    xlim(floor(10*(domain.min_dim(domain.dimval(3))-domain.dzpar))/10 + ceil(10*(domain.max_dim(domain.dimval(3))+domain.dzpar-(domain.min_dim(domain.dimval(3))-domain.dzpar)))/10*[0 1])
     ylim(round(10*([ domain.min_dim(domain.dimval(1)) domain.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10)
     
     xlabel(dslice.xlabel)
     ylabel(dslice.zlabel)
     
-    title([dslice.zlabel(1),' - ',dslice.xlabel(1), ' View of Focused Region'])
+    title([dslice.zlabel(1:end-5),dslice.xlabel(1:end-5), ' view of focused region'])
     grid on
     hold off;
     
@@ -144,7 +144,7 @@ if (Bubble.N >0 )
     xlabel(dslice.xlabel)
     ylabel(dslice.ylabel);
     
-    title([dslice.ylabel(1),' - ',dslice.xlabel(1), ' View of Focused Region'])
+    title([dslice.ylabel(1:end-5),dslice.xlabel(1:end-5), ' view of focused region'])
     grid on
     hold off;
     
@@ -167,7 +167,7 @@ if (Bubble.N >0 )
     xlabel(dslice.ylabel);
     ylabel(dslice.zlabel);
     
-    title([dslice.zlabel(1),' - ',dslice.ylabel(1), ' View of Focused Region'])
+    title([dslice.zlabel(1:end-5),dslice.ylabel(1:end-5), ' view of focused region'])
     grid on
     hold off;
     
@@ -187,6 +187,8 @@ if (Bubble.N >0 )
     % set(gcf, 'Color', 'w');
     set(gca, 'Color', 'none'); % Sets axes background
     set(gca,'FontSize',LocPlot_FontSize)
+    set(gcf,'Color','white')
+    
     %========================== Save plot ===================================
     % if (strcmp(file.saveplot,'yes'))
     %     saveas(f4,[file.savedir,'/',file.dirname,'_cluster_slice',int2str(dslice.num),'.jpg'])
@@ -197,17 +199,16 @@ if (Bubble.N >0 )
     if (sum(Bubble.Radius==0)==0)
         f5 = figure('WindowState','maximized');
         BinNum  = 100;
-        histfit(Bubble.Radius,BinNum,'Gamma','interpreter','latex');
+        histfit(Bubble.Radius,BinNum,'Gamma');
         h = get(gca,'Children');
         set(h(2),'FaceColor',[.8 .8 .8]) % Bar Properties
         set(h(1),'Color','blue')         % Line Properties
         %     set(h,'FaceColor','#404040')
         ax = gca;
-        ax.TickLabelInterpreter='latex';
         xlim([min(Bubble.Radius)-1E-10 max(Bubble.Radius)])
-        set(gca,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Radius [$\mu$m]'; ax.XLabel.Interpreter = 'latex';
-        ax.YLabel.String = 'No. of Microbubbles'; ax.YLabel.Interpreter = 'latex';
-        title('Microbubble Radius Distribution','interpreter','latex')
+        set(gca,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Radius [$\mu$m]'; 
+        ax.YLabel.String = 'No. of Microbubbles'; 
+        title('Microbubble Radius Distribution')
         set(gca, 'Color', 'white'); % Sets axes background
         set(gcf, 'Color', 'white'); % Sets axes background
         set(gca,'FontSize',30)

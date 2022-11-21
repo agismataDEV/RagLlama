@@ -715,10 +715,10 @@
 		read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.SOS5
 		read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.KAPPA5
 		read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.BETA5
-		read(iImportUNIT,*)
-		read(iImportUNIT,*)
-		read(iImportUNIT,*)
 		if (cModelParams.ContrastSourceType==iCI_SCATTERER) then
+            read(iImportUNIT,*)
+            read(iImportUNIT,*)
+            read(iImportUNIT,*)
 		
 			read(iImportUNIT,*,IOSTAT = readstatus) ScattererParams%ScType
 			call remove_CR(ScattererParams%ScType)
