@@ -165,7 +165,6 @@ CONTAINS
         integer iErr
         integer(i8b) ::                                iLi, iLx, iLy, iIndS, iIndS2
         character(len=1024)::                acTemp; 
-
 ! *****************************************************************************
 !
 !   I/O
@@ -445,7 +444,6 @@ CONTAINS
         type(Grid), pointer::                pcGridS, pcGridD
         integer(i8b) ::                                iLi, iLx, iLy, iIndS, iIndS2
         character(len=1024)::                acTemp; 
-
 ! *****************************************************************************
 !
 !   I/O
@@ -729,7 +727,6 @@ CONTAINS
                         iOmega, iLx, iLy, iLz, iIndS, iIndG, iIndSUpdate
         real(dp) ::                        dOmega, dCorrection, dKcutoff
         character(len=1024)::                acTemp; 
-
 ! *****************************************************************************
 !
 !   I/O
@@ -1061,7 +1058,6 @@ CONTAINS
                         iOmega, iLx, iLy, iLz, iIndS, iIndG, iIndSUpdate
         real(dp) ::                        dOmega, dCorrection, dKcutoff
         character(len=1024)::                acTemp; 
-
 ! *****************************************************************************
 !
 !   I/O
@@ -1155,7 +1151,6 @@ CONTAINS
         call InitGrid(cSliceD, cGridD%iProcN, cGridD%iProcID, (/.false., .false., .false., .false./)); 
         call GridDistr2CreateEmpty(cSliceS%cGrid); 
         call GridDistr2CreateEmpty(cSliceD%cGrid); 
-
         ! 4) Now we perform the convolution on each xyz-block we have stored locally and store the result
         call PrintToLog("Start the inner loop of the convolution", 3)
         ! For the T axis we assume that pcSpaceD%iDimT = pcSpaceS%iDimT and pcSpaceD%dTanT=pcSpaceS%dTanT

@@ -100,3 +100,13 @@ ParnacPointSourceCloud.f90 :
 1. Update from BubbleParams to ScattererParams
 2. Now a linear scatterer can be used from input file 
 
+=============================================================================================================
+21/11/2022 
+=============================================================================================================
+ParnacParamInit.f90 : 
+1. Now you can load a file if the dimensions are the same by using filename 
+
+ParnacPointSourceCloud.f90 : 
+1. Now a cube, a cylinder or a sphere can be generated as the bubble cloud
+2. Changes were made in the TrilinearInterpolation function in order to not give an error in the case of a point scatterer placed really close to a gridpoint coordinate.
+

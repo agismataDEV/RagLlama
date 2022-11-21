@@ -25,7 +25,6 @@
 1.570796E+000		*** Thetat [rad]
 1.700000E+006		*** freq0  = Fundamental frequency [Hz]
 5.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
-2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
 ************************************

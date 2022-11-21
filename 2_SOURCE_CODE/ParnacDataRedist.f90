@@ -8,7 +8,7 @@ MODULE ParnacDataRedist
 !
 !   Version Date    Comment
 !   ------- -----   -------
-!   1.0     090505  Original code (KH) 
+!   1.0     090505  Original code (KH)
 !
 !   Copyright (C)   Laboratory of Electromagnetic Research
 !                   Delft University of Technology, Delft, The Netherlands
@@ -37,19 +37,19 @@ MODULE ParnacDataRedist
 !
 !   MODULES USED
 !
-	USE Types 
+    USE Types
     USE Constants
-	USE ParnacGeneral
-	USE ParnacDataDef
-!	USE ParnacTransformInit
+    USE ParnacGeneral
+    USE ParnacDataDef
+!        USE ParnacTransformInit
 !    USE ParnacMPIDef
 
-	USE ParnacDataSpaceInit, ONLY : &
+    USE ParnacDataSpaceInit, ONLY: &
         GridDistr0CreateEmpty, GridDistr0Allocate, GridDistr0Deallocate, &
         GridDistr1CreateEmpty, GridDistr1Allocate, GridDistr1Deallocate, &
         GridDistr2Allocate, GridDistr2Deallocate
 
-	use, intrinsic :: iso_c_binding 
+    use, intrinsic :: iso_c_binding
 ! *****************************************************************************
 !
 !   GLOBAL DECLARATIONS
@@ -57,9 +57,9 @@ MODULE ParnacDataRedist
 !   none
 !
 
-IMPLICIT NONE
+    IMPLICIT NONE
 
-  	! include 'fftw3-mpi.f03'
+    ! include 'fftw3-mpi.f03'
 ! *****************************************************************************
 !
 !   CONTAINED SUBROUTINES AND FUNCTIONS
@@ -68,7 +68,7 @@ IMPLICIT NONE
 !   ReorderDistr2ToDistr1   sub   reorder a grid from distribution 2 to 1
 !   ReorderDistr0ToDistr1   sub   reorder a grid from distribution 0 to 1
 !   ReorderDistr1ToDistr0   sub   reorder a grid from distribution 1 to 0
-!   Distr2ObtainXYZBlock    sub   obtain a single frequency XYZ block from a 
+!   Distr2ObtainXYZBlock    sub   obtain a single frequency XYZ block from a
 !                                 grid
 !   Distr2ObtainYMirroredXYZBlock  sub  obtain a single frequency XYZ block
 !                                 from a grid in mirrored form
@@ -80,8 +80,8 @@ IMPLICIT NONE
 !
 CONTAINS
 
-SUBROUTINE ReorderDistr1ToDistr2(cGrid)
-	
+    SUBROUTINE ReorderDistr1ToDistr2(cGrid)
+
 ! =============================================================================
 !
 !   Programmer: Jasper de Koning / Koos Huijssen
@@ -96,7 +96,7 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 !
 !   DESCRIPTION
 !
-!   The subroutine ReorderDistr1ToDistr2 reorders the data in a grid from 
+!   The subroutine ReorderDistr1ToDistr2 reorders the data in a grid from
 !   distribution 1 to distr. 2, i.e. from a T-local distribution to an XYZ-
 !   local distribution. This involves a communication of the data between all
 !   processors.
@@ -115,11 +115,10 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 !   cGrid   io   type(Grid)   The grid that contains the data array which needs
 !                             to be redistributed.
 !
-	type(Grid), INTENT(inout) ::		cGrid;
-
+        type(Grid), INTENT(inout) ::                cGrid; 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   TotalProc   i8b   Total number of processors
 !   Local1T     i8b   Total T-positions on each processor in Distr. 1
@@ -134,17 +133,17 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 !   iErr        i4b   Error number
 !   acTemp      char  Temporary char array for output log messages
 !
-	integer(i8b) ::				TotalProc, Local1T, Local2T, Local1XYZ, Local2XYZ
-	integer(i8b) ::				iProcL, iT2L, iXYZ1L
-	integer(i8b) ::				iSrcInd, iDestInd
-	integer(i4b) ::				iErr
-	character(LEN = 2048) ::		acTemp;
+        integer(i8b) ::                                TotalProc, Local1T, Local2T, Local1XYZ, Local2XYZ
+        integer(i8b) ::                                iProcL, iT2L, iXYZ1L
+        integer(i8b) ::                                iSrcInd, iDestInd
+        integer(i4b) ::                                iErr
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -157,147 +156,142 @@ SUBROUTINE ReorderDistr1ToDistr2(cGrid)
 !   GridDistr2Allocate
 !   GridDistr1Deallocate
 !   PrintToLog
-!   
+!
 ! *****************************************************************************
 !
 !   PSEUDOCODE
 !
 !   Allocate the Distr. 2 array as a buffer
-!   Pack the data in Distr. 1 such that we have data blocks of size 
+!   Pack the data in Distr. 1 such that we have data blocks of size
 !     local2T*local1XYZ, to facilitate the redistribution of contiguous blocks.
 !     the stride in T is still 1...
 !   Redistribute the data across all processors to change from the T-local
 !     distribution 1 to the XYZ-local distribution 2
 !   Unpack the data in Distr. 2 such that the stride in XYZ becomes 1
 !   Deallocate the Distr. 1 array
-!   
+!
 ! =============================================================================
-	
-	write (acTemp, '("ReorderDistr1ToDistr2")');	call PrintToLog(acTemp, 3);
 
-	call SWStart(cswDBG1);
-	call SWStop(cswDBG1);
+        write (acTemp, '("ReorderDistr1ToDistr2")'); call PrintToLog(acTemp, 3); 
+        call SWStart(cswDBG1); 
+        call SWStop(cswDBG1); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockRedist1_2)
 
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist1_2)
-	
-	! If it is not in the correct distribution, we can do nothing and return an error
-	if (cGrid.iDistr /= 1) then
-			write (acTemp, '("ReorderDistr1ToDistr2: the grid provided as input is not in distribution 1, but in distribution ", I3, "")') cGrid%iDistr;
-			call PrintToLog(acTemp, -1);
-		stop
-	end if
+        ! If it is not in the correct distribution, we can do nothing and return an error
+        if (cGrid.iDistr /= 1) then
+            write (acTemp, '("ReorderDistr1ToDistr2: the grid provided as input is not in distribution 1, but in distribution ", I3, "")') cGrid%iDistr; 
+            call PrintToLog(acTemp, -1); 
+            stop
+        end if
 
-    ! If iProcN = 1, then the grid is in T-local as well as XYZ-local distribution,
-    ! no need to redistribute
-    if (cGrid.iProcN>1) then
+        ! If iProcN = 1, then the grid is in T-local as well as XYZ-local distribution,
+        ! no need to redistribute
+        if (cGrid.iProcN > 1) then
 
-	    write (acTemp, '("Allocate mem for redistribution")');	call PrintToLog(acTemp, 4);
-	    ! First we allocate cGrid.pacD2, we use this as a buffer
-	    call GridDistr2Allocate(cGrid);
+            write (acTemp, '("Allocate mem for redistribution")'); call PrintToLog(acTemp, 4); 
+            ! First we allocate cGrid.pacD2, we use this as a buffer
+            call GridDistr2Allocate(cGrid); 
+            !Initialize redistribution variables (for an easier understanding of the redistribution process)
+            TotalProc = cGrid.iProcN
+            Local1T = cGrid.iD2GlobN        ! = cGrid.iD1TL = cSpace%iDimT+1
+            Local2XYZ = cGrid.iD1GlobN        ! = cGrid.iD1GlobN = cSpace%iDimX * cSpace%iDimY * cSpace%iDimZ
+            Local1XYZ = cGrid.iD1LocN        ! = Local2XYZ/cGrid.iProcN
+            Local2T = cGrid.iD2LocN        ! = Local1T/cGrid.iProcN
 
-	    !Initialize redistribution variables (for an easier understanding of the redistribution process)
-	    TotalProc = cGrid.iProcN
-	    Local1T   = cGrid.iD2GlobN	! = cGrid.iD1TL = cSpace%iDimT+1
-	    Local2XYZ = cGrid.iD1GlobN	! = cGrid.iD1GlobN = cSpace%iDimX * cSpace%iDimY * cSpace%iDimZ
-	    Local1XYZ = cGrid.iD1LocN	! = Local2XYZ/cGrid.iProcN
-	    Local2T   = cGrid.iD2LocN	! = Local1T/cGrid.iProcN
-	
-	    write (acTemp, '(" Pack")');	call PrintToLog(acTemp, 4);
-!	     Previous Implementation
-!	     We continue by packing the data into the second buffer
+            write (acTemp, '(" Pack")'); call PrintToLog(acTemp, 4); 
+!             Previous Implementation
+!             We continue by packing the data into the second buffer
 
-		! PacD1 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1TN, XYZ2T1 XYZ2T2 .... XYZ2TN ...
-		do iProcl = 0, TotalProc-1
-		     do iT2l = 0, Local2T-1
-			    
-			    iSrcInd = 1 + iT2l + iProcl*Local2T
-			    iDestInd = 1+iT2l+iProcl*Local2T*Local1XYZ
-			    cGrid.pacD2(iDestInd:(iProcL+1)*Local2T*LocaL1XYZ:Local2T) = cGrid.pacD1(iSrcInd : Local1T*Local1XYZ : Local1T)
+            ! PacD1 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1TN, XYZ2T1 XYZ2T2 .... XYZ2TN ...
+            do iProcl = 0, TotalProc - 1
+                do iT2l = 0, Local2T - 1
 
-		    end do
-	    end do
-		! PacD2 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS), XYZ2T1 XYZ2T2 .... XYZ2T(N/CPUS), XYZNT1 XYZNT2 .... XYZNT(N/CPUS),
-		! XYZ1T(N/CPUS+1) XYZ1T(N/CPUS+2) XYZ1T(N/CPUS+3) ..... XYZ1T(N/CPUS+ N/CPUS), ...
- 	    
-!	     Now we have allocated the buffer space and have packed the data, it is time to start with 
-!	     the distributing itself. We have to send one block of data from each processor, to each other processor. 
+                    iSrcInd = 1 + iT2l + iProcl*Local2T
+                    iDestInd = 1 + iT2l + iProcl*Local2T*Local1XYZ
+                    cGrid.pacD2(iDestInd:(iProcL + 1)*Local2T*LocaL1XYZ:Local2T) = cGrid.pacD1(iSrcInd:Local1T*Local1XYZ:Local1T)
+
+                end do
+            end do
+            ! PacD2 now has the format XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS), XYZ2T1 XYZ2T2 .... XYZ2T(N/CPUS), XYZNT1 XYZNT2 .... XYZNT(N/CPUS),
+            ! XYZ1T(N/CPUS+1) XYZ1T(N/CPUS+2) XYZ1T(N/CPUS+3) ..... XYZ1T(N/CPUS+ N/CPUS), ...
+
+!             Now we have allocated the buffer space and have packed the data, it is time to start with
+!             the distributing itself. We have to send one block of data from each processor, to each other processor.
 !         This is done by the MPI_Alltoall primitive.
-	    ! write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
-        call MPI_Alltoall(cGrid.pacD2,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          cGrid.pacD1,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          MPI_COMM_WORLD,           &
-                          iErr)
-		
+            ! write (acTemp, '(" Communicate")');        call PrintToLog(acTemp, 4);
+            call MPI_Alltoall(cGrid.pacD2, &
+                              int(Local1XYZ*Local2T), &
+                              MPI_DOUBLE_COMPLEX, &
+                              cGrid.pacD1, &
+                              int(Local1XYZ*Local2T), &
+                              MPI_DOUBLE_COMPLEX, &
+                              MPI_COMM_WORLD, &
+                              iErr)
 
-		! with MPI_ALLTOALL each processor gets an array for the first N/CPUS time from all the process so
-		! pacD1 has the form XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS),XYZ2T1 XYZ2T2 XYZ2T3 ..... XYZ2T(N/CPUS),XYZNT1 XYZNT2 XYZNT3 ..... XYZNT(N/CPUS)
+            ! with MPI_ALLTOALL each processor gets an array for the first N/CPUS time from all the process so
+            ! pacD1 has the form XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS),XYZ2T1 XYZ2T2 XYZ2T3 ..... XYZ2T(N/CPUS),XYZNT1 XYZNT2 XYZNT3 ..... XYZNT(N/CPUS)
 
-! MPI_Alltoall is an out-of-place command, which means that the redistribution 
-! of the data needs two buffers to be allocated simultaneously. This makes it 
-! expensive in terms of memory usage. To improve this, in the future we may 
+! MPI_Alltoall is an out-of-place command, which means that the redistribution
+! of the data needs two buffers to be allocated simultaneously. This makes it
+! expensive in terms of memory usage. To improve this, in the future we may
 ! adopt an alternative implementation; maybe the implementation using non-
 ! blocking Sends and Receives that is included below (and that is also out-
 ! of-place) aids in the implementation.
 !
-!	    do iProcl = 0, TotalProc-1
-!		    call MPI_ISend(cGrid.pacD2(1 + iProcl * Local1XYZ*Local2T),  &
-!				    int(Local1XYZ*Local2T), &
-!				    MPI_DOUBLE_COMPLEX, &
-!				    int(iProcl),	&
-!				    int(cGrid.iProcID),	&
-!				    MPI_COMM_WORLD, &
-!				    aiReqSent(iProcl+1), &
-!				    iErr);
+!            do iProcl = 0, TotalProc-1
+!                    call MPI_ISend(cGrid.pacD2(1 + iProcl * Local1XYZ*Local2T),  &
+!                                    int(Local1XYZ*Local2T), &
+!                                    MPI_DOUBLE_COMPLEX, &
+!                                    int(iProcl),        &
+!                                    int(cGrid.iProcID),        &
+!                                    MPI_COMM_WORLD, &
+!                                    aiReqSent(iProcl+1), &
+!                                    iErr);
 !           end do
 !            do iProcl = 0, TotalProc-1
-!		    call MPI_IRecv(cGrid.pacD1(1 + iProcl * Local1XYZ*Local2T), &
-!				    int(Local1XYZ*Local2T), &
-!				    MPI_DOUBLE_COMPLEX, &
-!				    int(iProcl), &
-!				    int(iProcl), &
-!				    MPI_COMM_WORLD, &
-!				    aiReqRecv(iProcl+1), &
-!				    iErr);
-!	    end do
-!	    
-!	    write (acTemp, '(" Synchronize")');	call PrintToLog(acTemp, 4);
-!	    ! We wait untill we have obtained and sent all the blocks
-!	    do iProcl = 0, TotalProc-1
-!		    call MPI_Wait(aiReqRecv(iProcl+1), aiStatus, iErr);
-!		    call MPI_Wait(aiReqSent(iProcl+1), aiStatus, iErr);
-!	    end do
+!                    call MPI_IRecv(cGrid.pacD1(1 + iProcl * Local1XYZ*Local2T), &
+!                                    int(Local1XYZ*Local2T), &
+!                                    MPI_DOUBLE_COMPLEX, &
+!                                    int(iProcl), &
+!                                    int(iProcl), &
+!                                    MPI_COMM_WORLD, &
+!                                    aiReqRecv(iProcl+1), &
+!                                    iErr);
+!            end do
+!
+!            write (acTemp, '(" Synchronize")');        call PrintToLog(acTemp, 4);
+!            ! We wait untill we have obtained and sent all the blocks
+!            do iProcl = 0, TotalProc-1
+!                    call MPI_Wait(aiReqRecv(iProcl+1), aiStatus, iErr);
+!                    call MPI_Wait(aiReqSent(iProcl+1), aiStatus, iErr);
+!            end do
 
-		! pacD1 has the form XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS),XYZ2T1 XYZ2T2 XYZ2T3 ..... XYZ2T(N/CPUS),XYZNT1 XYZNT2 XYZNT3 ..... XYZNT(N/CPUS)
-	    write (acTemp, '(" Unpack")');	call PrintToLog(acTemp, 4);
-	    ! Now we have distributed all the data, it will still be a mess, it is not yet in distribution 2. At this
-	    !  moment the data is still distributed such that the stride in T-Direction is 1. So, to finish this job,
-	    !  we have to redistribute this data again, but now locally.
-	    !
-	    ! The index of the destination can be written as:
-	    !  A(x, y, z, i) = Av(x + y * Sy + z * Sz + i * Si), the data as we get it is not in a nice order
-	    !  , we can find the value of i easily (this is T), it is hard however to obtain the 
-	    !  x, y, z values. However, we can find x + y * Sy + z * Sz = iBl + iPl * cGrid.iD0LocN,
-	    !  because the t-blocks were block distributed over the processes in distribution 0,1.
-	    do iT2l = 0, Local2T-1
-			cGrid.pacD2( 1 +iT2l*Local2XYZ : Local2XYZ*(iT2l+1)) = cGrid.pacD1(1 +iT2l: Local2T*Local2XYZ : Local2T)
-		enddo
-	    ! We finish by deallocating the space that was used by distribution 1
-	    call GridDistr1DeAllocate(cGrid);
-		! pacD2 now has the form XYZ1T1 XYZ2T1 XYZ3T1 XYZ4T1 ... XYZNT1, XYZ1T2 XYZ2T2 ... XYZNT2, ... , XYZ1TN XYZ2TN ... XYZNTN
-		
-    end if
-	! And finally, we can set the flag to 2!
-	cGrid.iDistr		= 2;
+            ! pacD1 has the form XYZ1T1 XYZ1T2 XYZ1T3 ..... XYZ1T(N/CPUS),XYZ2T1 XYZ2T2 XYZ2T3 ..... XYZ2T(N/CPUS),XYZNT1 XYZNT2 XYZNT3 ..... XYZNT(N/CPUS)
+            write (acTemp, '(" Unpack")'); call PrintToLog(acTemp, 4); 
+            ! Now we have distributed all the data, it will still be a mess, it is not yet in distribution 2. At this
+            !  moment the data is still distributed such that the stride in T-Direction is 1. So, to finish this job,
+            !  we have to redistribute this data again, but now locally.
+            !
+            ! The index of the destination can be written as:
+            !  A(x, y, z, i) = Av(x + y * Sy + z * Sz + i * Si), the data as we get it is not in a nice order
+            !  , we can find the value of i easily (this is T), it is hard however to obtain the
+            !  x, y, z values. However, we can find x + y * Sy + z * Sz = iBl + iPl * cGrid.iD0LocN,
+            !  because the t-blocks were block distributed over the processes in distribution 0,1.
+            do iT2l = 0, Local2T - 1
+                cGrid.pacD2(1 + iT2l*Local2XYZ:Local2XYZ*(iT2l + 1)) = cGrid.pacD1(1 + iT2l:Local2T*Local2XYZ:Local2T)
+            end do
+            ! We finish by deallocating the space that was used by distribution 1
+            call GridDistr1DeAllocate(cGrid); 
+            ! pacD2 now has the form XYZ1T1 XYZ2T1 XYZ3T1 XYZ4T1 ... XYZNT1, XYZ1T2 XYZ2T2 ... XYZNT2, ... , XYZ1TN XYZ2TN ... XYZNTN
 
-	call SWStop(cswBlock);	call SWStop(cswBlockRedist1_2)
-END SUBROUTINE ReorderDistr1ToDistr2
+        end if
+        ! And finally, we can set the flag to 2!
+        cGrid.iDistr = 2; 
+        call SWStop(cswBlock); call SWStop(cswBlockRedist1_2)
+    END SUBROUTINE ReorderDistr1ToDistr2
 
-SUBROUTINE ReorderDistr2ToDistr1(cGrid)
-	
+    SUBROUTINE ReorderDistr2ToDistr1(cGrid)
+
 ! =============================================================================
 !
 !   Programmer: Jasper de Koning / Koos Huijssen
@@ -312,7 +306,7 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 !
 !   DESCRIPTION
 !
-!   The subroutine ReorderDistr2ToDistr1 performs the inverse operation of 
+!   The subroutine ReorderDistr2ToDistr1 performs the inverse operation of
 !   ReorderDistr1ToDistr2. See its header for more info.
 !
 ! *****************************************************************************
@@ -322,11 +316,10 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 !   cGrid   io   type(Grid)   The grid that contains the data array which needs
 !                             to be redistributed.
 !
-	type(Grid), INTENT(inout) ::		cGrid;
-
+        type(Grid), INTENT(inout) ::                cGrid; 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   TotalProc   i8b   Total number of processors
 !   Local1T     i8b   Total T-positions on each processor in Distr. 1
@@ -341,20 +334,20 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 !   iErr        i4b   Error number
 !   acTemp      char  Temporary char array for output log messages
 !
-	integer(i8b) ::				TotalProc, Local1T, Local2T, Local1XYZ, Local2XYZ
-	integer(i8b) ::				iProcl,    iT2l, iXYZ1L
-	integer(i8b) ::				iSrcInd, iDestInd
-	integer(i4b) ::				iErr;
-	character(LEN = 2048) ::		acTemp;
-!	integer(i4b)::			aiStatus(MPI_STATUS_SIZE) 
-!	integer(i4b)::			aiReqSent(cGrid.iProcN), aiReqRecv(cGrid.iProcN);
-	
+        integer(i8b) ::                                TotalProc, Local1T, Local2T, Local1XYZ, Local2XYZ
+        integer(i8b) ::                                iProcl, iT2l, iXYZ1L
+        integer(i8b) ::                                iSrcInd, iDestInd
+        integer(i4b) ::                                iErr; 
+        character(LEN=2048) ::                acTemp; 
+!        integer(i4b)::                        aiStatus(MPI_STATUS_SIZE)
+!        integer(i4b)::                        aiReqSent(cGrid.iProcN), aiReqRecv(cGrid.iProcN);
+
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -367,138 +360,132 @@ SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 !   GridDistr2Allocate
 !   GridDistr1Deallocate
 !   PrintToLog
-!   
+!
 ! =============================================================================
-	
-	write (acTemp, '("ReorderDistr2ToDistr1")');	call PrintToLog(acTemp, 3);
 
-	call SWStart(cswDBG1);
-	call SWStop(cswDBG1);
+        write (acTemp, '("ReorderDistr2ToDistr1")'); call PrintToLog(acTemp, 3); 
+        call SWStart(cswDBG1); 
+        call SWStop(cswDBG1); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockRedist2_1)
 
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist2_1)
+        ! If it is not in the correct distribution, we can do nothing and return an error
+        if (cGrid.iDistr /= 2) then
+            write (acTemp, '("ReorderDistr2ToDistr1: the grid provided as input is not in distribution 2, but in distribution ", I3, "")') cGrid%iDistr; 
+            call PrintToLog(acTemp, -1); 
+            stop
+        end if
 
-	! If it is not in the correct distribution, we can do nothing and return an error
-	if (cGrid.iDistr /= 2) then
-			write (acTemp, '("ReorderDistr2ToDistr1: the grid provided as input is not in distribution 2, but in distribution ", I3, "")') cGrid%iDistr;
-			call PrintToLog(acTemp, -1);
-		stop
-	end if
+        ! If iProcN = 1, then the grid is in T-local as well as XYZ-local distribution,
+        ! no need to redistribute
+        if (cGrid.iProcN > 1) then
 
-    ! If iProcN = 1, then the grid is in T-local as well as XYZ-local distribution,
-    ! no need to redistribute
-    if (cGrid.iProcN>1) then
+            ! First we allocate cGrid.acD1, we use this as a buffer
+            write (acTemp, '("Allocate mem for redistribution")'); call PrintToLog(acTemp, 4); 
+            call GridDistr1Allocate(cGrid); 
+            !Initialize redistribution variables (for better understanding of the redistribution)
+            TotalProc = cGrid.iProcN
+            Local1T = cGrid.iD1TL                                                ! = cGrid.iD2GlobN
+            Local2T = cGrid.iD1TL/cGrid.iProcN                ! = cGrid.iD2LocN
+            Local1XYZ = cGrid.iD1GlobN/cGrid.iProcN                ! = cGrid.iD1LocN
+            Local2XYZ = cGrid.iD1GlobN
 
-	    ! First we allocate cGrid.acD1, we use this as a buffer
-	    write (acTemp, '("Allocate mem for redistribution")');	call PrintToLog(acTemp, 4);
-	    call GridDistr1Allocate(cGrid);
+            ! We continue by packing the data into the second buffer
+            write (acTemp, '(" Pack")'); call PrintToLog(acTemp, 4); 
+            do iT2l = 0, Local2T - 1
+                cGrid.pacD1(1 + iT2l:Local2T*Local2XYZ:Local2T) = cGrid.pacD2(1 + iT2l*Local2XYZ:Local2XYZ*(iT2l + 1)); 
+            end do
 
-	    !Initialize redistribution variables (for better understanding of the redistribution)
-	    TotalProc = cGrid.iProcN
-	    Local1T   = cGrid.iD1TL						! = cGrid.iD2GlobN
-	    Local2T   = cGrid.iD1TL/cGrid.iProcN		! = cGrid.iD2LocN
-	    Local1XYZ = cGrid.iD1GlobN/cGrid.iProcN		! = cGrid.iD1LocN
-	    Local2XYZ = cGrid.iD1GlobN
+            ! Now we have allocated the buffer space and have packed the data, it is time to start with
+            ! the distributing itself. We have to send one block of data from each processor, to each other processor.
+            ! We will do this using synchronous sends (ISend). We did not opt for the usage of MPI_Alltoall, because
+            ! this operation is not in-place. This command is not inplace either, but we could fiddle around with it for a bit,
+            ! such that it might BECOME inplace. Therefore, to keep options open we use this method.
+            write (acTemp, '(" Communicate")'); call PrintToLog(acTemp, 4); 
+            call MPI_Alltoall(cGrid.pacD1, &
+                              int(Local1XYZ*Local2T), &
+                              MPI_DOUBLE_COMPLEX, &
+                              cGrid.pacD2, &
+                              int(Local1XYZ*Local2T), &
+                              MPI_DOUBLE_COMPLEX, &
+                              MPI_COMM_WORLD, &
+                              iErr)
 
-	    ! We continue by packing the data into the second buffer
-	    write (acTemp, '(" Pack")');	call PrintToLog(acTemp, 4);
-	    do iT2l = 0, Local2T-1
-			cGrid.pacD1(1 +iT2l: Local2T*Local2XYZ : Local2T) = cGrid.pacD2( 1 +iT2l*Local2XYZ : Local2XYZ*(iT2l+1));
-		enddo
-
-	    ! Now we have allocated the buffer space and have packed the data, it is time to start with 
-	    ! the distributing itself. We have to send one block of data from each processor, to each other processor. 
-	    ! We will do this using synchronous sends (ISend). We did not opt for the usage of MPI_Alltoall, because
-	    ! this operation is not in-place. This command is not inplace either, but we could fiddle around with it for a bit,
-	    ! such that it might BECOME inplace. Therefore, to keep options open we use this method.
-	    write (acTemp, '(" Communicate")');	call PrintToLog(acTemp, 4);
-		
-        call MPI_Alltoall(cGrid.pacD1,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          cGrid.pacD2,              &
-                          int(Local1XYZ*Local2T),   &
-                          MPI_DOUBLE_COMPLEX,       &
-                          MPI_COMM_WORLD,           &
-                          iErr)
-
-    !	if (cGrid.iProcN > 1) then
-    !		call SWStart(cswDBG1);
+            !        if (cGrid.iProcN > 1) then
+            !                call SWStart(cswDBG1);
     !!KH Is this one necessary since the MPI_WAIT is also included???
-    !        call MPI_Barrier(MPI_COMM_WORLD, iErr);
-    !		call SWStop(cswDBG1);
-    !	end if
-    !	do iProcl = 0, TotalProc-1
-    !		call MPI_ISend(cGrid.pacD1(1 + iProcl * Local1XYZ*Local2T),  &
-    !				int(Local1XYZ*Local2T), &
-    !				MPI_DOUBLE_COMPLEX, &
-    !				int(iProcl),	&
-    !				int(cGrid.iProcID),	&
-    !				MPI_COMM_WORLD, &
-    !				aiReqSent(iProcl+1), &
-    !				iErr);
-    !		call MPI_IRecv(cGrid.pacD2(1 + iProcl * Local1XYZ*Local2T), &
-    !				int(Local1XYZ*Local2T), &
-    !				MPI_DOUBLE_COMPLEX, &
-    !				int(iProcl), &
-    !				int(iProcl), &
-    !				MPI_COMM_WORLD, &
-    !				aiReqRecv(iProcl+1), &
-    !				iErr);
-    !	end do
-    !	
-    !	! We wait untill we have obtained and sent all the blocks
-    !	write (acTemp, '(" Synchronize")');	call PrintToLog(acTemp, 4);
-    !	do iProcl = 0, TotalProc-1
-    !		call MPI_Wait(aiReqRecv(iProcl+1), aiStatus, iErr);
-    !		call MPI_Wait(aiReqSent(iProcl+1), aiStatus, iErr);
-    !	end do
-	    
-	    ! Now we have distributed all the data, it will still be a mess, it is not yet in distribution 1. At this
-	    !  moment the data is still distributed such that the stride in T-Direction is big. So, to finish this job
-	    !  we have to redistribute this data again, but now locally.
-	    !
-	    ! The index of the destination can be written as: A(t, i) = Av(t + i * Si), the data as we get it is not 
-	    !  in a nice order. It is stored as: A_org(t, i) = A_org(p*cGrid.iD1TL/cGrid.iProcN + t, i), with p
-	    !  the ID of the processor that sent the data. So, we get:	!
-	    write (acTemp, '(" Unpack")');	call PrintToLog(acTemp, 4);
-		do iProcl = 0, TotalProc-1
-		     do iT2l = 0, Local2T-1
-			    
-			    iSrcInd = 1+iT2l+iProcl*Local2T*Local1XYZ
-			    iDestInd = 1 + iT2l + iProcl*Local2T
-			    cGrid.pacD1(iDestInd : Local1T*Local1XYZ : Local1T) = cGrid.pacD2(iSrcInd:(iProcL+1)*Local2T*LocaL1XYZ:Local2T);
+            !        call MPI_Barrier(MPI_COMM_WORLD, iErr);
+            !                call SWStop(cswDBG1);
+            !        end if
+            !        do iProcl = 0, TotalProc-1
+            !                call MPI_ISend(cGrid.pacD1(1 + iProcl * Local1XYZ*Local2T),  &
+            !                                int(Local1XYZ*Local2T), &
+            !                                MPI_DOUBLE_COMPLEX, &
+            !                                int(iProcl),        &
+            !                                int(cGrid.iProcID),        &
+            !                                MPI_COMM_WORLD, &
+            !                                aiReqSent(iProcl+1), &
+            !                                iErr);
+            !                call MPI_IRecv(cGrid.pacD2(1 + iProcl * Local1XYZ*Local2T), &
+            !                                int(Local1XYZ*Local2T), &
+            !                                MPI_DOUBLE_COMPLEX, &
+            !                                int(iProcl), &
+            !                                int(iProcl), &
+            !                                MPI_COMM_WORLD, &
+            !                                aiReqRecv(iProcl+1), &
+            !                                iErr);
+            !        end do
+            !
+            !        ! We wait untill we have obtained and sent all the blocks
+            !        write (acTemp, '(" Synchronize")');        call PrintToLog(acTemp, 4);
+            !        do iProcl = 0, TotalProc-1
+            !                call MPI_Wait(aiReqRecv(iProcl+1), aiStatus, iErr);
+            !                call MPI_Wait(aiReqSent(iProcl+1), aiStatus, iErr);
+            !        end do
 
-		    end do
-	    end do
+            ! Now we have distributed all the data, it will still be a mess, it is not yet in distribution 1. At this
+            !  moment the data is still distributed such that the stride in T-Direction is big. So, to finish this job
+            !  we have to redistribute this data again, but now locally.
+            !
+            ! The index of the destination can be written as: A(t, i) = Av(t + i * Si), the data as we get it is not
+            !  in a nice order. It is stored as: A_org(t, i) = A_org(p*cGrid.iD1TL/cGrid.iProcN + t, i), with p
+            !  the ID of the processor that sent the data. So, we get:        !
+            write (acTemp, '(" Unpack")'); call PrintToLog(acTemp, 4); 
+            do iProcl = 0, TotalProc - 1
+                do iT2l = 0, Local2T - 1
 
-	    ! We finish by deallocating the space that was used by distribution 2
-	    call GridDistr2DeAllocate(cGrid);
-	
-    end if
+                    iSrcInd = 1 + iT2l + iProcl*Local2T*Local1XYZ
+                    iDestInd = 1 + iT2l + iProcl*Local2T
+                    cGrid.pacD1(iDestInd:Local1T*Local1XYZ:Local1T) = cGrid.pacD2(iSrcInd:(iProcL + 1)*Local2T*LocaL1XYZ:Local2T); 
+                end do
+            end do
 
-	! And finally, we can set the flag to 1!
-	cGrid.iDistr		= 1;
-	call SWStop(cswBlock);	call SWStop(cswBlockRedist2_1)
-END SUBROUTINE ReorderDistr2ToDistr1
+            ! We finish by deallocating the space that was used by distribution 2
+            call GridDistr2DeAllocate(cGrid); 
+        end if
+
+        ! And finally, we can set the flag to 1!
+        cGrid.iDistr = 1; 
+        call SWStop(cswBlock); call SWStop(cswBlockRedist2_1)
+    END SUBROUTINE ReorderDistr2ToDistr1
 
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! %
-! % 		ReorderDistr0ToDistr1
+! %                 ReorderDistr0ToDistr1
 ! %
 ! % Transform a cGrid from Distribution 0 to Distribution 1. We do not deallocate the data in
-! % distribution 0. 
+! % distribution 0.
 ! % Input:
-! % 	cGrid: this grid should obviously be in distribution 0. 
-! % Output 
-! % 	cGrid: The same data, but now stored in distribution 1. If pacD1 was already allocated
-! %		the data stored in it is overwritten and is lost for all eternity. The data
-! %		in parD0 will not be deallocated however.
+! %         cGrid: this grid should obviously be in distribution 0.
+! % Output
+! %         cGrid: The same data, but now stored in distribution 1. If pacD1 was already allocated
+! %                the data stored in it is overwritten and is lost for all eternity. The data
+! %                in parD0 will not be deallocated however.
 ! %
-! %	We assume that cGrid.iD1T = 1 <--- Should be better
+! %        We assume that cGrid.iD1T = 1 <--- Should be better
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-SUBROUTINE ReorderDistr0ToDistr1(cGrid)
-	
+    SUBROUTINE ReorderDistr0ToDistr1(cGrid)
+
 ! =============================================================================
 !
 !   Programmer: Jasper de Koning / Koos Huijssen
@@ -513,14 +500,14 @@ SUBROUTINE ReorderDistr0ToDistr1(cGrid)
 !
 !   DESCRIPTION
 !
-!   The subroutine ReorderDistr0ToDistr1 reorders the data in a grid from 
+!   The subroutine ReorderDistr0ToDistr1 reorders the data in a grid from
 !   distribution 0 to distr. 1, i.e. from a T-local distribution, real numbers,
-!   no wraparound region in T, to a T-local distribution, real numbers stored 
-!   in complex data type, including wraparound region in T. It is memory 
-!   intensive as it has two buffers in memory simultaneously, however it is 
+!   no wraparound region in T, to a T-local distribution, real numbers stored
+!   in complex data type, including wraparound region in T. It is memory
+!   intensive as it has two buffers in memory simultaneously, however it is
 !   never a bottleneck as ReorderDistr1ToDistr2 takes much more memory.
 !
-!   One unnecessary assumption in the current implementation is that 
+!   One unnecessary assumption in the current implementation is that
 !   cGrid.iD1T = 1. This could be generalized but this is not very urgent.
 !
 ! *****************************************************************************
@@ -530,22 +517,22 @@ SUBROUTINE ReorderDistr0ToDistr1(cGrid)
 !   cGrid   io   type(Grid)   The grid that contains the data array which needs
 !                             to be redistributed.
 !
-	type(Grid), intent(inout)::	cGrid
+        type(Grid), intent(inout)::        cGrid
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   iLI      i8b   Loop counter over all XYZ-positions
 !   acTemp   char  Temporary char array for output log messages
 !
-	integer(i8b) ::			iLT, iLI
-	character(LEN = 2048) ::		acTemp;
+        integer(i8b) ::                        iLT, iLI
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -555,46 +542,44 @@ SUBROUTINE ReorderDistr0ToDistr1(cGrid)
 !   GridDistr1CreateEmpty
 !   GridDistr0Deallocate
 !   PrintToLog
-!   
+!
 ! =============================================================================
-	
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist0_1)
-	write (acTemp, '("ReorderDistr0ToDistr1")');	call PrintToLog(acTemp, 3);
-	! First we will check whether we are in distribution 0
-	if (cGrid.iDistr /= 0) then
-		write (acTemp, '("ReorderDistr0ToDistr1: the grid provided as input is not in distribution 0, but in distribution ", I3, "")') cGrid%iDistr;
-		call PrintToLog(acTemp,0)
-		stop
-	end if
-	
-	! Allocate the data for distribution 1
-	call GridDistr1CreateEmpty(cGrid)
-	if(mod(cGrid.iD0TL,2_i8b)==1) then
-		do iLI = 0, cGrid.iD0LocN-1
-			cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2-1)*cGrid.iD1TS : cGrid.iD1TS) =&
-					cGrid.parD0(1 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-2)*cGrid.iD0TS : 2*cGrid.iD0TS) + &
-				im* cGrid.parD0(2 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-2)*cGrid.iD0TS : 2*cGrid.iD0TS)
-			cGrid.pacD1(1 + iLi*cGrid.iD1IS + ((cGrid.iD0TL+1)/2-1)*cGrid.iD1TS) =&
-					cGrid.parD0(1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS);
-		end do
-	else
-		
-		do iLI = 0, cGrid.iD0LocN-1
-			cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2-1)*cGrid.iD1TS : cGrid.iD1TS) =&
-					cGrid.parD0(1 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS : 2*cGrid.iD0TS) + &
-				im* cGrid.parD0(2 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS : 2*cGrid.iD0TS)
-		end do
-	end if
-    call GridDistr0DeAllocate(cGrid);
-    
-	! Set the flag to 1
-	cGrid.iDistr		= 1;
 
-	call SWStop(cswBlock);	call SWStop(cswBlockRedist0_1)
-END SUBROUTINE ReorderDistr0ToDistr1
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockRedist0_1)
+        write (acTemp, '("ReorderDistr0ToDistr1")'); call PrintToLog(acTemp, 3); 
+        ! First we will check whether we are in distribution 0
+        if (cGrid.iDistr /= 0) then
+            write (acTemp, '("ReorderDistr0ToDistr1: the grid provided as input is not in distribution 0, but in distribution ", I3, "")') cGrid%iDistr; 
+            call PrintToLog(acTemp, 0)
+            stop
+        end if
 
-SUBROUTINE ReorderDistr1ToDistr0(cGrid)
-	
+        ! Allocate the data for distribution 1
+        call GridDistr1CreateEmpty(cGrid)
+        if (mod(cGrid.iD0TL, 2_i8b) == 1) then
+            do iLI = 0, cGrid.iD0LocN - 1
+                cGrid.pacD1(1 + iLi*cGrid.iD1IS:1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2 - 1)*cGrid.iD1TS:cGrid.iD1TS) = &
+                    cGrid.parD0(1 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 2)*cGrid.iD0TS:2*cGrid.iD0TS) + &
+                    im*cGrid.parD0(2 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 2)*cGrid.iD0TS:2*cGrid.iD0TS)
+                cGrid.pacD1(1 + iLi*cGrid.iD1IS + ((cGrid.iD0TL + 1)/2 - 1)*cGrid.iD1TS) = &
+                    cGrid.parD0(1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 1)*cGrid.iD0TS); 
+            end do
+        else
+
+            do iLI = 0, cGrid.iD0LocN - 1
+                cGrid.pacD1(1 + iLi*cGrid.iD1IS:1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2 - 1)*cGrid.iD1TS:cGrid.iD1TS) = &
+                    cGrid.parD0(1 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 1)*cGrid.iD0TS:2*cGrid.iD0TS) + &
+                    im*cGrid.parD0(2 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 1)*cGrid.iD0TS:2*cGrid.iD0TS)
+            end do
+        end if
+        call GridDistr0DeAllocate(cGrid); 
+        ! Set the flag to 1
+        cGrid.iDistr = 1; 
+        call SWStop(cswBlock); call SWStop(cswBlockRedist0_1)
+    END SUBROUTINE ReorderDistr0ToDistr1
+
+    SUBROUTINE ReorderDistr1ToDistr0(cGrid)
+
 ! =============================================================================
 !
 !   Programmer: Jasper de Koning / Koos Huijssen
@@ -609,10 +594,10 @@ SUBROUTINE ReorderDistr1ToDistr0(cGrid)
 !
 !   DESCRIPTION
 !
-!   The subroutine ReorderDistr1ToDistr0 performs the inverse operation of 
+!   The subroutine ReorderDistr1ToDistr0 performs the inverse operation of
 !   ReorderDistr0ToDistr1. See its header for more info.
 !
-!   One unnecessary assumption in the current implementation is that 
+!   One unnecessary assumption in the current implementation is that
 !   cGrid.iD1T = 1. This could be generalized but this is not very urgent.
 !
 ! *****************************************************************************
@@ -622,24 +607,23 @@ SUBROUTINE ReorderDistr1ToDistr0(cGrid)
 !   cGrid   io   type(Grid)   The grid that contains the data array which needs
 !                             to be redistributed.
 !
-	type(Grid), intent(inout)::	cGrid
+        type(Grid), intent(inout)::        cGrid
 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   iLI      i8b   Loop counter over all XYZ-positions
 !   acTemp   char  Temporary char array for output log messages
 !
-	integer(i8b) ::			iLT, iLI
-	character(LEN = 2048) ::		acTemp;
-	
+        integer(i8b) ::                        iLT, iLI
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -649,67 +633,64 @@ SUBROUTINE ReorderDistr1ToDistr0(cGrid)
 !   GridDistr0CreateEmpty
 !   GridDistr1Deallocate
 !   PrintToLog
-!   
+!
 ! =============================================================================
 
-	write (acTemp, '("ReorderDistr1ToDistr0")');	call PrintToLog(acTemp, 3);
-	
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockRedist1_0)
-	! First we will check whehter we are in distribution 1
-	if (cGrid.iDistr /= 1) then
-		write (acTemp, '("ReorderDistr1ToDistr0: the grid provided as input is not in distribution 1, but in distribution ", I3, "")') cGrid%iDistr;
-		call PrintToLog(acTemp,0)
-		stop
-	end if
-		
-	! Allocate the data for distribution 0
-	call GridDistr0CreateEmpty(cGrid)
-	if(mod(cGrid.iD0TL,2_i8b)==1) then
-		do iLi = 0, cGrid.iD0LocN-1
-			cGrid.parD0(1 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS: 2*cGrid.iD0TS) = &
-			real(cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + ((cGrid.iD0TL+1)/2-1)*cGrid.iD1TS : cGrid.iD1TS),dp)
-			cGrid.parD0(2 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS: 2*cGrid.iD0TS) = &
-			dimag(cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2-1)*cGrid.iD1TS : cGrid.iD1TS))
-		end do
-	else
-		do iLi = 0, cGrid.iD0LocN-1
-			cGrid.parD0(1 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS: 2*cGrid.iD0TS) = &
-			real(cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2-1)*cGrid.iD1TS : cGrid.iD1TS),dp)
-			cGrid.parD0(2 + iLi*cGrid.iD0IS : 1 + iLi*cGrid.iD0IS + (cGrid.iD0TL-1)*cGrid.iD0TS: 2*cGrid.iD0TS) = &
-			dimag(cGrid.pacD1(1 + iLi*cGrid.iD1IS : 1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2-1)*cGrid.iD1TS : cGrid.iD1TS))
-		end do
-	end if	
-	
-    call GridDistr1DeAllocate(cGrid);
+        write (acTemp, '("ReorderDistr1ToDistr0")'); call PrintToLog(acTemp, 3); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockRedist1_0)
+        ! First we will check whehter we are in distribution 1
+        if (cGrid.iDistr /= 1) then
+            write (acTemp, '("ReorderDistr1ToDistr0: the grid provided as input is not in distribution 1, but in distribution ", I3, "")') cGrid%iDistr; 
+            call PrintToLog(acTemp, 0)
+            stop
+        end if
 
-	! Set the flag to 0
-	cGrid.iDistr		= 0;
+        ! Allocate the data for distribution 0
+        call GridDistr0CreateEmpty(cGrid)
+        if (mod(cGrid.iD0TL, 2_i8b) == 1) then
+            do iLi = 0, cGrid.iD0LocN - 1
+                cGrid.parD0(1 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 1)*cGrid.iD0TS:2*cGrid.iD0TS) = &
+                    real(cGrid.pacD1(1 + iLi*cGrid.iD1IS:1 + iLi*cGrid.iD1IS + ((cGrid.iD0TL + 1)/2 - 1)*cGrid.iD1TS:cGrid.iD1TS), dp)
+                cGrid.parD0(2 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 1)*cGrid.iD0TS:2*cGrid.iD0TS) = &
+                    dimag(cGrid.pacD1(1 + iLi*cGrid.iD1IS:1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2 - 1)*cGrid.iD1TS:cGrid.iD1TS))
+            end do
+        else
+            do iLi = 0, cGrid.iD0LocN - 1
+                cGrid.parD0(1 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 1)*cGrid.iD0TS:2*cGrid.iD0TS) = &
+                    real(cGrid.pacD1(1 + iLi*cGrid.iD1IS:1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2 - 1)*cGrid.iD1TS:cGrid.iD1TS), dp)
+                cGrid.parD0(2 + iLi*cGrid.iD0IS:1 + iLi*cGrid.iD0IS + (cGrid.iD0TL - 1)*cGrid.iD0TS:2*cGrid.iD0TS) = &
+                    dimag(cGrid.pacD1(1 + iLi*cGrid.iD1IS:1 + iLi*cGrid.iD1IS + (cGrid.iD0TL/2 - 1)*cGrid.iD1TS:cGrid.iD1TS))
+            end do
+        end if
 
-	call SWStop(cswBlock);	call SWStop(cswBlockRedist1_0)
-END SUBROUTINE ReorderDistr1ToDistr0
+        call GridDistr1DeAllocate(cGrid); 
+        ! Set the flag to 0
+        cGrid.iDistr = 0; 
+        call SWStop(cswBlock); call SWStop(cswBlockRedist1_0)
+    END SUBROUTINE ReorderDistr1ToDistr0
 
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ! %
-! % 		Distr2ObtainXYZBlock
+! %                 Distr2ObtainXYZBlock
 ! %
-! %	This functions puts the value of the XYZ-block with index iIndex from distribution 2 in 
-! %	Cgrid, into the array pacBlock. pacBlock is a 3-dimensional array with dimensions:
-! %	(2*cGrid.iD2XL, 2*cGrid.iD2YL, 2*cGrid.iD2ZL);
+! %        This functions puts the value of the XYZ-block with index iIndex from distribution 2 in
+! %        Cgrid, into the array pacBlock. pacBlock is a 3-dimensional array with dimensions:
+! %        (2*cGrid.iD2XL, 2*cGrid.iD2YL, 2*cGrid.iD2ZL);
 ! %
-! %	input:
-! %		cGrid:		a grid, stored in distribution 2.
-! %		iIndex:		an index of the xyz-block we will obtain
-! %		pacBlock:	an array of complex values, with dimensions 
-! %				(2*cGrid.iD2XL, 2*cGrid.iD2YL, 2*cGrid.iD2ZL)
-! %	output:
-! %		pacBlock:	an array containing the values of the grid, with  dimensions 
-! %				(2*cGrid.iD2XL, 2*cGrid.iD2YL, 2*cGrid.iD2ZL) and strides
-! %				(cGrid.iD2XS, cGrid.iD2YS, cGrid.iD2ZS) 
+! %        input:
+! %                cGrid:                a grid, stored in distribution 2.
+! %                iIndex:                an index of the xyz-block we will obtain
+! %                pacBlock:        an array of complex values, with dimensions
+! %                                (2*cGrid.iD2XL, 2*cGrid.iD2YL, 2*cGrid.iD2ZL)
+! %        output:
+! %                pacBlock:        an array containing the values of the grid, with  dimensions
+! %                                (2*cGrid.iD2XL, 2*cGrid.iD2YL, 2*cGrid.iD2ZL) and strides
+! %                                (cGrid.iD2XS, cGrid.iD2YS, cGrid.iD2ZS)
 ! %
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-SUBROUTINE Distr2ObtainXYZBlock(cGridS, cGridD, iOmega)
-	
+    SUBROUTINE Distr2ObtainXYZBlock(cGridS, cGridD, iOmega)
+
 ! =============================================================================
 !
 !   Programmer: Jasper de Koning / Koos Huijssen
@@ -736,13 +717,12 @@ SUBROUTINE Distr2ObtainXYZBlock(cGridS, cGridD, iOmega)
 !   cGridD   io  type(Grid)   The grid that will contain the XYZ block at exit
 !   iOmega   i    i8b         The desired frequency of the XYZ block
 !
-	type(Grid), intent(in)::		cGridS
-	type(Grid), intent(inout)::		cGridD
-	integer(i8b), intent(in) ::		iOmega;
-
+        type(Grid), intent(in)::                cGridS
+        type(Grid), intent(inout)::                cGridD
+        integer(i8b), intent(in) ::                iOmega; 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   iL       i8b   Loop counter over all XYZ-positions
 !   iLX      i8b   Loop counter over all X-positions
@@ -752,15 +732,14 @@ SUBROUTINE Distr2ObtainXYZBlock(cGridS, cGridD, iOmega)
 !   iIndD    i8b   Index to a position in the destination array
 !   acTemp   char  Temporary char array for output log messages
 !
-	integer(i8b) ::				iL, iLX, iLY, iLZ, iIndS, iIndD
-	character(LEN = 2048) ::		acTemp;
-	
+        integer(i8b) ::                                iL, iLX, iLY, iLZ, iIndS, iIndD
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -768,136 +747,42 @@ SUBROUTINE Distr2ObtainXYZBlock(cGridS, cGridD, iOmega)
 !   SWstartandcount
 !   SWstop
 !   PrintToLog
-!   
+!
 ! =============================================================================
 
-	write (acTemp, '("Distr2ObtainXYZBlock")');	call PrintToLog(acTemp, 4);
-!	print *, " Punto di Interesse Odierno 0 New"
-	call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockObtain);
+        write (acTemp, '("Distr2ObtainXYZBlock")'); call PrintToLog(acTemp, 4); 
+!        print *, " Punto di Interesse Odierno 0 New"
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockObtain); 
 !    print *, " Punto di Interesse Odierno 1 New"
-	! First we initialize the block to zero
-	do iL = 0, cGridD%ID2XL*cGridD%ID2YL*cGridD%ID2ZL-1
-		cGridD%pacD2(1+iL)	= 0.0_dp;
-	end do
-!	print *, " Punto di Interesse Odierno 2 New"
-	! Copy cGridS to cGridD on the positions starting from X/Y/Z beam index (0,0,0)
-!	print *, "size(cGridD%pacD2)"
-!	print *, size(cGridD%pacD2)
-!	print *, "size(cGridS%pacD2)"
-!	print *, size(cGridS%pacD2)
-	do iLX = 0, cGridS%iD2XL-1
-		do iLY = 0, cGridS%iD2YL-1
-			do iLZ = 0, cGridS%iD2ZL-1
-				iIndS= 1 + iOmega * cGridS%iD2IS + iLX * cGridS%iD2XS + iLY * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
-				!print *, "iIndD"
-				!print *, iIndD
-				!print *, "iIndS"
-				!print *, iIndS
-				
-				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
-			end do
-		end do
-	end do
-!	print *, " Punto di Interesse Odierno 3 New"
-	call SWStop(cswBlock); call SWStop(cswBlockObtain);
+        ! First we initialize the block to zero
+        do iL = 0, cGridD%ID2XL*cGridD%ID2YL*cGridD%ID2ZL - 1
+            cGridD%pacD2(1 + iL) = 0.0_dp; 
+        end do
+!        print *, " Punto di Interesse Odierno 2 New"
+        ! Copy cGridS to cGridD on the positions starting from X/Y/Z beam index (0,0,0)
+!        print *, "size(cGridD%pacD2)"
+!        print *, size(cGridD%pacD2)
+!        print *, "size(cGridS%pacD2)"
+!        print *, size(cGridS%pacD2)
+        do iLX = 0, cGridS%iD2XL - 1
+            do iLY = 0, cGridS%iD2YL - 1
+                do iLZ = 0, cGridS%iD2ZL - 1
+                    iIndS = 1 + iOmega*cGridS%iD2IS + iLX*cGridS%iD2XS + iLY*cGridS%iD2YS + iLZ*cGridS%iD2ZS
+                    iIndD = 1 + iLX*cGridD%iD2XS + iLY*cGridD%iD2YS + iLZ*cGridD%iD2ZS
+                    !print *, "iIndD"
+                    !print *, iIndD
+                    !print *, "iIndS"
+                    !print *, iIndS
 
-END SUBROUTINE Distr2ObtainXYZBlock
+                    cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS); 
+                end do
+            end do
+        end do
+!        print *, " Punto di Interesse Odierno 3 New"
+        call SWStop(cswBlock); call SWStop(cswBlockObtain); 
+    END SUBROUTINE Distr2ObtainXYZBlock
 
-SUBROUTINE Distr2ObtainYMirroredXYZBlock(cGridS, cGridD, iOmega)
-
-! =============================================================================
-!
-!   Programmer: Jasper de Koning / Koos Huijssen
-!
-!   Language: Fortran 90
-!
-!   Version Date    Comment
-!   ------- -----   -------
-!   1.0     090505  Original code (KH)
-!
-! *****************************************************************************
-!
-!   DESCRIPTION
-!
-!   The subroutine Distr2ObtainXYZBlock extracts an XYZ block at a specific
-!   frequency from a grid which has its data stored in Distr. 2. The XYZ block
-!   is stored in the first frequency in cGridD, and it is mirrored in the
-!   Y-dimension. The line Y=0 is also excluded from the copy. This subroutine
-!   is used to represent the contrast sources at the negative y-axis for a 
-!   problem that is symmetric in Y, and it is assumed that cGridS only stores
-!   values on the positive Y-axis starting at Y=0.
-!
-! *****************************************************************************
-!
-!   INPUT/OUTPUT PARAMETERS
-!
-!   cGridS   i   type(Grid)   The grid that contains the source data array
-!   cGridD   io  type(Grid)   The grid that will contain the XYZ block at exit
-!   iOmega   i    i8b         The frequency of the XYZ block
-!
-	type(Grid), intent(in)::		cGridS
-	type(Grid), intent(inout)::		cGridD
-	integer(i8b), intent(in) ::		iOmega;
-
-! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
-!
-!   iL       i8b   Loop counter over all XYZ-positions
-!   iLX      i8b   Loop counter over all X-positions
-!   iLY      i8b   Loop counter over all Y-positions
-!   iLZ      i8b   Loop counter over all Z-positions
-!   iIndS    i8b   Index to a position in the source array
-!   iIndD    i8b   Index to a position in the destination array
-!   acTemp   char  Temporary char array for output log messages
-!
-	integer(i8b) ::				iL, iLX, iLY, iLZ, iIndS, iIndD
-	character(LEN = 2048) ::		acTemp;
-	
-! *****************************************************************************
-!
-!   I/O
-!
-!   Log file entries 
-!   
-! *****************************************************************************
-!
-!   SUBROUTINES/FUNCTIONS CALLED
-!
-!   SWstartandcount
-!   SWstop
-!   PrintToLog
-!   
-! =============================================================================
-
-	write (acTemp, '("Distr2ObtainYMirroredXYZBlock")');	call PrintToLog(acTemp, 4);
-	
-	call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockObtain);
-	! First we initialize the block to zero
-	do iL = 0, cGridD%ID2XL*cGridD%ID2YL*cGridD%ID2ZL-1
-		cGridD%pacD2(1+iL)	= 0;
-	end do
-	
-	! Copy cSpaceS to cSpaceD on the positions starting from X/Y/Z beam index (0,0,0)
-	! But mirror the source indices in the Y dimension
-	! and exclude y=0 from the copy (since we have already calculated the influence
-	! of the contrast source at y=0 in the un-mirrored block...
-	do iLX = 0, cGridS%iD2XL-1
-		do iLY = 0, cGridS%iD2YL-2
-			do iLZ = 0, cGridS%iD2ZL-1
-				iIndS= 1 + iOmega * cGridS%iD2IS + iLX * cGridS%iD2XS + (cGridS%iD2YL-1-iLY) * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
-				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
-			end do
-		end do
-	end do
-	
-	call SWStop(cswBlock); call SWStop(cswBlockObtain);
-
-END SUBROUTINE Distr2ObtainYMirroredXYZBlock
-
-SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
+    SUBROUTINE Distr2ObtainYMirroredXYZBlock(cGridS, cGridD, iOmega)
 
 ! =============================================================================
 !
@@ -917,7 +802,7 @@ SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   frequency from a grid which has its data stored in Distr. 2. The XYZ block
 !   is stored in the first frequency in cGridD, and it is mirrored in the
 !   Y-dimension. The line Y=0 is also excluded from the copy. This subroutine
-!   is used to represent the contrast sources at the negative y-axis for a 
+!   is used to represent the contrast sources at the negative y-axis for a
 !   problem that is symmetric in Y, and it is assumed that cGridS only stores
 !   values on the positive Y-axis starting at Y=0.
 !
@@ -929,13 +814,12 @@ SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   cGridD   io  type(Grid)   The grid that will contain the XYZ block at exit
 !   iOmega   i    i8b         The frequency of the XYZ block
 !
-	type(Grid), intent(in)::		cGridS
-	type(Grid), intent(inout)::		cGridD
-	integer(i8b), intent(in) ::		iOmega;
-
+        type(Grid), intent(in)::                cGridS
+        type(Grid), intent(inout)::                cGridD
+        integer(i8b), intent(in) ::                iOmega; 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   iL       i8b   Loop counter over all XYZ-positions
 !   iLX      i8b   Loop counter over all X-positions
@@ -945,15 +829,14 @@ SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   iIndD    i8b   Index to a position in the destination array
 !   acTemp   char  Temporary char array for output log messages
 !
-	integer(i8b) ::				iL, iLX, iLY, iLZ, iIndS, iIndD
-	character(LEN = 2048) ::		acTemp;
-	
+        integer(i8b) ::                                iL, iLX, iLY, iLZ, iIndS, iIndD
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -961,41 +844,127 @@ SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   SWstartandcount
 !   SWstop
 !   PrintToLog
-!   
+!
 ! =============================================================================
 
-	write (acTemp, '("Distr2FillYMirroredXYZBlock")');	call PrintToLog(acTemp, 4);
-	
-	call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockObtain);
-	! First we initialize the block to zero
-	do iL = 0, cGridD%ID2XL*cGridD%ID2YL*cGridD%ID2ZL-1
-		cGridD%pacD2(1+iL)	= 0;
-	end do
-	
-	! Copy cSpaceS to cSpaceD on the positions starting from X/Y/Z beam index (0,0,0)
-	! But mirror the source indices in the Y dimension
-	! and exclude y=0 from the copy (since we have already calculated the influence
-	! of the contrast source at y=0 in the un-mirrored block...
-	do iLX = 0, cGridS%iD2XL-1
-		do iLY = 0, cGridS%iD2YL-1
-			do iLZ = 0, cGridS%iD2ZL-1
-				iIndS= 1 + iOmega * cGridS%iD2IS + iLX * cGridS%iD2XS + (cGridS%iD2YL-1-iLY) * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
-				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
-				
-				iIndS= 1 + iOmega * cGridS%iD2IS + iLX * cGridS%iD2XS + iLY * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iLX * cGridD%iD2XS + (iLY + cGridS%iD2YL-1) * cGridD%iD2YS + iLZ * cGridD%iD2ZS
-				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
-			end do
-		end do
-	end do
-	
-	call SWStop(cswBlock); call SWStop(cswBlockObtain);
+        write (acTemp, '("Distr2ObtainYMirroredXYZBlock")'); call PrintToLog(acTemp, 4); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockObtain); 
+        ! First we initialize the block to zero
+        do iL = 0, cGridD%ID2XL*cGridD%ID2YL*cGridD%ID2ZL - 1
+            cGridD%pacD2(1 + iL) = 0; 
+        end do
 
-END SUBROUTINE Distr2FillYMirroredXYZBlock
+        ! Copy cSpaceS to cSpaceD on the positions starting from X/Y/Z beam index (0,0,0)
+        ! But mirror the source indices in the Y dimension
+        ! and exclude y=0 from the copy (since we have already calculated the influence
+        ! of the contrast source at y=0 in the un-mirrored block...
+        do iLX = 0, cGridS%iD2XL - 1
+            do iLY = 0, cGridS%iD2YL - 2
+                do iLZ = 0, cGridS%iD2ZL - 1
+                    iIndS = 1 + iOmega*cGridS%iD2IS + iLX*cGridS%iD2XS + (cGridS%iD2YL - 1 - iLY)*cGridS%iD2YS + iLZ*cGridS%iD2ZS
+                    iIndD = 1 + iLX*cGridD%iD2XS + iLY*cGridD%iD2YS + iLZ*cGridD%iD2ZS
+                    cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS); 
+                end do
+            end do
+        end do
 
-SUBROUTINE Distr2PutXYZBlock(cGridS, cGridD, iOmega)
-	
+        call SWStop(cswBlock); call SWStop(cswBlockObtain); 
+    END SUBROUTINE Distr2ObtainYMirroredXYZBlock
+
+    SUBROUTINE Distr2FillYMirroredXYZBlock(cGridS, cGridD, iOmega)
+
+! =============================================================================
+!
+!   Programmer: Jasper de Koning / Koos Huijssen
+!
+!   Language: Fortran 90
+!
+!   Version Date    Comment
+!   ------- -----   -------
+!   1.0     090505  Original code (KH)
+!
+! *****************************************************************************
+!
+!   DESCRIPTION
+!
+!   The subroutine Distr2ObtainXYZBlock extracts an XYZ block at a specific
+!   frequency from a grid which has its data stored in Distr. 2. The XYZ block
+!   is stored in the first frequency in cGridD, and it is mirrored in the
+!   Y-dimension. The line Y=0 is also excluded from the copy. This subroutine
+!   is used to represent the contrast sources at the negative y-axis for a
+!   problem that is symmetric in Y, and it is assumed that cGridS only stores
+!   values on the positive Y-axis starting at Y=0.
+!
+! *****************************************************************************
+!
+!   INPUT/OUTPUT PARAMETERS
+!
+!   cGridS   i   type(Grid)   The grid that contains the source data array
+!   cGridD   io  type(Grid)   The grid that will contain the XYZ block at exit
+!   iOmega   i    i8b         The frequency of the XYZ block
+!
+        type(Grid), intent(in)::                cGridS
+        type(Grid), intent(inout)::                cGridD
+        integer(i8b), intent(in) ::                iOmega; 
+! *****************************************************************************
+!
+!   LOCAL PARAMETERS
+!
+!   iL       i8b   Loop counter over all XYZ-positions
+!   iLX      i8b   Loop counter over all X-positions
+!   iLY      i8b   Loop counter over all Y-positions
+!   iLZ      i8b   Loop counter over all Z-positions
+!   iIndS    i8b   Index to a position in the source array
+!   iIndD    i8b   Index to a position in the destination array
+!   acTemp   char  Temporary char array for output log messages
+!
+        integer(i8b) ::                                iL, iLX, iLY, iLZ, iIndS, iIndD
+        character(LEN=2048) ::                acTemp; 
+! *****************************************************************************
+!
+!   I/O
+!
+!   Log file entries
+!
+! *****************************************************************************
+!
+!   SUBROUTINES/FUNCTIONS CALLED
+!
+!   SWstartandcount
+!   SWstop
+!   PrintToLog
+!
+! =============================================================================
+
+        write (acTemp, '("Distr2FillYMirroredXYZBlock")'); call PrintToLog(acTemp, 4); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockObtain); 
+        ! First we initialize the block to zero
+        do iL = 0, cGridD%ID2XL*cGridD%ID2YL*cGridD%ID2ZL - 1
+            cGridD%pacD2(1 + iL) = 0; 
+        end do
+
+        ! Copy cSpaceS to cSpaceD on the positions starting from X/Y/Z beam index (0,0,0)
+        ! But mirror the source indices in the Y dimension
+        ! and exclude y=0 from the copy (since we have already calculated the influence
+        ! of the contrast source at y=0 in the un-mirrored block...
+        do iLX = 0, cGridS%iD2XL - 1
+            do iLY = 0, cGridS%iD2YL - 1
+                do iLZ = 0, cGridS%iD2ZL - 1
+                    iIndS = 1 + iOmega*cGridS%iD2IS + iLX*cGridS%iD2XS + (cGridS%iD2YL - 1 - iLY)*cGridS%iD2YS + iLZ*cGridS%iD2ZS
+                    iIndD = 1 + iLX*cGridD%iD2XS + iLY*cGridD%iD2YS + iLZ*cGridD%iD2ZS
+                    cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS); 
+                    iIndS = 1 + iOmega*cGridS%iD2IS + iLX*cGridS%iD2XS + iLY*cGridS%iD2YS + iLZ*cGridS%iD2ZS
+                    iIndD = 1 + iLX*cGridD%iD2XS + (iLY + cGridS%iD2YL - 1)*cGridD%iD2YS + iLZ*cGridD%iD2ZS
+                    cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS); 
+                end do
+            end do
+        end do
+
+        call SWStop(cswBlock); call SWStop(cswBlockObtain); 
+    END SUBROUTINE Distr2FillYMirroredXYZBlock
+
+    SUBROUTINE Distr2PutXYZBlock(cGridS, cGridD, iOmega)
+
 ! =============================================================================
 !
 !   Programmer: Jasper de Koning / Koos Huijssen
@@ -1011,7 +980,7 @@ SUBROUTINE Distr2PutXYZBlock(cGridS, cGridD, iOmega)
 !   DESCRIPTION
 !
 !   The subroutine Distr2ObtainXYZBlock puts an XYZ block at a specific
-!   frequency in a Distr. 2 grid, i.e. it performs the inverse operation of 
+!   frequency in a Distr. 2 grid, i.e. it performs the inverse operation of
 !   Distr2ObtainXYZBlock.
 !
 ! *****************************************************************************
@@ -1023,13 +992,12 @@ SUBROUTINE Distr2PutXYZBlock(cGridS, cGridD, iOmega)
 !                             frequency iOmega is updated at exit
 !   iOmega   i    i8b         The frequency of the XYZ block
 !
-	type(Grid), intent(in)::		cGridS
-	type(Grid), intent(inout)::		cGridD
-	integer(i8b), intent(in) ::		iOmega;
-
+        type(Grid), intent(in)::                cGridS
+        type(Grid), intent(inout)::                cGridD
+        integer(i8b), intent(in) ::                iOmega; 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   iL       i8b   Loop counter over all XYZ-positions
 !   iLX      i8b   Loop counter over all X-positions
@@ -1039,15 +1007,14 @@ SUBROUTINE Distr2PutXYZBlock(cGridS, cGridD, iOmega)
 !   iIndD    i8b   Index to a position in the destination array
 !   acTemp   char  Temporary char array for output log messages
 !
-	integer(i8b) ::				iL, iLX, iLY, iLZ, iIndS, iIndD
-	character(LEN = 2048) ::		acTemp;
-	
+        integer(i8b) ::                                iL, iLX, iLY, iLZ, iIndS, iIndD
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -1055,27 +1022,26 @@ SUBROUTINE Distr2PutXYZBlock(cGridS, cGridD, iOmega)
 !   SWstartandcount
 !   SWstop
 !   PrintToLog
-!   
+!
 ! =============================================================================
 
-	write (acTemp, '("Distr2PutXYZBlock")');	call PrintToLog(acTemp, 4);
+        write (acTemp, '("Distr2PutXYZBlock")'); call PrintToLog(acTemp, 4); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockPut); 
+        ! Copy cSpaceS starting from X/Y/Z beam index (0,0,0) to cSpaceD
+        do iLX = 0, cGridD%iD2XL - 1
+            do iLY = 0, cGridD%iD2YL - 1
+                do iLZ = 0, cGridD%iD2ZL - 1
+                    iIndS = 1 + iLX*cGridS%iD2XS + iLY*cGridS%iD2YS + iLZ*cGridS%iD2ZS
+                    iIndD = 1 + iOmega*cGridD%iD2IS + iLX*cGridD%iD2XS + iLY*cGridD%iD2YS + iLZ*cGridD%iD2ZS
+                    cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS); 
+                end do
+            end do
+        end do
 
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockPut);
-	! Copy cSpaceS starting from X/Y/Z beam index (0,0,0) to cSpaceD
-	do iLX = 0, cGridD%iD2XL-1
-		do iLY = 0, cGridD%iD2YL-1
-			do iLZ = 0, cGridD%iD2ZL-1
-				iIndS= 1 + iLX * cGridS%iD2XS + iLY * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iOmega * cGridD%iD2IS + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
-				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
-			end do
-		end do
-	end do
-	
-	call SWStop(cswBlock); call SWStop(cswBlockPut);
-END SUBROUTINE Distr2PutXYZBlock
+        call SWStop(cswBlock); call SWStop(cswBlockPut); 
+    END SUBROUTINE Distr2PutXYZBlock
 
-SUBROUTINE Distr2PutYMirroredXYZBlock(cGridS, cGridD, iOmega)
+    SUBROUTINE Distr2PutYMirroredXYZBlock(cGridS, cGridD, iOmega)
 
 ! =============================================================================
 !
@@ -1095,7 +1061,7 @@ SUBROUTINE Distr2PutYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   frequency from a grid which has its data stored in Distr. 2. The XYZ block
 !   is stored in the first frequency in cGridD, and it is mirrored in the
 !   Y-dimension. The line Y=0 is also excluded from the copy. This subroutine
-!   is used to represent the contrast sources at the negative y-axis for a 
+!   is used to represent the contrast sources at the negative y-axis for a
 !   problem that is symmetric in Y, and it is assumed that cGridS only stores
 !   values on the positive Y-axis starting at Y=0.
 !
@@ -1107,13 +1073,12 @@ SUBROUTINE Distr2PutYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   cGridD   io  type(Grid)   The grid that will contain the XYZ block at exit
 !   iOmega   i    i8b         The frequency of the XYZ block
 !
-	type(Grid), intent(in)::		cGridS
-	type(Grid), intent(inout)::		cGridD
-	integer(i8b), intent(in) ::		iOmega;
-
+        type(Grid), intent(in)::                cGridS
+        type(Grid), intent(inout)::                cGridD
+        integer(i8b), intent(in) ::                iOmega; 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   iL       i8b   Loop counter over all XYZ-positions
 !   iLX      i8b   Loop counter over all X-positions
@@ -1123,15 +1088,14 @@ SUBROUTINE Distr2PutYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   iIndD    i8b   Index to a position in the destination array
 !   acTemp   char  Temporary char array for output log messages
 !
-	integer(i8b) ::				iL, iLX, iLY, iLZ, iIndS, iIndD
-	character(LEN = 2048) ::		acTemp;
-	
+        integer(i8b) ::                                iL, iLX, iLY, iLZ, iIndS, iIndD
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -1139,28 +1103,26 @@ SUBROUTINE Distr2PutYMirroredXYZBlock(cGridS, cGridD, iOmega)
 !   SWstartandcount
 !   SWstop
 !   PrintToLog
-!   
+!
 ! =============================================================================
 
-	write (acTemp, '("Distr2PutYMirroredXYZBlock")');	call PrintToLog(acTemp, 4);
+        write (acTemp, '("Distr2PutYMirroredXYZBlock")'); call PrintToLog(acTemp, 4); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockPut); 
+        ! Copy cSpaceS starting from X/Y/Z beam index (0,0,0) to cSpaceD
+        do iLX = 0, cGridD%iD2XL - 1
+            do iLY = 0, cGridD%iD2YL - 1
+                do iLZ = 0, cGridD%iD2ZL - 1
+                    iIndS = 1 + iLX*cGridS%iD2XS + (iLY + cGridD%iD2YL - 1)*cGridS%iD2YS + iLZ*cGridS%iD2ZS
+                    iIndD = 1 + iOmega*cGridD%iD2IS + iLX*cGridD%iD2XS + iLY*cGridD%iD2YS + iLZ*cGridD%iD2ZS
+                    cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS); 
+                end do
+            end do
+        end do
 
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockPut);
-	! Copy cSpaceS starting from X/Y/Z beam index (0,0,0) to cSpaceD
-	do iLX = 0, cGridD%iD2XL-1
-		do iLY = 0, cGridD%iD2YL-1
-			do iLZ = 0, cGridD%iD2ZL-1				
-				iIndS= 1 + iLX * cGridS%iD2XS + (iLY + cGridD%iD2YL-1) * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iOmega * cGridD%iD2IS + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
-				cGridD%pacD2(iIndD) = cGridS%pacD2(iIndS);
-			end do
-		end do
-	end do
-	
-	call SWStop(cswBlock); call SWStop(cswBlockPut);
+        call SWStop(cswBlock); call SWStop(cswBlockPut); 
+    END SUBROUTINE Distr2PutYMirroredXYZBlock
 
-END SUBROUTINE Distr2PutYMirroredXYZBlock
-
-SUBROUTINE Distr2AddToXYZBlock(cGridS, cGridD, iOmega)
+    SUBROUTINE Distr2AddToXYZBlock(cGridS, cGridD, iOmega)
 
 ! =============================================================================
 !
@@ -1188,13 +1150,12 @@ SUBROUTINE Distr2AddToXYZBlock(cGridS, cGridD, iOmega)
 !                             frequency iOmega is updated at exit
 !   iOmega   i    i8b         The frequency of the XYZ block
 !
-	type(Grid), intent(in)::		cGridS
-	type(Grid), intent(inout)::		cGridD
-	integer(i8b), intent(in) ::		iOmega;
-
+        type(Grid), intent(in)::                cGridS
+        type(Grid), intent(inout)::                cGridD
+        integer(i8b), intent(in) ::                iOmega; 
 ! *****************************************************************************
-! 
-!   LOCAL PARAMETERS      
+!
+!   LOCAL PARAMETERS
 !
 !   iL       i8b   Loop counter over all XYZ-positions
 !   iLX      i8b   Loop counter over all X-positions
@@ -1204,15 +1165,14 @@ SUBROUTINE Distr2AddToXYZBlock(cGridS, cGridD, iOmega)
 !   iIndD    i8b   Index to a position in the destination array
 !   acTemp   char  Temporary char array for output log messages
 !
-	integer(i8b) ::				iL, iLX, iLY, iLZ, iIndS, iIndD
-	character(LEN = 2048) ::		acTemp;
-	
+        integer(i8b) ::                                iL, iLX, iLY, iLZ, iIndS, iIndD
+        character(LEN=2048) ::                acTemp; 
 ! *****************************************************************************
 !
 !   I/O
 !
-!   Log file entries 
-!   
+!   Log file entries
+!
 ! *****************************************************************************
 !
 !   SUBROUTINES/FUNCTIONS CALLED
@@ -1220,25 +1180,23 @@ SUBROUTINE Distr2AddToXYZBlock(cGridS, cGridD, iOmega)
 !   SWstartandcount
 !   SWstop
 !   PrintToLog
-!   
+!
 ! =============================================================================
 
-	write (acTemp, '("Distr2AddToXYZBlock")');	call PrintToLog(acTemp, 4);
+        write (acTemp, '("Distr2AddToXYZBlock")'); call PrintToLog(acTemp, 4); 
+        call SwStartAndCount(cswBlock); call SwStartAndCount(cswBlockPut); 
+        ! Copy cSpaceS starting from X/Y/Z beam index (0,0,0) to cSpaceD
+        do iLX = 0, cGridD%iD2XL - 1
+            do iLY = 0, cGridD%iD2YL - 1
+                do iLZ = 0, cGridD%iD2ZL - 1
+                    iIndS = 1 + iLX*cGridS%iD2XS + iLY*cGridS%iD2YS + iLZ*cGridS%iD2ZS
+                    iIndD = 1 + iOmega*cGridD%iD2IS + iLX*cGridD%iD2XS + iLY*cGridD%iD2YS + iLZ*cGridD%iD2ZS
+                    cGridD%pacD2(iIndD) = cGridD%pacD2(iIndD) + cGridS%pacD2(iIndS); 
+                end do
+            end do
+        end do
 
-	call SwStartAndCount(cswBlock);	call SwStartAndCount(cswBlockPut);
-	! Copy cSpaceS starting from X/Y/Z beam index (0,0,0) to cSpaceD
-	do iLX = 0, cGridD%iD2XL-1
-		do iLY = 0, cGridD%iD2YL-1
-			do iLZ = 0, cGridD%iD2ZL-1
-				iIndS= 1 + iLX * cGridS%iD2XS + iLY * cGridS%iD2YS + iLZ * cGridS%iD2ZS
-				iIndD= 1 + iOmega * cGridD%iD2IS + iLX * cGridD%iD2XS + iLY * cGridD%iD2YS + iLZ * cGridD%iD2ZS
-				cGridD%pacD2(iIndD) = cGridD%pacD2(iIndD) + cGridS%pacD2(iIndS);
-			end do
-		end do
-	end do
-	
-	call SWStop(cswBlock); call SWStop(cswBlockPut);
-
-END SUBROUTINE Distr2AddToXYZBlock
+        call SWStop(cswBlock); call SWStop(cswBlockPut); 
+    END SUBROUTINE Distr2AddToXYZBlock
 
 END MODULE ParnacDataRedist
