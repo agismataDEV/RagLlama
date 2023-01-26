@@ -97,6 +97,7 @@ MODULE ParnacParamDef
 		logical(lgt) :: UseAntiAliasing	   !Employ an anti-aliasing procedure in the contrast sources
 		logical(lgt) :: UseSupportTapering !Taper the support at beginning and end 
 		logical(lgt) :: UseFreqTapering !Taper the frequency at the end
+		logical(lgt) :: UsePML !Taper the frequency at the end
 		character(LEN=128) :: FieldFilename
 		real(dp) :: xyzfielddim(3,2)	!Which dimension: x, y, z or t
 
@@ -164,7 +165,8 @@ MODULE ParnacParamDef
 		real(dp) :: focusx		  !x-coordinate of focus
 		real(dp) :: focusz		  !z-coordinate of focus
 		real(dp) :: elevationfocusz !z-coordinate of focus in elevation (y) - direction ==0 if no el. focus
-		character(LEN=128) :: phaseapodfilename 	!File in which element phases and apodizations are stored
+		character(LEN=128) :: phaseapodxfilename 	!File in which element phases and apodizations are stored
+		character(LEN=128) :: phaseapodyfilename 	!File in which element phases and apodizations are stored
 		character(LEN=128) :: td_filename		 	!File in which element phases and apodizations are stored
 
 !KH     !matrix array source
@@ -220,6 +222,8 @@ MODULE ParnacParamDef
 	character(LEN=256) :: residualdirectory
         
 	real(dp) :: arraywidth,maxphasedelay !Phase delay due to focusing (derived in normalize_constants)
+    integer(i8b) :: ScCloudNo
+    integer(i8b) :: iScCloud
 
 	end type SourceInput
 
@@ -279,7 +283,7 @@ MODULE ParnacParamDef
     real(dp)  				::  PDRange(2)
     real(dp)  				::  kappa_s
 
-    !------------------ Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
+    !------------------ Medium parameters (water, Room temperature =20ï¿½ and 1 atm ambient pressure)
     real(dp)  				::  sigma_w 
     real(dp)  				::  sigma_R0
     real(dp)  				::  sigma_R
@@ -307,8 +311,8 @@ MODULE ParnacParamDef
     
     end type ScattererInput
     
-    type(ScattererInput) :: ScattererParams
-	
+	type(ScattererInput), dimension(:),allocatable :: ScattererParams
+
 	type PointSourceCloudInput
 
     ! =============================================================================

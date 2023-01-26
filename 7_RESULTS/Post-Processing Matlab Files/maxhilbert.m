@@ -37,7 +37,6 @@ else
 end
 
 maxhilb=squeeze(max(abs(hilbert(output))));
-
 if (interpval>1)
     output=interpft(output,interpval*size(output,1));
 end

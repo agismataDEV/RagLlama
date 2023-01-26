@@ -34,6 +34,14 @@
 % ***********************************************************************************************************
 
 function [medium,domain,dslice,file,plin,pnl,Bubble] = xAM_Init(slicenumber)
+%SET EVERYTHING TO LATEX INTERPRETER
+list_factory = fieldnames(get(groot,'factory'));
+index_interpreter = find(contains(list_factory,'Interpreter'));
+for i = 1:length(index_interpreter)
+    default_name = strrep(list_factory{index_interpreter(i)},'factory','default');
+    set(groot, default_name,'latex');
+end
+
 %% Medium Parameters
 medium.freq0               = 15E6;                    %fundamental frequency
 medium.c0                  = 1480;                     % Speed of Sound [m/sec]
@@ -57,23 +65,31 @@ domain.symmetry             = 0;
 
 %% File Parameters
 file.lin_name            = 'TESTNeumann';
-file.dirname             = '../David_100deg_x_gaussian_4E5kPa_64el_W10um_H5mm_MediumNL';
-% file.dirname             = '../David_210deg_right_gaussian_64el_W10um_H4mm_apod';
-% file.dirname             = '../David_0deg_x_integrable_64el_long_high_apod';
-file.dirname_left        = '../David_150deg_left_high_amp';
-file.dirname_right       = '../David_150deg_left_high_amp';
+% file.dirname             = '../Validation/David_200deg_x_sin_10cycl';
+% file.dirname             = '../test/1PS_1MB_at_0';
+% file.dirname             = '../IEEE_2022/David_200deg_x_400kPa_15MHz_NL_Lagr';
+% file.dirname             = '../xAM_elf8mm/David_0deg_x_2MPa_Full';
+file.dirname             = '../EchoContrast_2023/David_0deg_x_2E4MBs_1E5LinSc_c0_400_3Fnyq_2E5Pa';
+file.dirname             = '../Validation/David_200deg_x_Lagrangian_FFT_001';
+% file.dirname             = '../../../INCS_3D_PS_CLOUD/7_RESULTS/Phased/Phased_1E5MB_1MHz_5E4Pa_DHPC';
+% file.dirname_left        = '../Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm_apod02_Cylinder';
+% file.dirname_right       = '../Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm_apod02_Cylinder';
+file.contrast_name       = 'ContrastSrc';
 file.rootname            = 'TESTNeumann';
 file.scatterer           = 'passive_nonlin';         % 'active','passive_lin', 'passive_nonlin'
 
 file.plot_contrast       = 'no';            % 'yes' or 'no'
+file.plot_AM             = 'no';            % 'yes' or 'no'
 file.plot_attenslices    = 'no';
 file.plot_converr        = 'yes';
 file.plot_colour         = 'viridis';        % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
 file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
-file.load_contrast_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
+file.load_contrast_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
+file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
-domain.angle = str2num(file.dirname(strfind(file.dirname,'deg')+[-3:-1]))/10;
+domain.angle   = 0;
+% domain.angle = str2num(file.dirname(strfind(file.dirname,'deg')+[-3:-1]))/10;
 %% Slice Parameters
 dslice.dims          = [ 'x','y','z'];
 dslice.num           = slicenumber;
@@ -87,9 +103,9 @@ if dslice.savedim(dslice.num) =='y'; domain.dimval = [2 1 3];end
 if dslice.savedim(dslice.num) =='x'; domain.dimval = [1 2 3];end
 if dslice.savedim(dslice.num) =='z'; domain.dimval = [3 1 2];end
 
-dslice.xlabel = ([upper(dslice.dims(domain.dimval(3))) ' [mm]']);
-dslice.ylabel = ([upper(dslice.dims(domain.dimval(2))) ' [mm]']);
-dslice.zlabel = ([upper(dslice.savedim(dslice.num)) ' [mm]']);
+dslice.xlabel = (['\textit{' (dslice.dims(domain.dimval(3))) '} [mm]']);
+dslice.ylabel = (['\textit{' (dslice.dims(domain.dimval(2))) '} [mm]']);
+dslice.zlabel = (['\textit{' (dslice.savedim(dslice.num)) '} [mm]']);
 
 file.focalplanename = [ dslice.savedim(dslice.num) int2string_ICS(dslice.num) ];
 
@@ -106,9 +122,9 @@ domain.tdimpar     = size(plin.data,1);
 domain.iProcN      = output.iNumProc;
 
 %% Source Delay
-file_srcdelay       = [file.dirname '/' file.rootname  'srcdelay' int2string_ICS(0)];
-output_srcdelay     = load_ICS_array(file_srcdelay);
-plin.t_delay             = output_srcdelay.data;
+% file_srcdelay       = [file.dirname '/' file.rootname  'srcdelay' int2string_ICS(0)];
+% output_srcdelay     = load_ICS_array(file_srcdelay);
+% plin.t_delay             = output_srcdelay.data;
 
 %%
 domain.dimlen(domain.dimval(1)) = output.lengthslice;
@@ -147,7 +163,7 @@ output_nonl      = load_ICS_slice(pnl.filename);
 pnl.xwave_data       = squeeze(output_nonl.data);
 
 %% CONTRAST DATA WITHOUT ANY BUBBLES
-if strcmp(file.plot_contrast,'yes')
+if strcmp(file.plot_AM,'yes')
     pcon.filename       = [file.dirname_right,'/', file.rootname int2string_ICS(domain.beamiterations) '_' file.focalplanename int2string_ICS(domain.ibeam)];    
     output      = load_ICS_slice(pcon.filename(i_start:end),domain.strides,domain.offsets);
     pnl.rightwave_data        = squeeze(output.data);
@@ -155,6 +171,15 @@ if strcmp(file.plot_contrast,'yes')
     pcon.filename       = [file.dirname_left,'/', file.rootname int2string_ICS(domain.beamiterations) '_' file.focalplanename int2string_ICS(domain.ibeam)];
     output      = load_ICS_slice(pcon.filename(i_start:end),domain.strides,domain.offsets);
     pnl.leftwave_data        = squeeze(output.data);
+    
+end
+if (strcmp(file.plot_contrast,'yes') && domain.beamiterations>0)
+    pcon.filename       = [file.dirname '/' file.contrast_name int2string_ICS(domain.beamiterations) '_' file.focalplanename int2string_ICS(domain.ibeam)];
+    i_start=1;
+    if isempty(file.dirname) ;i_start = 2; end
+    
+    output      = load_ICS_slice(pcon.filename(i_start:end),domain.strides,domain.offsets);
+    pnl.contrastdata        = squeeze(output.data);
     
 end
 if (domain.symmetry~=0) 

@@ -1,3 +1,4 @@
+
 ###############################
 # Un-ignore the affected subdirectory
 !7_RESULTS/
@@ -6,10 +7,7 @@
 /7_RESULTS/**
 # This pattern only works with the two previous patterns
 # (i remember it was working alone on older git versions)
-!/Post_Processing_Matlab_Files/*
-!/Post_Processing_Matlab_Files
-!/Figures
-!/Results_for_separate_Variables
+!7_RESULTS/Post_Processing_Matlab_Files
 ###############################
 
 !3_COMPILED_FILES/

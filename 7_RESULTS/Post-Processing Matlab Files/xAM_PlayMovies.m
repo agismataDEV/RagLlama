@@ -14,18 +14,18 @@
 %
 % AM, version 201005
 
-function xAM_PlayMovies(medium,domain,dslice,file,plin,pnl)
+function xAM_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble,Lin)
 
 if (strcmp(file.play_movies,'yes'))
-    mov = VideoWriter('PressureFieldEvolution.avi','Motion JPEG AVI');
-    mov.FrameRate = 30; mov.Quality = 75;
+    mov = VideoWriter('PressureFieldEvolution_200deg_1MPa_15MHz.avi','Motion JPEG AVI');
+    mov.FrameRate = 45; mov.Quality = 75;
     open(mov);
     
     disp(' ')
     disp(['Play movie ...'])
     
     sizeP = size(plin.data);
-    Linear_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
+%     Linear_Field=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
 %     X_Wave=-500*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
 %     Right_Wave=-1*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
 %     Left_Wave=-1E30*ones(sizeP(1)+sizeP(3),sizeP(2),sizeP(3));
@@ -41,7 +41,7 @@ if (strcmp(file.play_movies,'yes'))
 %         Linear_Field = real(ifft( fft(plin.data) .* plin.mult));
 %         Linear_Field = 20*log10(abs(Linear_Field));
         for k=1:sizeP(3)
-            Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.xwave_data(:,:,k) - plin.data(:,:,k)));
+            Linear_Field(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.xwave_data(:,:,k)));
 %             X_Wave(k:sizeP(1)+k-1,:,k)=20*log10(abs(pnl.xwave_data(:,:,k)));
 %             Right_Wave(k:sizeP(1)+k-1,:,k)=abs((pnl.rightwave_data(:,:,k)));
 %             Left_Wave(k:sizeP(1)+k-1,:,k)=abs(pnl.leftwave_data(:,:,k));
@@ -58,9 +58,17 @@ if (strcmp(file.play_movies,'yes'))
         i_end = sizeP(1)+sizeP(3);   % For Z the plot is only for the time points
     end
   %%
+    rotate = 1;
     i_end = sizeP(1) + sizeP(3);
-    plot_value = (20*log10(abs(pnl.xwave_data)));
-    dBVALUES = 15;0.3*max(max(max(plot_value)));
+%     plot_value = pnl.snd_x0_mbs*1E-3;(max(abs(pnl.snd_x0_mbs * 1E-3)));
+    plot_value = squeeze(20*log10(abs(plin.data)));
+    dBVALUES = 30;0.3*max(max(max(plot_value*1E3)));
+    
+    if(domain.a_t==1); plot_value = Linear_Field; end
+    
+    X = domain.par{domain.dimval(3)}; Y = domain.par{domain.dimval(2)};
+    if (rotate);X = domain.par{domain.dimval(2)}; Y = domain.par{domain.dimval(3)} ; dimorder=[2 3 1]; A=rot90(permute(plot_value,dimorder),3);plot_value=ipermute(A,dimorder);end
+    
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
@@ -68,53 +76,80 @@ if (strcmp(file.play_movies,'yes'))
     F(num_frames) = struct('cdata',[],'colormap',[]);
     
     f2 = figure('WindowState','maximized');
-    ax = gca;
-    p=imagesc(ax,domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},squeeze(plot_value(1,:,:)) );
+    ax = gca; 
+    p=imagesc(ax,X,Y,squeeze(plot_value(1,:,:)));
+    ylabel(ax,dslice.ylabel,'Interpreter','latex')
+    xlabel(ax,dslice.xlabel,'Interpreter','latex')
+    if (rotate); ylabel(ax,dslice.xlabel,'Interpreter','latex'); xlabel(ax,dslice.ylabel,'Interpreter','latex'); end
     hold on;
-    caxis(ax,[max(max(max(plot_value)))-dBVALUES max(max(max(plot_value)))])
-    title_txt = 'X-Wave Pressure Field, t_i = ';
-%     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
-    title(ax,[title_txt,num2str(1)])
-    xlabel(ax,dslice.xlabel)
-    ylabel(ax,dslice.ylabel)
+%     rect_w =  0.01*(domain.max_dim(domain.dimval(1))+domain.dypar - (domain.min_dim(domain.dimval(1))-domain.dypar));
+%     r = rectangle('Position',[Lin.LocRange(1,1)  Lin.LocRange(3,1) diff(Lin.LocRange(1,:)) diff(Lin.LocRange(3,:))],...
+%     'EdgeColor',[0.64,0.08,0.18], 'FaceColor' , 'none','LineWidth',4,'LineStyle','--');%'#8BE5D3'); %% Visualization of slice
+%     circ = viscircles([sum(Bubble.LocRange(1,:))/2 sum(Bubble.LocRange(3,:))/2],diff(Bubble.LocRange(3,:))/2,'Color',"#0072BD",'LineWidth',4);
     
-    xlim(ax,[min(domain.par{domain.dimval(3)}) max(domain.par{domain.dimval(3)})])
-    ylim(ax,[min(domain.par{domain.dimval(2)}) max(domain.par{domain.dimval(2)})])
+    caxis(ax,[max(max(max(plot_value)))-dBVALUES max(max(max(plot_value)))])
+    title_txt = 'X-Wave Pressure Field, $t_i$ = ';
+%     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
+    title(ax,[title_txt,num2str(0*domain.dtpar*1E6), '$\mu$s'],'Interpreter','latex')
+    axis image;
+    
+    xlim(ax,[min(X) max(X)])
+    ylim(ax,[min(Y) max(Y)])
     
     xAM_Colormaps(file)
     c = colorbar;
     c.Label.String = 'Normalized Pressure [dB]';
-    set(ax,'YDir','normal')
-    if dslice.savedim(dslice.num) =='z'; set(ax,'XDir','reverse');set(ax,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
-    axis image;
-    set(gcf, 'Color', 'w');
-    set(gca,'FontSize',18)
+    c.TickLabelInterpreter='latex';
+    c.Label.Interpreter='latex';
     
-    F(1) = getframe(gcf);
+%     set(ax,'YDir','normal')
+%     if dslice.savedim(dslice.num) =='z'; set(ax,'XDir','reverse');set(ax,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
+%     xlim([0 8])
+%     ylim([0 8])
+    set(gcf, 'Color', 'w');
+    set(gca,'FontSize',25)
+    ax.TickLabelInterpreter='latex';
+%     set(gca,'LooseInset', get(gca,'TightInset'), [ 0.2 0 0 0])
+    
+    F(1) = getframe(gca);
     writeVideo(mov,F(1));
     %%
     % ======================================== Create Frames and write each frame to video =============================
-    for i=2:i_end  % Change this to i_end for full time simulation movie
-        set(ax.Title,'String',[title_txt,num2str(i)])   
-        set(p,'XData',domain.par{domain.dimval(3)},'YData',domain.par{domain.dimval(2)},'CData',squeeze(plot_value(i,:,:)))
+
+    for j=2:i_end
+        set(ax.Title,'String',[title_txt,num2str(j)])   
+        set(p,'CData',squeeze(plot_value(j,:,:)))
         drawnow
         if (strcmp(file.save_movies,'yes'))
-            F(i) = getframe(gcf);
-            writeVideo(mov,F(i));
-        end      
+            F(j) = getframe(gcf);
+            writeVideo(mov,F(j));
+        end  
     end
+% j=0;
+%     for i=2:i_end  % Change this to i_end for full time simulation movie
+%         set(ax.Title,'String',[title_txt,num2str(round((i+j)*domain.dtpar*1E6)), '$\mu$s'],'Interpreter','latex') 
+% %         set(p,'CData',rot90(squeeze(plot_value(i,:,:)),3))  
+%         set(p,'CData',squeeze(plot_value(i,:,:)))
+% %         ylim([-1 1])
+%         drawnow
+%         if (strcmp(file.save_movies,'yes'))
+%             F(i+j) = getframe(gcf);
+%             writeVideo(mov,F(i+j));
+%         end      
+%     end
     close(mov);
     
     %% =============================================== Compute angle of plane-wave =======================================
-    for i=400:400 % Campure a specific time frame and plot it in a figure
+    for i=500:500 % Campure a specific time frame and plot it in a figure
         set(ax.Title,'String',[title_txt,num2str(i)])
-        set(p,'XData',domain.par{domain.dimval(3)},'YData',domain.par{domain.dimval(2)},'CData',squeeze(plot_value(i,:,:)))
+        set(p,'CData',rot90(squeeze(plot_value(i,:,:)),3)*rotate)
         drawnow
         if (strcmp(file.save_movies,'yes'))
             F(i) = getframe(gcf);
             writeVideo(mov,F(i));
         end
     end
+    %%
     plot([domain.par{3}(1) domain.par{3}(end)],[0 0],'--','Color','white','LineWidth',2)
     %Capture the indexes of the max values in this plot 
     [max_val,max_idx] = max(squeeze(plot_value(i,:,:))');

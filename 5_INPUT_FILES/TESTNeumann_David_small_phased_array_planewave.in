@@ -9,17 +9,17 @@
 2.000000E-003		*** μ	   = Medium viscosity [Pa*sec]
 1.010000E+005		*** P0 	   = Ambient Pressure [Pa]
 15.00000E+006		*** fc0    = Frequency at which sound velocity is given [Hz]
-3.210000E+000		*** beta   = Nonlinearity parameter
-2.500000E-004		*** a_att  = Frequency-dependent attenuation parameter [Np/cm MHz^b]
+0.000000E+000		*** beta   = Nonlinearity parameter
+0.000000E-000		*** a_att  = Frequency-dependent attenuation parameter [Np/cm MHz^b]
 2.000000E+000		*** b_att  = Power in frequency power attenuation law
 *************************************************
 ***   domain and discretization parameters    ***
 *************************************************
-3.210000E+000		*** Lx in [mm]
-1.001000E+000		*** Ly in [mm]
-6.000000E+001		*** Lt in [cycles]
--1.000000E+000		*** Sz in [mm]	(Start of the field)
-0.400000E+001		*** Lz in [mm]	(length of the field in z)
+5.000000E+000		*** Lx in [mm]
+2.000000E+000		*** Ly in [mm]
+15.000000E+001		*** Lt in [cycles]
+0.0000000E+000		*** Sz in [mm]	(Start of the field)
+1.000000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E-000		*** Thetat [rad]
@@ -39,9 +39,10 @@ nonlin
 1		*** Switch: Use Anti-Aliasing in contrast source evaluation
 1		*** Switch: Use Support Tapering in contrast source evaluation	
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
-0		*** Switch: Use Symmetry in the Y axis
+1		*** Switch: Use Symmetry in the Y axis
+0		*** Switch: Use Perfectly Matched Layer
 1		*** Number of beams in which the total field is split
-2		*** Number of iterations of the first beam
+15		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 3		*** Number of slices to be stored
@@ -55,13 +56,13 @@ z 4.0000
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 integrable
-1.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
-1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
+1.000000E+006		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+3.000000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
-3.00000E+000		*** Twidth = Width of gaussian window
-3.00000E+000		*** Tdelay = Delay of gaussian window
-2.0					*** Power
+10.00000E+000			*** Twidth = Width of gaussian window
+20.70000E+000			*** Tdelay = Delay of gaussian window
+2						*** Power  = Power of gaussian window		
 ***************************
 ***  Switches  		***
 ***************************

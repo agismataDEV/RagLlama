@@ -41,37 +41,37 @@ cp ../5_INPUT_FILES/$OUTPUT_FOLDER_DAVID/APOD/apod_${OUTPUT_FOLDER_COMPOUND}_x.d
 cd ../6_RUN/
 
 ### HERE WE CREATE THE BASH FILE
-echo "#!/bin/bash" 									 															 > job_INCS_David
-echo " " 											 															>> job_INCS_David
-echo "#SBATCH --job-name=${A}_wave" 	 																		>> job_INCS_David
-echo "#SBATCH --partition=general" 					 															>> job_INCS_David
-echo "#SBATCH --qos=short"          				 																>> job_INCS_David
-echo "#SBATCH --nodes=2"           					 															>> job_INCS_David
-echo "#SBATCH --ntasks-per-node=50" 				 															>> job_INCS_David
-echo "#SBATCH --cpus-per-task=1"      				 															>> job_INCS_David
-echo "#SBATCH --mem=400G"           				 															>> job_INCS_David
-echo "#SBATCH --time=04:00:00"      				 															>> job_INCS_David
-echo "#SBATCH --output=$OUT_FILE" 					 															>> job_INCS_David
-echo "#SBATCH --error=$ERR_FILE"     				 															>> job_INCS_David
-echo "##SBATCH --exclusive"          				 															>> job_INCS_David
-echo " " 											 															>> job_INCS_David
-echo "module use /opt/insy/modulefiles" 			 															>> job_INCS_David
-echo "module load intel" 							 															>> job_INCS_David
-echo " " 											 															>> job_INCS_David
-echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64" 		>> job_INCS_David
-echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh" 				>> job_INCS_David
-echo "source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64" 		>> job_INCS_David
-echo " " 																										>> job_INCS_David
-echo "ulimit -s unlimited" 																						>> job_INCS_David
-echo " " 																										>> job_INCS_David
-echo "# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so" 						>> job_INCS_David
-echo "export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so" 															>> job_INCS_David
-echo "export OMP_NUM_THREADS=1" 																				>> job_INCS_David
-echo "export MKL_NUM_THREADS=1" 																				>> job_INCS_David
-echo "#export MKL_THREADING_LAYER=intel" 																		>> job_INCS_David
-echo "#export MKL_DYNAMIC="FALSE"" 																				>> job_INCS_David
-echo "#export MKL_VERBOSE=1" 																					>> job_INCS_David
-echo "srun ../3_COMPILED_FILES/INCS_${OUTPUT_FOLDER_COMPOUND} $INPUT_FILE_DAVID TESTNeumann ../7_RESULTS/$OUTPUT_FOLDER_DAVID/$OUTPUT_FOLDER_COMPOUND ../7_RESULTS/$OUTPUT_FOLDER_DAVID/$OUTPUT_FOLDER_COMPOUND" >> job_INCS_David
+echo "#!/bin/bash  									 															
+   											 															
+#SBATCH --job-name=${A}_wave  	 																		
+#SBATCH --partition=general  					 															
+#SBATCH --qos=short           				 															
+#SBATCH --nodes=2            					 															
+#SBATCH --ntasks-per-node=50  				 															
+#SBATCH --cpus-per-task=1       				 															
+#SBATCH --mem=400G            				 															
+#SBATCH --time=04:00:00       				 															
+#SBATCH --output=$OUT_FILE  					 															
+#SBATCH --error=$ERR_FILE      				 															
+##SBATCH --exclusive           				 															
+   											 															
+module use /opt/insy/modulefiles  			 															
+module load intel  							 															
+   											 															
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64  		
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh  				
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64  		
+   																										
+ulimit -s unlimited  																						
+   																										
+# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so  						
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so  															
+export OMP_NUM_THREADS=1  																				
+export MKL_NUM_THREADS=1  																				
+#export MKL_THREADING_LAYER=intel  																		
+#export MKL_DYNAMIC= FALSE   																				
+#export MKL_VERBOSE=1  																					
+srun ../3_COMPILED_FILES/INCS_${OUTPUT_FOLDER_COMPOUND} $INPUT_FILE_DAVID TESTNeumann ../7_RESULTS/$OUTPUT_FOLDER_DAVID/$OUTPUT_FOLDER_COMPOUND ../7_RESULTS/$OUTPUT_FOLDER_DAVID/$OUTPUT_FOLDER_COMPOUND" > job_INCS_David
 
 sbatch ../6_RUN/job_INCS_David &
 

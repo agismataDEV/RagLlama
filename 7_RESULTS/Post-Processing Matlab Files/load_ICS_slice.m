@@ -52,7 +52,7 @@ end
 % Locate the first file
 
 fileexists=0;
-for firstproc=0:200
+for firstproc=0:300
     inum=['000' num2str(firstproc)];
     inum=inum(length(inum)+(-2:0));
     totalfilename=[filename '_' inum '.h5'];

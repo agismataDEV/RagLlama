@@ -6,7 +6,7 @@
 ***************************
 1.060000E+003		*** rho0   = Ambient density rho0 [kg/m^3]
 1.480000E+003		*** c0     = Small signal sound velocity [m/s] 
-2.000000E-003		*** µ	   = Medium viscosity [Pa*sec]
+2.000000E-003		*** ï¿½	   = Medium viscosity [Pa*sec]
 1.010000E+005		*** P0 	   = Ambient Pressure [Pa]
 15.00000E+006		*** fc0    = Frequency at which sound velocity is given [Hz]
 3.210000E+000		*** beta   = Nonlinearity parameter
@@ -16,15 +16,15 @@
 ***   domain and discretization parameters    ***
 *************************************************
 6.410010E+000		*** Lx in [mm]
-5.001000E+000		*** Ly in [mm]
-12.00000E+001		*** Lt in [cycles]
-0.000000E+001		*** Sz in [mm]	(Start of the field)
-1.200000E+001		*** Lz in [mm]	(length of the field in z)
+1.501000E+000		*** Ly in [mm]
+21.00000E+001		*** Lt in [cycles]
+-0.05000E+001		*** Sz in [mm]	(Start of the field)
+1.850000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E-000		*** Thetat [rad]
 15.00000E+006		*** freq0  = Fundamental frequency [Hz]
-2.500000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+3.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
@@ -57,12 +57,12 @@ z 4.0000
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-8.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+2.000000E+006		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
 1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
-3.00000E+000			*** Twidth = Width of gaussian window
-6.00000E+000			*** Tdelay = Delay of gaussian window
+1.50000E+000			*** Twidth = Width of gaussian window
+3.00000E+000			*** Tdelay = Delay of gaussian window
 2						*** Power  = Power of gaussian window	
 *** Source shape, choices: "cylindricalflat", "rectangularflat", "triangularflat", "pointsource", "phasedarray"
 phasedarray
@@ -72,16 +72,18 @@ phasedarray
 *** pointsource specific: No parameters
 *** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), TimeDelayFilename, PhaseApodFilename
 64			*** Number of elements
-0.1000		*** Element width
-5.00      	*** Element height
-0.0000000	*** Kerf
+0.0800		*** Element width
+1.5000     	*** Element height
+0.0200000	*** Kerf
 0.0000000	*** Focus x
 1.00000E+30	*** Focus z
 1.00000E+30	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-none *** td_210deg_left.dat
-***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_0deg_x.dat *** apod_210deg_left.dat
+td_150deg_x.dat *** td_210deg_left.dat
+***   apodization in azimuthal X inputfilename    *** Use "standard" for [inputfilename]_apo.mat
+apod_150deg_x.dat *** apod_210deg_left.dat
+***   apodization in elevation Y inputfilename    *** Use "standard" for [inputfilename]_apo.mat
+none *** apod_210deg_left.dat
 ***************************
 ***  Switches  		***
 ***************************

@@ -239,7 +239,7 @@ SUBROUTINE GridInitTransforms(cSpace)
 				int((/ cModelParams%PPW*pcGrid%iD0TL /)),			&	! We take the length of the T-axis in distribution 1, the factor 2 is due to the fact that the input is real and the array in distribution 2 is complex
 				int((/ pcGrid%iD1TS   /)), 			&	!KH no: the factor 2 is due to the wraparound region
 				int((/ pcGrid%iD1TS   /)), 			&	! in complex, we have floor((2*iD0TL)/2)+1 numbers
-				1,						&	! for periodical T, we would need floor(iD0TL/2)+1 numbers in dist. 1
+				1,									&	! for periodical T, we would need floor(iD0TL/2)+1 numbers in dist. 1
 				int((/ pcGrid%iD1LocN /)),			&
 				int((/ 2*pcGrid%iD1TL /)),			&	!this factor two is merely because of storing real values in complex variables
 				int((/ pcGrid%iD1TL   /)),			&

@@ -137,7 +137,7 @@
 				RTOL_UP = RTOL
 			    ! t  = RealTimeIn(iout-1) 
 				tout = ScattererParams%T_driv(iout)
-				call slsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+				call slsoda(MARMOTTANT_NORM,NEQ_ODEPACK,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
 				do while (ISTATE <0)
 					if (ISTATE == -2) then
 						TOLSF = RWORK(14) 
@@ -169,7 +169,7 @@
 						write(*,*) "ISTATE = " ,ISTATE
 					endif
 					ISTATE = 3
-					call slsoda(MARMOTTANT_EXP,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
+					call slsoda(MARMOTTANT_NORM,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JAC1,jt)
 					IF (ISTATE>0) RWORK(5:7:2) = 0 
 					IF (ISTATE>0) IWORK(5:6) = 0 
 				end do
