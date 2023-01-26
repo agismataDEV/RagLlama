@@ -92,14 +92,16 @@ disp(['Ploting the Residuals ... '])
 if (strcmp(file.plot_converr,'yes'))
     for Bubblei = 1:1
         LS = split(cellstr(ls([file.dirname,'/',file.rootname,'*_',dslice.savedim(dslice.num),int2string_ICS(dslice.num),int2string_ICS(0),int2string_ICS(0),'*.h5'])),[file.rootname,'_']);
+        
         LS = split(LS(:,2) ,'_y_');
         IterationNumber = max(str2double(LS(:,1)));
         
         ii = 0;
         txt_err = {'total'; 'contrast'};
         file_dirname = [filename, erase(num2str(BubbleList(Bubblei),'%.0E'),'+0'),'MBs'];
+        file_dirname = file.dirname;
         
-        for i =1:2
+        for i =1:1
             if (i==1)
                 current   = [file_dirname '/' file.rootname int2string_ICS(0) '_' file.focalplanename int2string_ICS(ii)];
             else
@@ -140,6 +142,7 @@ if (strcmp(file.plot_converr,'yes'))
     for i = 1:1
         
         f8=figure('WindowState','maximized');
+hold on;
         eval(['plot',num2str(i),' = semilogy(0:size(Error_prev_',txt_err{i},',2)-1,flipud(Error_prev_',txt_err{i},'))'])
 
         set(eval(['plot',num2str(i),'(1)']),'DisplayName',[num2str(BubbleList(1)),' Bubble(s) Pres'],'Marker','o','MarkerSize',12,'LineWidth',2,'LineStyle','--',...

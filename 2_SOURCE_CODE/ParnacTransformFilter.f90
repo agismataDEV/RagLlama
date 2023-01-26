@@ -1928,7 +1928,7 @@ CONTAINS
         ! Zero-padding after the values which will be used for interpolation
         ! This is done by initializing OutputValW with 0 ( Really small number due to precision)
         ! Replace the first half part with the values of initial variable.
-        OutputValWT = InputValWT !* dTaperMaxFreqWindow
+        OutputValWT = InputValWT * dTaperMaxFreqWindow
 
         ! Inverse FFT of OutputLen-point
         call dfftw_execute_dft_c2r(cSpace%cGrid%cTransforms%iPlanTransform1D_Own_inv, OutputValWT, OutputValWT)

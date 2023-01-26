@@ -2337,7 +2337,7 @@
 				    Call print_error (TempResidualOutput1, err_unit_number, error_file)
 
 				end if
-
+ 
 				!--------------------------------------------------------------------------------------------------------
 
 				call UpdateRRMSerror(cRRMSNorm, cBeam, iBeam, iIter)

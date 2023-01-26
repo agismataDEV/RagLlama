@@ -563,6 +563,7 @@ CONTAINS
         end if
 
         call SwStartAndCount(cswLinStep); 
+        cSpace%iSpaceIdentifier = iSI_PRIMARYSOURCE; 
         call PointSourceCloudOperator(cSpace)
         cSpace%iSpaceIdentifier = iSI_CONTRASTSOURCE; 
         call test_isnan(cSpace)

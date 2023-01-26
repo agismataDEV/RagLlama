@@ -8,7 +8,7 @@ objects = 	 $(addprefix $(OBJDIR)/, fftw3.o Types.o Constants.o Cisi.o FDWeight.
 								  ParnacDataSpaceInit.o ParnacOutput.o ParnacDataMap.o  Specialfun.o ContrastGenFilt.o \
 								  ParnacDataRedist.o f2kcli.o ParnacParamInit.o  ParnacTransformFilter.o ParnacDerivative.o \
 			 					  ORDERPACK.o ODEPACK.o RP.o RKF45.o ParnacContrastFunctions.o ParnacPointSourceCloud.o \
-								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacSchemes.o ParnacMain.o\
+								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacMain.o\
 								)  
  
 LIB_PATH_HDF5 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/hdf5_ifort_v1.8.7/lib #-L ~/hdf5_ifort_v1.8.21/lib
@@ -20,7 +20,7 @@ LIB_PATH_FFTW 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3
 INC_PATH_FFTW 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3.3.9/include
 
 LIBS_HDF5 	= 	-lhdf5_fortran -lhdf5 -lhdf5_hl -lhdf5hl_fortran  
-LIBS_MPI 	= 	-lmpifort -lmpi 
+LIBS_MPI 	= 	-lmpifort -lmpi
 LIBS_FFTW3 	= 	$(LIB_PATH_FFTW) $(INC_PATH_FFTW) $(BIN_PATH_FFTW) -lfftw3 ##-lfftw3_mpi -lfftw3_threads ##-L ~/FFTW_3.3.9/lib/libfftw3.a -L ~/FFTW_3.3.9/libfftw3_mpi.a -lm 
 LIBS		=  	$(LIBS_HDF5) $(LIBS_MPI) $(LIBS_FFTW3) -lz -lm -shared-intel
 
@@ -95,8 +95,8 @@ $(OBJDIR)/ParnacPointSourceCloud.o : ParnacPointSourceCloud.f90
 ##Iterative Schemes
 $(OBJDIR)/ParnacIterStepMain.o  : ParnacIterStepMain.f90
 	mpiifort -c ParnacIterStepMain.f90 $(CFLAGS) -o $(OBJDIR)/ParnacIterStepMain.o -module $(OBJDIR)
-$(OBJDIR)/ParnacSchemes.o :ParnacSchemes.f90
-	mpiifort -c ParnacSchemes.f90 $(CFLAGS) -o $(OBJDIR)/ParnacSchemes.o -module $(OBJDIR)
+# $(OBJDIR)/ParnacSchemes.o :ParnacSchemes.f90
+# 	mpiifort -c ParnacSchemes.f90 $(CFLAGS) -o $(OBJDIR)/ParnacSchemes.o -module $(OBJDIR)
 
 ##Transform and Filter
 $(OBJDIR)/ParnacTransformFilter.o : ParnacTransformFilter.f90
@@ -129,8 +129,8 @@ $(OBJDIR)/ParnacOutput.o : ParnacOutput.f90
 ##Main 
 $(OBJDIR)/ParnacMain.o :ParnacMain.f90
 	mpiifort -c ParnacMain.f90 $(CFLAGS) $(LIBS_FFTW3) -o $(OBJDIR)/ParnacMain.o -module $(OBJDIR)
-$(OBJDIR)/ParnacMain_Compact.o :ParnacMain_Compact.f90
-	mpiifort -c ParnacMain_Compact.f90 $(CFLAGS) -o $(OBJDIR)/ParnacMain_Compact.o -module $(OBJDIR)
+# $(OBJDIR)/ParnacMain_Compact.o :ParnacMain_Compact.f90
+# 	mpiifort -c ParnacMain_Compact.f90 $(CFLAGS) -o $(OBJDIR)/ParnacMain_Compact.o -module $(OBJDIR)
 		
 clean:
 	rm $(OBJDIR)/*.o

@@ -623,7 +623,7 @@ CONTAINS
         ! Logical acts give -1 if TRUE and 0 if FALSE
         dSinc = 0.0D0
         ! If the argument is 0 then change it to 1D-30/1D-30 in order to avoid 0/0 = 1
-        dSinc = sin(dArg + EPSILON(1.0D-10))/(dArg + EPSILON(1.0D-10))
+        dSinc = dsin(dArg + EPSILON(1.0D-10))/(dArg + EPSILON(1.0D-10))
 
     END FUNCTION dSinc
 
@@ -938,87 +938,5 @@ CONTAINS
         end do
 
     END SUBROUTINE FISHER_YATES_SHUFFLE
-
-    SUBROUTINE FIND_CLOSEST_DIVISOR(Nominator, Denominator, Result)
-
-        ! =============================================================================
-        !
-        !   Programmer: Agisilaos Matalliotakis // Date : 200902
-        !
-        !   Language: Fortran 90
-        !
-        !   Version Date    Comment
-        !   ------- -----   -------
-        !   3.0     200902  Original code (KAM)
-        !
-        ! *****************************************************************************
-        !
-        !   DESCRIPTION
-        !
-        !   The subroutine FIND_CLOSEST_DIVISOR finds an integer divisor of a given
-        !        number (Nominator) which is closest to a given second number (Denominator).
-        !
-        ! *****************************************************************************
-        !
-        !   INPUT/OUTPUT PARAMETERS
-        !
-        !   Nominator                     i   i8b                  Nominator, Number we are looking of its divisors
-        !   Denominator                                  i   i8b         Denominator, the divisor
-        !   Result                            io  i8b         Closest Integer Divisor
-        !
-        integer(i8b), intent(in)::                          Nominator, Denominator
-        integer(i8b), intent(inout)::                              Result
-        ! *****************************************************************************
-        !
-        !   LOCAL PARAMETERS
-        !
-        !   i            i8b    Loop counter
-
-        integer(i8b) :: i
-
-        if (Denominator <= 1) then
-            Result = 1
-            return
-        else if (mod(Nominator, Denominator) == 0) then
-            Result = Denominator
-            return
-        end if
-        i = 1
-        do while (i < Denominator)
-            if (mod(Nominator, i) == 0) Result = i
-            i = i + 1
-        end do
-        return
-    END SUBROUTINE FIND_CLOSEST_DIVISOR
-
-    FUNCTION Solve_Geometric_Series(a, n, S)
-        real(dp), intent(in)                 :: a
-        integer(i8b), intent(in)         :: n, S
-        real(dp)                                        :: Solve_Geometric_Series
-        integer(i8b)                                 :: i, Calc_S
-        real(dp)                                        :: r, startD, endD
-        Solve_Geometric_Series = 1.0D0
-        if (S*1.0D0/n == a) return
-        i = 1
-        Calc_S = 0
-        do while (Calc_S < 1)
-            i = i + 1
-            Calc_S = INT(a*(i**n - 1)/(i - 1)/S, 8)
-        end do
-
-        r = real(i, dp)
-        startD = r - 1.0D0
-        endD = r
-        do while (abs(S - Calc_S) > a*1E2)
-            r = (endD + startD)/2
-            Calc_S = INT(a*(r**n - 1)/(r - 1), 8)
-            endD = r*abs(Calc_S > S) + (1 - abs(Calc_S > S))*endD
-            startD = startD*abs(Calc_S > S) + (1 - abs(Calc_S > S))*r
-        end do
-        Solve_Geometric_Series = r
-
-        return
-
-    END FUNCTION Solve_Geometric_Series
 
 END MODULE SpecialFun

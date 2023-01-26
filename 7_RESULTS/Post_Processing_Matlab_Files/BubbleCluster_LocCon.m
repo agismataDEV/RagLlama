@@ -39,7 +39,7 @@ if Bubble.N>0
     Bubble.Contrast = LoadContrastParams(Bubble,file,[name,'_Contrast',int2string_ICS(domain.beamiterations)], Bubble.ConFile , file.load_contrast_from_file, 'rb');
     % Load the bubbles' radius value
     Bubble.RadFile  = zeros(Bubble.N,1);
-    Bubble.Radius   = LoadContrastParams(Bubble,file,[name,'_Radius'], Bubble.RadFile , file.load_radius_from_file);
+    Bubble.Radius   = LoadContrastParams(Bubble,file,[name,'_Radius',int2string_ICS(domain.beamiterations)], Bubble.RadFile , file.load_radius_from_file,'r');
     
     % Find Location of each microbubble
     Bubble.Loc = Bubble.LocNorm*medium.dLambdaNN;

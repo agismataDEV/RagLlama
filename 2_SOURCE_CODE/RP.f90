@@ -69,18 +69,18 @@ CONTAINS
         integer(i8b), parameter ::  NEQ_ODEPACK(1) = 2, NEQ_RK = 5                !   Number of first order ode's
         integer(i4b), parameter ::  lrw = 697                        !   LRW   :IN     Declared length of RWORK (in user's DIMENSION statement).
         integer(i4b), parameter ::  liw = 45            !   LIW   :IN     Declared length of IWORK (in user's DIMENSION statement).
-        real(dp)                            ::  atol(NEQ_ODEPACK(1)), rtol, dtout, t, tout, t_ref, y(NEQ_RK), yp(NEQ_RK)
-        real(dp)                                ::        TOLSF, ATOL_UP(NEQ_ODEPACK(1)), RTOL_UP
+        real(dp)                                ::  atol(NEQ_ODEPACK(1)), rtol, dtout, t, tout, t_ref, y(NEQ_RK), yp(NEQ_RK)
+        real(dp)                                ::  TOLSF, ATOL_UP(NEQ_ODEPACK(1)), RTOL_UP
         real(dp)                                ::  rwork(lrw)
-        integer(i4b)                         ::  iwork(liw)
-        integer(i4b)                         ::  i, iopar, iopt, iout, istate, itask, itol, mf, jt, flag
-        real(dp)                                 ::  norm_factor(3), P_interp(1)
+        integer(i4b)                            ::  iwork(liw)
+        integer(i4b)                            ::  i, iopar, iopt, iout, istate, itask, itol, mf, jt, flag
+        real(dp)                                ::  norm_factor(3), P_interp(1)
         real(dp)                                ::  R_bub(n_samples, 3), dTaperSupportWindowN(n_samples), P_bub(n_samples)
 
-        character(len=1024)        ::  actemp
+        character(len=1024)                     ::  actemp
 
-        logical                                        ::  log_isnan
-
+        logical                                 ::  log_isnan
+ 
         call ScattererInit()
         call R_exp(iBubble)
 
@@ -92,7 +92,7 @@ CONTAINS
         if (trim(ScattererParams%Solver_Normalize) == 'time') ScattererParams%time_norm = cModelParams%freq0
         if (trim(ScattererParams%Solver_Normalize) == 'radius') ScattererParams%rad_norm = ScattererParams%R0(iBubble)
         if (trim(ScattererParams%Solver_Normalize) == 'freq0_and_radius') then
-            ScattererParams%time_norm = cModelParams%freq0
+            ScattererParams%time_norm = cModelParams%freq0* 2 * cModelParams%Fnyq
             ScattererParams%rad_norm = ScattererParams%R0(iBubble)
         elseif (trim(ScattererParams%Solver_Normalize) == 'Minnaert_and_radius') then
             ScattererParams%time_norm = SQRT(cMediumParams%P0/cMediumParams%rho0)/ScattererParams%R0(iBubble)
@@ -100,16 +100,16 @@ CONTAINS
         end if
 
         itol = 2            !  if atol scalar, itol = 1 and  if atol array, itol = 2, if atol and rtol array, itol = 4
-        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 10.0D0)
-        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 10.0D0)
+        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
+        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
 
         dTaperSupportWindowN = dTaperingWindow(n_samples, (RealTimeIn(2) - RealTimeIn(1))*cModelParams%freq0, 2.0_dp, 2.0_dp)
 
         ALLOCATE (ScattererParams%P_driv(n_samples), ScattererParams%T_driv(n_samples))
-        ScattererParams%P_driv = RealPressIn !* dTaperSupportWindowN
+        ScattererParams%P_driv = RealPressIn * dTaperSupportWindowN
         ScattererParams%T_driv = RealTimeIn*ScattererParams%time_norm
 
-        ! Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
+        ! Medium parameters (water, Room temperature =20° and 1 atm ambient pressure) 
         ScattererParams%P_g0 = cMediumParams%P0 + 2.0D0*ScattererParams%sigma_R0/ScattererParams%R0(iBubble)
 
         ! Marmottant model parameters
@@ -148,7 +148,7 @@ CONTAINS
                 RTOL_UP = RTOL
                 tout = ScattererParams%T_driv(iout) !tout + (RealTimeIn(2)-RealTimeIn(1)) * ScattererParams%time_norm ;
                 y(5) = ScattererParams%P_driv(iout)
-                call dlsode(MARMOTTANT, NEQ_ODEPACK, y, t, tout, itol, rtol, atol, itask, istate, iopt, rwork, lrw, iwork, liw, JACDUM, mf)
+                call dlsoda(MARMOTTANT, NEQ_ODEPACK, y, t, tout, itol, rtol, atol, itask, istate, iopt, rwork, lrw, iwork, liw, JACDUM, jt)
 
                 do while (ISTATE < 0)
 
@@ -202,7 +202,7 @@ CONTAINS
 
         ! Find volume acceleration d^2V/dt^2 [m^3/s^2]
         ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
-        V_dd_pad = REAL(4.0D0*pi*R_bub(:, 1)*(R_bub(:, 1)*R_bub(:, 3) + 2.0D0*R_bub(:, 2)**2), dp)!*dTaperSupportWindowN
+        V_dd_pad = REAL(4.0D0*pi*R_bub(:, 1)*(R_bub(:, 1)*R_bub(:, 3) + 2.0D0*R_bub(:, 2)**2), dp) *dTaperSupportWindowN
         P_bub = REAL(ScattererParams%P_g0*(R_bub(:, 1)/ScattererParams%R0(iBubble))**(-3.0D0*ScattererParams%gama)*(1.0D0 - 3.0D0*ScattererParams%gama/cMediumParams%c0*R_bub(:, 2)), dp)
 
         DEALLOCATE (ScattererParams%P_driv, ScattererParams%T_driv)
@@ -223,7 +223,7 @@ CONTAINS
         !
         ! *****************************************************************************
         !
-        !   DESCRIPTION
+        !   DESCRIPTION 
         !
         !   The subroutine MARMOTTANT_X solves the Marmottant model of the RP Equation
         !   using a simplification of R=x*R0 and t=τ/f0 . This way the radius is normalized and the
@@ -247,8 +247,9 @@ CONTAINS
         real(dp) P_elas, P_vis, P_gas, Damp_ac, Damp_visc, P_total
 
         iBubble = NINT(R(4))
-        ScattererParams%kappa_s = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
+        ! ScattererParams%kappa_s = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
         call INTERP1D(ScattererParams%T_driv, ScattererParams%P_driv, real((/t/), dp), P_interp); 
+        ! P_interp(1) = R(5);
         ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
         ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)
 
@@ -270,10 +271,10 @@ CONTAINS
         Damp_visc = 4.0D0*cMediumParams%mu*R_norm(2)/R_norm(1)
         P_elas = 2.0D0*sigma_R/R_norm(1)
         P_vis = 4.0D0*ScattererParams%kappa_s*R_norm(2)/R_norm(1)**2
-        P_total = (P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)
+        P_total = real(P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis,dp)
 
         Rdot(1) = R(2)  ! Rdot , radius velocity
-        R_norm(3) = (P_total/cMediumParams%rho0 - 3.0D0/2.0D0*R_norm(2)**2)/R_norm(1)
+        R_norm(3) = real(P_total/cMediumParams%rho0 - 3.0D0/2.0D0*R_norm(2)**2.0D0,dp)/R_norm(1)
         Rdot(2) = R_norm(3)/(ScattererParams%rad_norm*ScattererParams%time_norm**2)! Rddot , radius acceleration
         R(3) = Rdot(2)
     END SUBROUTINE MARMOTTANT

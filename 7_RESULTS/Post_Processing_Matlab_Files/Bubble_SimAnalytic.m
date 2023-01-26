@@ -27,9 +27,9 @@ function [V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f)
 %% ========================Initialization==============================================================
 
 % -------------Bubble parameters
-par.R0 = 2.4e-6 ;                         % [μm],  initial bubble radius R0
-par.S_vis = 5.8e-9         ;            % [Pa*sec] , Shell viscosity
-par.S_vis = 1.5E-9*exp(8E5*par.R0);
+par.R0 = 4.2e-6 ;                         % [μm],  initial bubble radius R0
+par.S_vis = 3.0e-8         ;            % [Pa*sec] , Shell viscosity
+% par.S_vis = 1.5E-9*exp(8E5*par.R0);
 
 %------------------ Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
 par.P0 = 1.01e+5 ;                             % [Pa], ambient pressure 1 [atm] = 10^5 [Pa]
@@ -42,7 +42,7 @@ par.c = c;
 par.rho = rho;
 par.f = f;
 %---------------Marmottant model parameters
-par.chi = 0.5   ;                                     % [N/m] shell elasticity
+par.chi = 0.4   ;                                     % [N/m] shell elasticity
 par.R_b = par.R0/sqrt(par.sigma_R0/par.chi+1);     % buckling radius
 par.R_r = par.R_b*sqrt(par.sigma_w/par.chi+1);       % upper limit radius after rupture
 
@@ -53,12 +53,12 @@ par.fresonance = par.f0*sqrt(1-par.delta^2/2)/1E6  %MHz
 
 %% Create p_driv manually
 w_driving   = 2*pi*par.f;
-gauss_dl    = 12/par.f;
-gauss_win   = 6/par.f;
-dt = 1/(2*9*f);
+gauss_dl    = 3/par.f;
+gauss_win   = 1/par.f;
+dt = 1/(2*7*f);
 t_p_driv = [1:600]*dt;
 
-p_driv   = 1E2*exp( - ((t_p_driv-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t_p_driv-gauss_dl));
+p_driv   = 2E5*exp( - ((t_p_driv-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t_p_driv-gauss_dl));
 %% ========================= Solve ODE with Marmottant ==================================================
 T_start = t_p_driv(1) ;
 T_end   = t_p_driv(end)   ;

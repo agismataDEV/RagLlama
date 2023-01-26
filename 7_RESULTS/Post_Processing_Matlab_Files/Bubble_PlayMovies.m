@@ -48,14 +48,14 @@ if (strcmp(file.play_movies,'yes'))
     %% ========================= Initialize first frame=========================
     
     i_end = sizeP(1);
-    dBVALUES = 50;
-    plot_value = 20*log10(abs(pnl.data));
+    dBVALUES = 70;
+    plot_value = 20*log10(abs(plin.data));
     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
-    mov = VideoWriter('Proton_Scattered_3E2MBs_3cycles.avi','Motion JPEG AVI');
-    mov.FrameRate = 10; mov.Quality = 75;
+    mov = VideoWriter('Phased_1E5MB_new_12th.avi','Motion JPEG AVI');
+    mov.FrameRate = 30; mov.Quality = 75;
     open(mov);
     
     num_frames = i_end;
@@ -79,7 +79,7 @@ if (strcmp(file.play_movies,'yes'))
 %         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
 %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
     end
-    title_txt = 'Scattered Pressure Field , $t_i = $';
+    title_txt = 'Linear Pressure Field , $t_i = $';
 %     title_txt = 'Linear Pressure Field , $t_i = $';
 %     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
     %     if (sum(sum(sum(plot_value==Total_Field)))==numel(plot_value)) ;title_txt = 'Total Pressure Field, t_i = ';end
@@ -93,11 +93,13 @@ if (strcmp(file.play_movies,'yes'))
     BubbleCluster_Colormaps(file)
     c = colorbar;
     c.Label.String = 'Normalized Pressure [dB]';
+    c.Label.Interpreter = 'latex';
     set(ax,'YDir','normal')
     if dslice.savedim(dslice.num) =='z'; set(ax,'XDir','reverse');set(ax,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
     axis image;
     set(gcf, 'Color', 'w');
     set(gca,'FontSize',30)
+%     xlim(ax,[0 55])
     
     F(1) = getframe(gcf);
     writeVideo(mov,F(1));

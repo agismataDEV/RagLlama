@@ -51,7 +51,7 @@ for i = 1:i_end
     for i=1:harmonics
         eval(['pnl.harm' num2str(i) '= nan(dims);']);
     end
-    
+   
     order = 4;
     % There is not significant change if I use the 1st block of code for a cluster of bubbles,
     % But the opposite cannot happen ,because the 2nd block of code can not accurately visualize
@@ -59,21 +59,22 @@ for i = 1:i_end
     % generate fundamental, higher harmonic and superharmonic profiles
 
 %         
-%         for iz=1:dims(2)
-%             plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
-%             for i = 1: harmonics
-%                 eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
-%             end
-% %                         pnl.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
-% %                         plin.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
-% %                         pnl.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
-% %                         plin.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
-%             
-%         end
-		plin.fund =20*log10(maxhilbert_vec(plin.data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
-		for i = 1: harmonics
-            eval(['pnl.harm' num2str(i) '=20*log10(maxhilbert_vec(pharm,domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+        for iz=1:dims(2)
+            plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
+            pnl.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
+            for i = 1: harmonics
+                eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+            end
+%                         pnl.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
+%                         plin.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
+%                         pnl.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+%                         plin.atten_fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+            
         end
+% 		plin.fund =20*log10(maxhilbert_vec(plin.data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
+% 		for i = 1: harmonics
+%             eval(['pnl.harm' num2str(i) '=20*log10(maxhilbert_vec(pharm,domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+%         end
     
     %% PLOTS
    disp(['Ploting the ', subplot_txt1,'...'])
@@ -104,28 +105,13 @@ for i = 1:i_end
  
     %%
     %====================================================== Harmonic Plot =================================================
-    Nsubplot = 4;
-    splot_div =2;
+    Nsubplot = 1;
+    splot_div =1;
     dBVALUES=20;
+    harmonics = 1;
     Add = 0;
-    plin_plot = squeeze(20*log10(max(abs(pnl.data))));
-    FontSize = 20;
-    f2=figure('WindowState','maximized');
-    imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
-    hold on;
-    caxis([max(max(plin_plot))-dBVALUES max(max(plin_plot))]+Add)
-    title('Total Pressure Field')
-    xlabel(dslice.xlabel )
-    ylabel(dslice.ylabel)
-    BubbleCluster_Colormaps(file)
-    c = colorbar;
-    c.Label.String = 'Pressure [dB]'; c.Label.FontSize = FontSize;
-    set(gca,'LooseInset', max(get(gca,'TightInset'), 0.03))
-    set(gca,'YDir','normal')
-    if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
-    set(gcf, 'Color', 'white');
-    set(gca,'FontSize',FontSize);
-    hold off;
+    plin_plot = squeeze(20*log10(max(abs(pnl.contrastdata1))));
+    FontSize = 40;
     
     f4=figure('WindowState','maximized');
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
@@ -136,23 +122,35 @@ for i = 1:i_end
     elseif Bubble.N>=1
         plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
     end
+   if PS.N >6
+        rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
+    elseif PS.N>=1
+        plot(PS.LocGlob(:,domain.dimval(3)),PS.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
+    end
     title('Linear Pressure Field')
+        title(['F0, [0.7 - 1.3] MHz'] )
+        title(['2H, [1.7 - 2.3] MHz'] )
+        title(['3H, [2.7 - 3.3] MHz'] )
     xlabel(dslice.xlabel)
     ylabel(dslice.ylabel )
     BubbleCluster_Colormaps(file)
     c = colorbar;
+    c.Label.Interpreter = 'latex';
     c.Label.String = 'Pressure [dB]'; c.Label.FontSize = FontSize;
-    set(gca,'LooseInset', max(get(gca,'TightInset'), 0.03))
+%     set(gca,'LooseInset', max(get(gca,'TightInset'), 0.03))
     set(gca,'YDir','normal')
     if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
     set(gcf, 'Color', 'white');
     set(gca,'FontSize',FontSize);
     hold off;
+    axis image
     %%
 %     caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
+ 
     for i = 1: harmonics
         if (i-4*floor((i-1)/4)==1); f3=figure('WindowState','maximized');end
-        pnl_harmi = 20*log10(squeeze(max(abs(pnl.data))));%eval(['pnl.harm' num2str(i)]);
+        pnl_harmi = 20*log10(squeeze(max(abs(pnl.data))));%eval(['pnl.harm' num2str(i)]);   
+        pnl_harmi =  squeeze(max(abs(pnl.data)) - max(abs(plin.data)));
         subplot(Nsubplot/splot_div,Nsubplot/(Nsubplot/splot_div),i-4*floor((i-1)/4))
         imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
         
@@ -170,6 +168,7 @@ for i = 1:i_end
         ylabel(dslice.ylabel)
         BubbleCluster_Colormaps(file)
         c = colorbar;
+        c.Label.Interpreter = 'latex';
         c.Label.String = 'Pressure [dB]'; c.Label.FontSize = FontSize;
         set(gca,'YDir','normal')
         if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
@@ -180,6 +179,7 @@ for i = 1:i_end
         sgtitle(subplot_txt,'FontSize',FontSize+3);
         spl = lower(split(subplot_txt1,' '));
         hold off;
+        axis image;
         
     end
     

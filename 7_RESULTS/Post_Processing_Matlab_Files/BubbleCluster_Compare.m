@@ -34,31 +34,35 @@ if (Bubble.N <=10 && Bubble.N>0)
     %%
     i_start = 1;
     i_end = domain.tdimpar;
-    depth =  100;
-    x_idx = round(size(plin.data,2)/2)+1;
+    depth =  300; %depth =  55;
+    x_idx = round(size(plin.data,2)/2)+1; %x_idx=47;
     figure('WindowState','maximized');
-%     hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.data(i_start:i_end,x_idx,depth)*1E-3, '-','LineWidth',2)
-    hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,x_idx,depth)*1E-3,'-.','LineWidth',2)
-    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.contrastdata(i_start:i_end,x_idx,depth)*1E-3, '--','LineWidth',2)
-    xlabel('Time [usec]')
-    ylabel('Pressure [kPa]')
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.data(i_start:i_end,x_idx,depth)*1E-3, '-','LineWidth',3)
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,plin.data(i_start:i_end,x_idx,depth)*1E-3,'-.','LineWidth',3)
+    hold on;  plot(domain.tpar(i_start:i_end)*1E6,pnl.contrastdata(i_start:i_end,x_idx,depth)*1E-3, '--','LineWidth',3)
+    xlabel('\textit{t} [$\mu$s]')
+    ylabel('\textit{p} [kPa]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
-    hl = legend('Linear','Contrast');
+    hl = legend('Total','Linear','Contrast');
     grid on;
-    title(['INCS Results after ',num2str(domain.beamiterations), ' Iterations @ (X,Y,Z) = (', num2str(domain.par{1}(x_idx)),', ',num2str(dslice.pos(dslice.num)),', ', num2str(domain.par{3}(depth)),') [mm]'])
+    title(['INCS Results at (X,Y,Z) = (', num2str(domain.par{1}(x_idx)),', ',num2str(dslice.pos(dslice.num)),', ', num2str(domain.par{3}(depth)),') [mm]'])
     
     F_s = 1/(domain.dtpar);                          % [Hz] , 1/dt
+    [f_s,Sp_t] = Freq_Calc(pnl.data(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
     [f_p,Sp_p] = Freq_Calc(plin.data(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
-    figure('WindowState','maximized');
-    hold on;  plot(f_p*1E-6,Sp_p - max(Sp_p),'-','LineWidth',2)
     [f_s,Sp_s] = Freq_Calc(pnl.contrastdata(i_start:i_end,x_idx,depth),F_s);            % Spectrum of simulation
-    hold on;  plot(f_s*1E-6,Sp_s - max(Sp_s),'--','LineWidth',2)
-    xlabel('Frequency [MHz]')
+    figure('WindowState','maximized');
+    hold on;  plot(f_s*1E-6,Sp_t,'-','LineWidth',3)
+    hold on;  plot(f_p*1E-6,Sp_p ,'-.','LineWidth',3)
+    hold on;  plot(f_s*1E-6,Sp_s,'--','LineWidth',3)
+    ylim(max([Sp_p ; Sp_t,;Sp_s]) - [ 80 -5])
+    xlim([0 7*medium.freq0*1E-6])
+    xlabel('\textit{f} [MHz]')
     ylabel('Amplitude [dB]')
     set(gca,'FontSize',20)
     set(gcf,'Color','white')
-    legend('Linear','Scattered')
+    legend('Total','Linear','Scattered')
     grid on;
 %     ylim([max([Sp_p; Sp_s])-70 max([Sp_p; Sp_s])])
     %% ============== Comparison of time signature based on ODE Solvers ====================================

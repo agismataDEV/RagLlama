@@ -266,7 +266,7 @@
                 ! Check the existence of the inputfile in the input dir
                 inquire (FILE=trim(sInputDir)//trim(sInputName), EXIST=error)
                 if (error .EQV. .FALSE.) then
-                    write (*, "('Error, cannot find inputfile',A)") trim(sInputDir)//trim(sInputName)
+                    write (*, "('Error, cannot find inputfile ',A)") trim(sInputDir)//trim(sInputName)
                     stop 'Error, cannot find inputfile'
                 end if
             end if
@@ -890,7 +890,7 @@
                     write (*, "('Source signature file ',A)") trim(cSourceParams.srcsignfilename)
                 end if
                 write (*, '(" ")')
-                if (cModelParams.PrimarySourceType /= iEI_PLANEWAVE .AND. cModelParams.PrimarySourceType /= iEI_POINTSOURCECLOUD) then
+                if (cModelParams.PrimarySourceType /= iEI_PLANEWAVE ) then
                     ! source shape parameters
                     write (*, '(" SrcShapeType: ",I2)') cSourceParams.srcshapetype
                     if (cSourceParams.srcshapetype == iHI_CYLINDRICAL) then

@@ -121,7 +121,7 @@ microbubble		***	type of scatterer
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-2.00000E+004	*** No. of Bubbles consisting the cluster
+1.00000E+003	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	

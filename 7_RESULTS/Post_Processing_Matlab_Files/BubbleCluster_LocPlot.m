@@ -75,8 +75,9 @@ if (Bubble.N >0 )
     hold off;
     
     set(gca,'FontSize',LocPlot_FontSize)
-    %======================= 3D Microbubble Cluster Focused position =============
+    %% ======================= 3D Microbubble Cluster Focused position =============
     subplot(2,3,2)
+    figure
     hold on;
     box on;
     [Z,X] = meshgrid(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)});
@@ -88,7 +89,7 @@ if (Bubble.N >0 )
     
     xlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(3))) max(Bubble.LocGlob(:,domain.dimval(3)))] + [-domain.dzpar domain.dzpar]))/10)
     ylim(round(10*([min(Bubble.LocGlob(:,domain.dimval(2))) max(Bubble.LocGlob(:,domain.dimval(2)))] + [-domain.dxpar domain.dxpar]))/10)
-    zlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(1))) max(Bubble.LocGlob(:,domain.dimval(1)))] + [-domain.dypar domain.dypar]))/10)
+    zlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(1))) max(Bubble.LocGlob(:,domain.dimval(1)))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     % xlim([ 40 45])
     % ylim([ -4 -3])
     % zlim([ 1 2])
@@ -103,6 +104,7 @@ if (Bubble.N >0 )
     hold off;
     
     set(gca,'FontSize',LocPlot_FontSize)
+    %%
     %====================== X-Z Side View of Focused Region ==========================
     subplot(2,3,3)
     
@@ -122,7 +124,7 @@ if (Bubble.N >0 )
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ; r.FaceColor = [ 192 192 192]/255;end
     
     xlim(floor(10*(domain.min_dim(domain.dimval(3))-domain.dzpar))/10 + ceil(10*(domain.max_dim(domain.dimval(3))+domain.dzpar-(domain.min_dim(domain.dimval(3))-domain.dzpar)))/10*[0 1])
-    ylim(round(10*([ domain.min_dim(domain.dimval(1)) domain.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10)
+    ylim(round(10*([ domain.min_dim(domain.dimval(1)) domain.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     
     xlabel(dslice.xlabel)
     ylabel(dslice.zlabel)
@@ -132,6 +134,7 @@ if (Bubble.N >0 )
     hold off;
     
     set(gca,'FontSize',LocPlot_FontSize)
+    %%
     %====================== 2D Side View of Focused Region ==========================
     subplot(2,3,[4 5])
     hold on;
@@ -149,6 +152,7 @@ if (Bubble.N >0 )
     hold off;
     
     set(gca,'FontSize',LocPlot_FontSize)
+    %%
     %====================== Z-Y Side View of Focused Region ==========================
     subplot(2,3,6)
     hold on;
@@ -160,7 +164,7 @@ if (Bubble.N >0 )
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ; r.FaceColor = [ 192 192 192]/255;end
     
     xlim(round(10*([ domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(2))] + [-domain.dxpar domain.dxpar]))/10)
-    ylim(round(10*([ domain.min_dim(domain.dimval(1)) domain.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10)
+    ylim(round(10*([ domain.min_dim(domain.dimval(1)) domain.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     % xlim([-0.1 0.1])
     % ylim([-0.1 0.1])
     
