@@ -121,6 +121,5 @@ ParnacMain.f90 / ParnacParamInit.f90:
 
 ParnacPointSourceCloud.f90 : 
 1. Now you can set specific dimensions for the bubble cloud (-X X , -Y Y and 0 Z)
+2. IMPORTANT! Corrections made for calculate the scattered pressure at a region around the bubble cloud.
 
-Removed PPW from everywhere!!
-Also from the input files!
