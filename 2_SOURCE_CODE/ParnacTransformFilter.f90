@@ -1704,10 +1704,10 @@ CONTAINS
 !   OutputLen        i   i8b    Length of output signal
 !   OutputVal        r   dp   a vector of OutputLen length of the  output signal
 !
-        real(dp), intent(in)                 ::                 InputVal(:)
-        real(dp), intent(out)                 ::                 OutputVal(:)
-        integer(i8b), intent(in)                ::                Order
-        type(Space), intent(in)         ::                 cSpace
+        real(dp), intent(in)                    ::                  InputVal(:)
+        real(dp), intent(out)                   ::                  OutputVal(:)
+        integer(i8b), intent(in)                ::                  Order
+        type(Space), intent(in)                 ::                  cSpace
 
 ! *****************************************************************************
 !
@@ -1724,15 +1724,15 @@ CONTAINS
 !   dRightBand                                   dp    Right limit of banded tapering
 !
 
-        complex(dpc)                                 ::                         InputValW(size(InputVal)/2 + 1)
-        complex(dpc), allocatable        ::                        OutputValW(:)
-        complex(dpc), allocatable        ::                        dMultFactor(:)
-        real(dp), allocatable                ::                        dTaperMaxFreqWindow(:)
-        integer(i8b)                                 ::                        InputLen, OutputLen, EvenOrOdd, iNumPlanTransform, iNumPlanTransform_inv, iDimW
+        complex(dpc)                                ::                      InputValW(size(InputVal)/2 + 1)
+        complex(dpc), allocatable                   ::                      OutputValW(:)
+        complex(dpc), allocatable                   ::                      dMultFactor(:)
+        real(dp), allocatable                       ::                      dTaperMaxFreqWindow(:)
+        integer(i8b)                                ::                      InputLen, OutputLen, EvenOrOdd, iNumPlanTransform, iNumPlanTransform_inv, iDimW
 
         !Filtering and windowing parameters
-        real(dp)         ::                        dLeftBand, dRightBand, dOmega(size(InputVal)/2 + 1)
-        integer                ::                        i, iErr
+        real(dp)                                    ::                      dLeftBand, dRightBand, dOmega(size(InputVal)/2 + 1)
+        integer                                     ::                      i, iErr
 
 ! *****************************************************************************
 !
@@ -1798,25 +1798,27 @@ CONTAINS
         !
         !   DESCRIPTION
         !
-        !   The function INTERP1DFREQ returns a signal upsampled or downsampled
-        !   based on the input signal and the output length.
-        !   If (InputLen > FinalLen) then decimate ( downsample)
-        !   If (InputLen < FinalLen) then upsample
+        !   The function GREENS1DFREQ returns the convolution between the input signal
+        !   (InputVal) with the Green's function.
         !
         ! *****************************************************************************
         !
         !   INPUT/OUTPUT PARAMETERS
         !
         !   InputVal         r   dp   a vector of the (time) values of the initial signal
-        !   OutputLen        i   i8b    Length of output signal
-        !   OutputVal        r   dp   a vector of OutputLen length of the  output signal
+        !   Bubble_diff      r   dp   a vector of the difference between the scatterer
+        !                             and the Target where we want to compute the pressure
+        !   OutputVal        r   dp   a vector of the  output signal
+        !   iTargetIndex     i   i8b  a vector that has the location of the target gridpoint
+        !                             where we want to compute the pressure 
         !
-        real(dp), intent(in)                 ::                 InputVal(:)
-        real(dp), intent(out)                 ::                 OutputVal(:)
-        real(dp), intent(inout)                ::                Bubble_diff(3)
-        integer(i8b), intent(inout)        ::                iTargetIndex(3)
+        !
+        real(dp), intent(in)                    ::                  InputVal(:)
+        real(dp), intent(out)                   ::                  OutputVal(:)
+        real(dp), intent(inout)                 ::                  Bubble_diff(3)
+        integer(i8b), intent(inout)             ::                  iTargetIndex(3)
 
-        type(Space), intent(in)          ::                 cSpace
+        type(Space), intent(in)                 ::                  cSpace
 
         ! *****************************************************************************
         !
@@ -1843,11 +1845,10 @@ CONTAINS
         integer                                     ::                        i, iErr
 
         !Green's function parameters:
-
         integer(i8b)                                ::                        iIndZ, iOmega, iDifft
         real(dp)                                    ::                        dStartT, dEndT, dRad
         real(dp)                                    ::                        dSi1, dSi2, dCi1, dCi2; 
-        real(dp)                                    ::                        dOmega, dCorrection, dKcutoff
+        real(dp)                                    ::                        dOmega,  dKcutoff
         complex(dpc)                                ::                        dKangular, E1mm, E1mp, E1pm, E1pp
         integer(i8b)                                ::                        error
 
@@ -1871,9 +1872,6 @@ CONTAINS
         EvenOrOdd = mod(InputLen, 2_i8b)
         iDimW = InputLen/2 + 1
         interp_factor = 1
-
-        !    in the contrast source
-        ! dTaperSupportWindow = dTaperingWindow(InputLen,cSpace%dDt,2.0D0,2.0D0)
 
         InputValWT = 0.0
         InputValWT(1:InputLen/2) = InputVal(1:InputLen - EvenOrOdd:2) + im*InputVal(2:InputLen - EvenOrOdd:2)

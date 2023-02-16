@@ -528,7 +528,9 @@ CONTAINS
         !   DESCRIPTION
         !
         !   The subroutine PointSourceCloudField computes the primary field solution
-        !   generated from a cloud of point sources, having the same amplitude.
+        !   generated from a cloud of point sources. It is assumed as a contrast source
+        !   and then the convolution with the green's function takes place. 
+        !   This is similary to what happens to a point scatterers' cloud.
         !
         ! *****************************************************************************
         !
@@ -564,7 +566,7 @@ CONTAINS
 
         call SwStartAndCount(cswLinStep); 
         cSpace%iSpaceIdentifier = iSI_PRIMARYSOURCE; 
-        call PointSourceCloudOperator(cSpace)
+        call PointSourceCloudOperator(cSpace)  ! This is where the source term is computed
         cSpace%iSpaceIdentifier = iSI_CONTRASTSOURCE; 
         call test_isnan(cSpace)
         call ContrastSourcetoField(cSpace, cSpace, .false.)

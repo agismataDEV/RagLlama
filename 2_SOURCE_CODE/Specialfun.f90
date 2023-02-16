@@ -643,28 +643,28 @@ CONTAINS
         !   DESCRIPTION
         !
         !   The subroutine LINSPACE gemerates a vector x, when the starting value (x_start),
-        !        the final value (x_end) and the length of interest (x_len) are known.
+        !   the final value (x_end) and the length of interest (x_len) are known.
         !
         ! *****************************************************************************
         !
         !   INPUT/OUTPUT PARAMETERS
         !
-        !   Nominator                     i   i8b                  Nominator, Number we are looking of its divisors
-        !   Denominator                                  i   i8b         Denominator, the divisor
-        !   Result                            io  i8b         Closest Integer Divisor
+        !   Nominator                       i   i8b         Nominator, Number we are looking of its divisors
+        !   Denominator                     i   i8b         Denominator, the divisor
+        !   Result                          io  i8b         Closest Integer Divisor
         !
         ! *****************************************************************************
-        implicit none
-        real(dp), dimension(:), intent(out) :: x
-        real(dp), intent(in)                            :: x_start, x_end
-        integer(i8b), intent(in)                          :: x_len
+
+        real(dp), dimension(:), intent(out)                             :: x
+        real(dp), intent(in)                                            :: x_start, x_end
+        integer(i8b), intent(in)                                        :: x_len
         ! *****************************************************************************
         !
         !   LOCAL PARAMETERS
         !
         ! *****************************************************************************
-        real(dp)                                                           :: dx
-        integer(i8b)                                                 :: i
+        real(dp)                                                        :: dx
+        integer(i8b)                                                    :: i
         ! *****************************************************************************
         !
         !   I/O
@@ -739,30 +739,30 @@ CONTAINS
         !
         !   DESCRIPTION
         !
-        !   The subroutine FIND_CLOSEST_DIVISOR finds an integer divisor of a given
-        !        number (Nominator) which is closest to a given second number (Denominator).
+        !   The subroutine INTERP3D does a trilinear interpolation based on the X and Y
+        !   values that are given and also the X values that we want to get the Y values.
         !
         ! *****************************************************************************
         !
         !   INPUT/OUTPUT PARAMETERS
         !
-        !   xData                     i   i8b                  a vector of the x-values of the data to be interpolated
-        !   yData                                  i   i8b         a vector of the y-values of the data to be interpolated
-        !   xVal                    i   i8b         a vector of the x-values where interpolation should be performed
-        !   yVal                    o   i8b         a vector of the resulting interpolated values
+        !   LOCDATA                     r   dp         a vector of the x-values of the data to be interpolated
+        !   LOCFINAL                    r   dp         a vector of the y-values of the data to be interpolated
+        !   FDATA                       r   dp         a vector of the x-values where interpolation should be performed
+        !   FFINAL                      r   dp         a vector of the resulting interpolated values
         !
         ! *****************************************************************************
-        real(dp), intent(in)                 ::                 LOCDATA(:, :), FDATA(:, :), LOCFINAL(:)
-        real(dp), intent(out)                 ::                 FFINAL(:)
+        real(dp), intent(in)                ::                  LOCDATA(:, :), FDATA(:, :), LOCFINAL(:)
+        real(dp), intent(out)               ::                  FFINAL(:)
 
         ! *****************************************************************************
         !
         !   LOCAL PARAMETERS
         !
         ! *****************************************************************************
-        integer(i8b)                                 ::                 inputIndex, dataIndex, i_start, i_end
-        real(dp)                                    ::                x_d, xmin, xmax, y_d, ymin, ymax, z_d, zmin, zmax
-        real(dp)                                    ::                 c00(size(FFINAL, 1)), c01(size(FFINAL, 1)), c10(size(FFINAL, 1)), c11(size(FFINAL, 1)), c0(size(FFINAL, 1)), c1(size(FFINAL, 1))
+        integer(i8b)                        ::                  inputIndex, dataIndex, i_start, i_end
+        real(dp)                            ::                  x_d, xmin, xmax, y_d, ymin, ymax, z_d, zmin, zmax
+        real(dp)                            ::                  c00(size(FFINAL, 1)), c01(size(FFINAL, 1)), c10(size(FFINAL, 1)), c11(size(FFINAL, 1)), c0(size(FFINAL, 1)), c1(size(FFINAL, 1))
         ! *****************************************************************************
         !
         !   I/O
@@ -821,22 +821,23 @@ CONTAINS
         !
         !   DESCRIPTION
         !
-        !   The subroutine FIND_CLOSEST_DIVISOR finds an integer divisor of a given
-        !        number (Nominator) which is closest to a given second number (Denominator).
+        !   The subroutine INTERP3D_SHEPARD does a 3D interpolation based on the 
+        !   X and Y values that are given and also the X values that we want to get 
+        !   the Y values. The difference with INTERP3D is that you can use a weight.
+        !   
         !
         ! *****************************************************************************
         !
         !   INPUT/OUTPUT PARAMETERS
         !
-        !   xData                     i   i8b                  a vector of the x-values of the data to be interpolated
-        !   yData                                  i   i8b         a vector of the y-values of the data to be interpolated
-        !   xVal                    i   i8b         a vector of the x-values where interpolation should be performed
-        !   yVal                    o   i8b         a vector of the resulting interpolated values
+        !   LOCDATA                     r   dp         a vector of the x-values of the data to be interpolated
+        !   LOCFINAL                    r   dp         a vector of the y-values of the data to be interpolated
+        !   FDATA                       r   dp         a vector of the x-values where interpolation should be performed
+        !   FFINAL                      r   dp         a vector of the resulting interpolated values
         !
         ! *****************************************************************************
-
-        real(dp), intent(in)                 ::                 LOCDATA(:, :), FDATA(:, :), LOCFINAL(:)
-        real(dp), intent(out)                 ::                 FFINAL(:)
+        real(dp), intent(in)                ::                  LOCDATA(:, :), FDATA(:, :), LOCFINAL(:)
+        real(dp), intent(out)               ::                  FFINAL(:)
 
         ! *****************************************************************************
         !
@@ -887,8 +888,8 @@ CONTAINS
         !
         !   DESCRIPTION
         !
-        !   The subroutine FIND_CLOSEST_DIVISOR finds an integer divisor of a given
-        !        number (Nominator) which is closest to a given second number (Denominator).
+        !   The subroutine FISHER_YATES_SHUFFLE returns the first N elements of the 
+        !   Array shuffled.
         !
         ! *****************************************************************************
         !
@@ -901,16 +902,16 @@ CONTAINS
         !
         ! *****************************************************************************
 
-        integer(i8b), intent(inout)                 ::                 Array(:)
-        integer(i8b), intent(in)                     ::                 N
+        integer(i8b), intent(inout)             ::                 Array(:)
+        integer(i8b), intent(in)                ::                 N
 
         ! *****************************************************************************
         !
         !   LOCAL PARAMETERS
         !
         ! *****************************************************************************
-        integer                                            ::                i, j, temp
-        real(dp)                    ::      rand_num
+        integer                                 ::                  i, j, temp
+        real(dp)                                ::                  rand_num
         ! *****************************************************************************
         !
         !   I/O

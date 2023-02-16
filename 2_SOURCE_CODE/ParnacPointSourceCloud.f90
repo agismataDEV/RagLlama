@@ -170,9 +170,11 @@ CONTAINS
 
         integer                             ::          iErr, iStat(MPI_STATUS_SIZE), ErrCode
         real(dp)                            ::          dRadius(1), Domain_Range(2, 3)
-        integer(i8b)                        ::          iDimX, iDimY, iDimZ, iDimT, iDimW, count_neighbs, NeighbGridPoints(16**3, 3)
-        integer(i8b)                        ::          iBubble, iIndex, i, j, i_neighbgp, iStart, x, y, z
-        integer                             ::          ibDimT, BubbleProc, i_loc
+        integer(i8b)                        ::          iDimT, iDimW, count_neighbs, NeighbGridPoints(16**3, 3)
+        integer(i8b)                        ::          iBubble, iIndex, i, j, i_neighbgp, iStart
+
+        ! Variables for MPI! (That's why they are single precision)
+        integer                             ::          ibDimT, i_loc
         integer                             ::          Bubble_disps(cSpace%cGrid%iProcN), Bubble_condisps(cSpace%cGrid%iProcN), Bubble_count(cSpace%cGrid%iProcN)
 
         character(len=1024)                 ::          actemp, MPI_FILENAME
@@ -181,7 +183,7 @@ CONTAINS
         real(dp), allocatable               ::          dBubbleContrast(:), dBubbleLocationN(:, :), tempcon(:)
 
         ! Parameters for Rayleigh - Plesset Solver
-        LOGICAL(lgt)                        ::          exists, exists_loc, result
+        LOGICAL(lgt)                        ::           exists_loc, result
 
         !Filtering and windowing parameters
         real(dp)                            ::          dTaperSupportWindow(cSpace%iDimT), dTaperMaxFreqWindow(cSpace%iDimT/2 + 1), dLeftBand, dRightBand
@@ -193,7 +195,7 @@ CONTAINS
         !
         !   I/O
         !
-        !   log file entries
+        !   log file entries 
         !
         ! *****************************************************************************
         !
@@ -278,10 +280,6 @@ CONTAINS
         write (acTemp, "('BubbleContrastOperator')"); call PrintToLog(acTemp, 2)
         !**************************************** INITIALIZE VALUES **********************************************
         iDimT = cSpace%iDimT   !t dimensions
-        iDimX = cSpace%iDimX   !x dimensions
-        iDimY = cSpace%iDimY   !y dimensions
-        iDimZ = cSpace%iDimZ   !z dimensions
-
         iDimW = iDimT/2 + 1
 
         !Allocate for memory management
@@ -304,9 +302,7 @@ CONTAINS
             BubbleAsPointScatterer%N = ScattererParams%N; BubbleAsPointScatterer%R0 = ScattererParams%R0; BubbleAsPointScatterer%ClusterDimsRatio = ScattererParams%ClusterDimsRatio; BubbleAsPointScatterer%MinInBetweenDist = ScattererParams%MinInBetweenDist
             ! Generate the cluster and save result on slices defined in input file
             call RNDGeneratePSCloud_Eff(cSpace, BubbleAsPointScatterer, dBubbleLocationN, Domain_Range)
-            ! call GeneratePSCloud(cSpace, BubbleAsPointScatterer, dBubbleLocationN, Domain_Range, .false.)
-            ! Save each Bubble's Position
-            call SaveExtraBubbleSlices(cSpace, dBubbleLocationN, Domain_Range)
+            ! call SaveExtraBubbleSlices(cSpace, dBubbleLocationN, Domain_Range)
             write (acTemp, "('No. of Bubbles consisting the cluster: ', I<INT(log10(real(ScattererParams%N,dp)))+1>, ' in a volume of ', F5.3, ' [mL].')") ScattererParams%N, PRODUCT(maxval(dBubbleLocationN, 1) - minval(dBubbleLocationN, 1))*(cMediumParams%c0*1E3/cModelParams%freq0)**3*1.0D-3; call PrintToLog(acTemp, 2); 
             ibDimT = iDimT !- FLOOR(minval(dBubbleLocationN(:,3) + cSpace%iStartZ* cSpace%dDx) / cSpace%dDt)  + 20 ! This should not be changed because ibDimT is Integer
         else
@@ -356,7 +352,6 @@ CONTAINS
             call PrintToLog(acTemp, 1)
             call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
         end if
-        call MPI_BARRIER(MPI_COMM_WORLD, iErr)
  
         write (acTemp, "('Communicate Bubble Location and Pressure')"); call PrintToLog(acTemp, 2)
         Bubble_disps = 0; Bubble_condisps = 0
@@ -426,7 +421,7 @@ CONTAINS
             end if
 
         end if
-        call MPI_BARRIER(MPI_COMM_WORLD,iErr)
+
         write (acTemp, "('Write the contrast of bubbles to output file')"); call PrintToLog(acTemp, 2)
         ! Multiple writes to split the work load in all the processes. Especially efficient in high number of scatterers
         ! These are unformatted which are a lot more efficient than FORMATTED files but it is more difficult to post-process
@@ -471,7 +466,7 @@ CONTAINS
         END DO
         call ReorderDistr2ToDistr1(pcGrid)
 
-        call TransformT_sml(pcGrid)
+        call TransformT_sml(pcGrid) 
 
         if (cModelParams.UseFreqTapering .EQV. .true.) then
             ! Tapering of the highest frequency part; otherwise the chopoff noise around the
@@ -940,29 +935,9 @@ CONTAINS
         dBubbleLocationN(:, 1) = dBubbleLocationN(:, 1) + Domain_Range(1, 1) 
         dBubbleLocationN(:, 2) = dBubbleLocationN(:, 2) + Domain_Range(1, 2)
         dBubbleLocationN(:, 3) = dBubbleLocationN(:, 3) + Domain_Range(1, 3)
-        if (cSpace%cGrid%iProcID==0) write(*,*) MINVAL(dBubbleLocationN(:,1)),MAXVAL(dBubbleLocationN(:,1)) 
-        if (cSpace%cGrid%iProcID==0) write(*,*) MINVAL(dBubbleLocationN(:,2)),MAXVAL(dBubbleLocationN(:,2)) 
-        if (cSpace%cGrid%iProcID==0) write(*,*) MINVAL(dBubbleLocationN(:,3)),MAXVAL(dBubbleLocationN(:,3)) 
 
         ! ================================================================================================================================
-
         ! dBubbleLocationN(1,:)=  (/0.0 ,   0.0 ,    4.94/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-        ! dBubbleLocationN(1,:)=  (/-0.0366470588235294 ,   -0.0366470588235294 ,    3.63602941176471/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-        ! dBubbleLocationN(2,:)=  (/-0.0366470588235294 ,   -0.0366470588235294 ,    5.08194117647059/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-        ! dBubbleLocationN(1,:)=  (/-0.0726470588235294 ,   -0.0726470588235294 ,    3.54033333333333 /) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-        ! dBubbleLocationN(1,:)=  (/-0.0823333333333333 ,   -0.0823333333333333 ,    3.458 /) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-        ! dBubbleLocationN(2,:)=  (/-0.0726470588235294 ,   -0.0726470588235294 ,    3.63235294117647/) ! At a gridpoint
-        ! dBubbleLocationN(1,:)=  (/0.599338235294118 ,   0.108970588235294 ,    5.17610294117647/) ! At a gridpoint
-        ! dBubbleLocationN(2,:)=  (/0.572095587323694 ,   0.0726470588235294 ,    3.148860381070307/) ! Βetween gridpoints
-        ! dBubbleLocationN(1,:)=  (/0.576333333333333  ,   0.0823333333333333  ,    5.187/)  ! Middle of gridpoints
-        ! dBubbleLocationN(2,:)=  (/0.653823529411765 ,  0.0726470588235294 ,   1.45294117647059/) ! At a gridpoint  @ 1E6 freq0 , 10 Fnyq
-        ! dBubbleLocationN(1,:)=  (/0.0 ,   0.0 ,   4.11666666666667/) ! At a gridpoint  @ 1E6 freq0 , 6 Fnyq
-        ! dBubbleLocationN(1,:)=  (/.576333333333333,0.0823333333333333,5.187  /)
-        ! dBubbleLocationN(2,:)=  (/-0.411677777777,0.0823333333333333,6.2573 /)
-        ! dBubbleLocationN(1, :) = (/-0.0412222222222222, -0.0412222222222222, 5.7221/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
-
-        dBubbleLocationN = dBubbleLocationN !+ EPSILON(1.0D0)
-        ! This is added because when the scatterer is exactly positioned at a gridpoint , the code is stucked
 
         call MPI_BCAST(dBubbleLocationN, INT(PointCloud%N*3), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, iErr)
         call MPI_BCAST(PointCloud%R0, INT(PointCloud%N), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, iErr)
@@ -2687,17 +2662,16 @@ CONTAINS
         integer                                 ::          iErr
         character(len=1024)                     ::          actemp
         real(dp)                                ::          dLambdaMM, Domain_Range(2, 3), dFFTFactor
-        integer(i8b)                            ::          iDimT, i, iPS
+        integer(i8b)                            ::          iDimT, i, iPS,iDimW, iStart, iIndex
 
         real(dp), allocatable                   ::          dPointSourceContrast(:), dProtonLocationN(:, :)
 
         !Filtering and windowing parameters
-        integer(i8b)                            ::          iDimW, ibDimW, iStart, iIndex
-        LOGICAL(lgt)                            ::          exists, exists_loc, result
-        real(dp)                            ::          dTaperSupportWindow(cSpace%iDimT), dTaperMaxFreqWindow(cSpace%iDimT/2 + 1), dLeftBand, dRightBand
+        LOGICAL(lgt)                            ::          exists_loc, result
+        real(dp)                                ::          dTaperSupportWindow(cSpace%iDimT), dTaperMaxFreqWindow(cSpace%iDimT/2 + 1), dLeftBand, dRightBand
 
-        real(dp)                            ::          dTaperX(cSpace%iDimX), dTaperY(cSpace%iDimY), dTaperZ(cSpace%iDimZ), dTaperWidth
-        integer(i8b)                        ::          iIndexX, iIndexY, iIndexZ, iOmega
+        real(dp)                                ::          dTaperX(cSpace%iDimX), dTaperY(cSpace%iDimY), dTaperZ(cSpace%iDimZ), dTaperWidth
+        integer(i8b)                            ::          iIndexX, iIndexY, iIndexZ, iOmega
 
         ! *****************************************************************************
         !

@@ -82,7 +82,9 @@ phasedarray
 30000000.0000000	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat, use "none" for no time delays
 none *** time delays in microsec
-***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat, use "none" for no apodization
+***   apodization in azimuthal X inputfilename    *** Use "standard" for [inputfilename]_apo.mat
+none
+***   apodization in elevation Y inputfilename    *** Use "standard" for [inputfilename]_apo.mat
 none
 ***************************
 ***  Switches  		***

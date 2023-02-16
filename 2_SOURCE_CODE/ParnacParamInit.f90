@@ -429,7 +429,7 @@
                 read (iImportUNIT, *, IOSTAT=readstatus) PointSourceCloudParams%ClusterDimsRatio(:, 2)
                 read (iImportUNIT, *, IOSTAT=readstatus) PointSourceCloudParams%ClusterDimsRatio(:, 3)
                 read (iImportUNIT, *, IOSTAT=readstatus) PointSourceCloudParams%MinInBetweenDist
-            else if (trim(acTemp) == 'filename') then
+            else if (trim(acTemp) == 'filename') then    ! Load Field 
                 read (iImportUNIT, *, IOSTAT=readstatus) acTemp
                 errstatus = errstatus + readstatus
                 call remove_CR(acTemp)
@@ -631,9 +631,13 @@
                             errstatus = errstatus + readstatus
                             call remove_CR(cSourceParams.td_filename)
                             read (iImportUNIT, *)
-                            read (iImportUNIT, *, IOSTAT=readstatus) cSourceParams.phaseapodfilename
+                            read (iImportUNIT, *, IOSTAT=readstatus) cSourceParams.phaseapodxfilename
                             errstatus = errstatus + readstatus
-                            call remove_CR(cSourceParams.phaseapodfilename)
+                            call remove_CR(cSourceParams.phaseapodxfilename)
+                            read (iImportUNIT, *)
+                            read (iImportUNIT, *, IOSTAT=readstatus) cSourceParams.phaseapodyfilename
+                            errstatus = errstatus + readstatus
+                            call remove_CR(cSourceParams.phaseapodyfilename)
                             !KH                                        else if (trim(acTemp)=='matrixarray') then
                             !KH                                                cSourceParams%srcshapetype = iHI_MATRIXARRAY
                             !KH
@@ -656,9 +660,9 @@
                             !KH                                                read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.matfocusz
                             !KH                                                errstatus = errstatus + readstatus
                             !KH!                                        read(iImportUNIT,*)
-                            !KH!                                                read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.phaseapodfilename
+                            !KH!                                                read(iImportUNIT,*,IOSTAT = readstatus) cSourceParams.phaseapodxfilename
                             !KH!                                                errstatus = errstatus + readstatus
-                            !KH!                                                call remove_CR(cSourceParams.phaseapodfilename)
+                            !KH!                                                call remove_CR(cSourceParams.phaseapodxfilename)
                         else
                             cSourceParams%srcshapetype = 0        !Doesn't exist
                         end if
@@ -908,7 +912,7 @@
                         write (*, '(" Focusz:       ",E10.3)') cSourceParams.focusz
                         write (*, '(" Elfocus:      ",E10.3)') cSourceParams.elevationfocusz
                         write (*, '(" TD file:       ",A)') cSourceParams.td_filename
-                        write (*, '(" Apodfile:      ",A)') cSourceParams.phaseapodfilename
+                        write (*, '(" Apodfile:      ",A)') cSourceParams.phaseapodxfilename
                         !KH                else if (cSourceParams.srcshapetype == iHI_MATRIXARRAY) then
                         !KH                                write ( *, '(" Numelx:    ",I3)') cSourceParams.matnumelx
                         !KH                                write ( *, '(" Numely:    ",I3)') cSourceParams.matnumely
@@ -919,7 +923,7 @@
                         !KH                                write ( *, '(" Focusx:   ",E10.3)') cSourceParams.matfocusx
                         !KH                                write ( *, '(" Focusy:   ",E10.3)') cSourceParams.matfocusx
                         !KH                                write ( *, '(" Focusz:   ",E10.3)') cSourceParams.matfocusz
-                        !KH!                                write ( *, '(" Apodfile: ",A)') cSourceParams.phaseapodfilename
+                        !KH!                                write ( *, '(" Apodfile: ",A)') cSourceParams.phaseapodxfilename
                         write (*, '(" ")')
                         write (*, '("---------------------------------------------------------------------------")')
                         write (*, '(" ")')
@@ -1189,20 +1193,36 @@
 #endif
                     end if
 
-                    if (trim(cSourceParams.phaseapodfilename) == "standard") then
+                    if (trim(cSourceParams.phaseapodxfilename) == "standard") then
                         i = index(sInputName, '.')
-                        cSourceParams.phaseapodfilename = sInputName(1:i - 1)//'_phapo.bin'
+                        cSourceParams.phaseapodxfilename = sInputName(1:i - 1)//'_phapo.bin'
                     end if
-                    if (trim(cSourceParams.phaseapodfilename) == 'none') then
+                    if (trim(cSourceParams.phaseapodxfilename) == 'none') then
                     else
 #ifndef RUNESTIMATOR
-                        inquire (FILE=trim(sInputDir)//trim(cSourceParams.phaseapodfilename), EXIST=error)
+                        inquire (FILE=trim(sInputDir)//trim(cSourceParams.phaseapodxfilename), EXIST=error)
                         if (error .EQV. .FALSE.) then
-                            write (*, "('Error, apodization inputfile ',A,' cannot be found.')") trim(cSourceParams.phaseapodfilename)
+                            write (*, "('Error, apodization inputfile ',A,' cannot be found.')") trim(cSourceParams.phaseapodxfilename)
                             stop
                         end if
 #endif
                     end if
+
+                    if (trim(cSourceParams.phaseapodyfilename) == "standard") then
+                        i = index(sInputName, '.')
+                        cSourceParams.phaseapodyfilename = sInputName(1:i - 1)//'_phapo.bin'
+                    end if
+                    if (trim(cSourceParams.phaseapodyfilename) == 'none') then
+                    else
+#ifndef RUNESTIMATOR
+                        inquire (FILE=trim(sInputDir)//trim(cSourceParams.phaseapodyfilename), EXIST=error)
+                        if (error .EQV. .FALSE.) then
+                            write (*, "('Error, apodization inputfile ',A,' cannot be found.')") trim(cSourceParams.phaseapodyfilename)
+                            stop
+                        end if
+#endif
+                    end if
+
                 end if
 
             end if

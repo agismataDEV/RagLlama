@@ -78,7 +78,9 @@ phasedarray
 35.0000000	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
 none
-***   apodization inputfilename    *** Use "standard" for [inputfilename]_apo.mat
+***   apodization in azimuthal X inputfilename    *** Use "standard" for [inputfilename]_apo.mat
+none
+***   apodization in elevation Y inputfilename    *** Use "standard" for [inputfilename]_apo.mat
 none
 ***************************
 ***  Switches  		***

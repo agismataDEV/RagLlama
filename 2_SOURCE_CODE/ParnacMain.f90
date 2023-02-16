@@ -2382,8 +2382,10 @@
 				                    "p", cBeam, iBeam, .true.)
 				    endif
 				    
-				    
-					if (cModelParams%PrimarySourceType == iEI_LOADFIELD) then
+				    ! If we load the field , usually it takes place from a different folder
+					! This is made here for any case that you load the field from a folder
+					! outside the output folder.
+					if (cModelParams%PrimarySourceType == iEI_LOADFIELD) then 
 						call AddStoredtoField(cBeam, trim(cModelParams.FieldFilename)); 
 					else
 						call AddStoredtoField(cBeam, "BeamSol0"); 
@@ -2398,7 +2400,6 @@
 				    end if
 
 				end if
-			
 
 				! Test whether there is a NaN in cBeam - indication of an error,
 				! no use to continue the program

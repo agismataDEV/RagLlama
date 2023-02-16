@@ -132,7 +132,7 @@ CONTAINS
 !                               it is already initialized and that a Grid 0
 !                               array is allocated
 !
-        type(Space), intent(inout)::                        cSource; 
+        type(Space), intent(inout)::            cSource; 
 ! *****************************************************************************
 !
 !   LOCAL PARAMETERS
@@ -148,11 +148,11 @@ CONTAINS
 !   error     i8b    error number
 !   Excitation  dp   3D array containing the source description in (t,x,y)
 !
-        integer(i8b)::                        iXInd, iYInd, iLi, iLt
-        integer(i8b) ::                        Ksource, LSource, MSource
-        character(len=1024) ::        acTemp; 
-        integer(i8b) ::                        error
-        real(dp), allocatable :: Excitation(:, :, :)
+        integer(i8b)::                          iXInd, iYInd, iLi, iLt
+        integer(i8b) ::                         Ksource, LSource, MSource
+        character(len=1024) ::                  acTemp; 
+        integer(i8b) ::                         error
+        real(dp), allocatable ::                Excitation(:, :, :)
 
 ! *****************************************************************************
 !
@@ -279,11 +279,11 @@ CONTAINS
 !   error     i8b    error number
 !   Excitation  dp   3D array containing the source description in (t,x,y)
 !
-        integer(i8b)::                        iLt
-        integer(i8b) ::                Ksource, LSource, MSource
-        character(len=1024) ::        acTemp
-        integer(i8b) ::                        error
-        real(dp), allocatable :: Excitation(:, :, :)
+        integer(i8b)                :: iLt
+        integer(i8b)                :: Ksource, LSource, MSource
+        character(len=1024)         :: acTemp
+        integer(i8b)                :: error
+        real(dp), allocatable       :: Excitation(:, :, :)
 
 ! *****************************************************************************
 !
@@ -380,8 +380,8 @@ CONTAINS
 !   dDt     i  dp   Stepsize in T
 !   dDx     i  dp   Stepsize in X
 !
-        real(dp), intent(in) :: dDt, dDx
-        integer(i8b), intent(out) :: iDimT, iDimX, iDimY
+        real(dp), intent(in) ::         dDt, dDx
+        integer(i8b), intent(out) ::    iDimT, iDimX, iDimY
 
 ! *****************************************************************************
 !
@@ -392,9 +392,9 @@ CONTAINS
 !   dTdelay  dp    maximal time delay in the data file source description
 !   acTemp   char  temporary char array for output log messages
 !
-        character(LEN=2048) ::                acTemp; 
-        integer(i8b) :: i, dims(3)
-        real(dp) :: dTdelay
+        character(LEN=2048) ::                  acTemp; 
+        integer(i8b) ::                         i, dims(3)
+        real(dp) ::                             dTdelay
 
 ! *****************************************************************************
 !
@@ -523,8 +523,8 @@ CONTAINS
 !                                mainly used to determine step sizes and filter
 !                                frequency
 !
-        real(dp), intent(out) ::                Excitation(:, :, :)
-        type(Space), intent(in) ::                cSpace
+        real(dp), intent(out) ::                    Excitation(:, :, :)
+        type(Space), intent(in) ::                  cSpace
 
 ! *****************************************************************************
 !
@@ -552,12 +552,12 @@ CONTAINS
 !   error        i8b   error number
 !   acTemp       char  temporary char array for output log messages
 !
-        integer(i8b) ::                                i, j, k, Ksource, Lsource, Msource, error
-        integer(i8b) ::                                plan_transform, plan_1D_transform, plan_1D_transform_inv
-        real(dp) ::                                        dKcutoff, dwsource
-        real(dp), allocatable ::        waxis(:), Ptempdelay(:), Signature(:)
-        complex(dpc), allocatable :: fPtempdelay(:), fExcitation(:, :, :), fSignature(:)
-        character(LEN=2048) ::                acTemp; 
+        integer(i8b)                    :: i, j, k, Ksource, Lsource, Msource, error
+        integer(i8b)                    :: plan_transform, plan_1D_transform, plan_1D_transform_inv
+        real(dp)                        :: dKcutoff, dwsource
+        real(dp), allocatable           :: waxis(:), Ptempdelay(:), Signature(:)
+        complex(dpc), allocatable       :: fPtempdelay(:), fExcitation(:, :, :), fSignature(:)
+        character(LEN=2048)             :: acTemp; 
 ! *****************************************************************************
 !
 !   I/O
@@ -797,8 +797,8 @@ CONTAINS
 !   Excitation  o  dp   3D array to be filled with the source
 !   dDt         i  dp   Stepsize in t
 !
-        real(dp), intent(out) :: Excitation(:, :, :)
-        real(dp), intent(in) :: dDt
+        real(dp), intent(out) ::    Excitation(:, :, :)
+        real(dp), intent(in) ::     dDt
 
 ! *****************************************************************************
 !
@@ -826,13 +826,13 @@ CONTAINS
 !   error        i8b   error number
 !   acTemp       char  temporary char array for output log messages
 !
-        integer(i8b) :: Ksource, Lsource, Msource, Ktsource, Ltsource, Mtsource, Lstart, Mstart
-        integer(i8b) :: i, j, dims(3), error
-        integer(i8b) :: plan_1D_transform, plan_1D_transform_inv
-        real(dp) :: dwsource
-        real(dp), allocatable :: Ptempsource(:, :, :), dTdelay(:, :), Ptempdelay(:), waxis(:)
-        complex(dpc), allocatable :: fPtempdelay(:)
-        character(LEN=2048) ::                acTemp; 
+        integer(i8b)                :: Ksource, Lsource, Msource, Ktsource, Ltsource, Mtsource, Lstart, Mstart
+        integer(i8b)                :: i, j, dims(3), error
+        integer(i8b)                :: plan_1D_transform, plan_1D_transform_inv
+        real(dp)                    :: dwsource
+        real(dp), allocatable       :: Ptempsource(:, :, :), dTdelay(:, :), Ptempdelay(:), waxis(:)
+        complex(dpc), allocatable   :: fPtempdelay(:)
+        character(LEN=2048)         :: acTemp; 
 ! *****************************************************************************
 !
 !   I/O
@@ -963,8 +963,8 @@ CONTAINS
 !   Signature  o  dp   1D array to be filled with the source signature
 !   dDt        i  dp   Stepsize in t
 !
-        real(dp), intent(out) :: Signature(:)
-        real(dp), intent(in) :: dDt
+        real(dp), intent(out) ::    Signature(:)
+        real(dp), intent(in) ::     dDt
 
 ! *****************************************************************************
 !
@@ -978,14 +978,14 @@ CONTAINS
 !   b0,b1,b2,b3    dp    constants for the blackman pulse
 !   acTemp         char  temporary char array for output log messages
 !
-        integer(i8b) :: i, Ksource, Ktsource
-        real(dp), allocatable :: taxis(:), Signaturetemp(:)
-        character(LEN=2048) ::                acTemp; 
+        integer(i8b)            :: i, Ksource, Ktsource
+        real(dp), allocatable   :: taxis(:), Signaturetemp(:)
+        character(LEN=2048)     :: acTemp; 
         !blackman pulse, constants
-        real(dp), parameter :: b0 = 0.35869d0
-        real(dp), parameter :: b1 = -0.48829d0
-        real(dp), parameter :: b2 = 0.14128d0
-        real(dp), parameter :: b3 = -0.01168d0
+        real(dp), parameter     :: b0 = 0.35869d0
+        real(dp), parameter     :: b1 = -0.48829d0
+        real(dp), parameter     :: b2 = 0.14128d0
+        real(dp), parameter     :: b3 = -0.01168d0
 
 ! *****************************************************************************
 !
@@ -1088,10 +1088,10 @@ CONTAINS
 !   dDw        i  dp   Stepsize in w
 !   dKcutoff   i  dp   Cutoff spatial angular frequency
 !
-        complex(dpc), intent(out) ::        fAperture(:, :, :)
-        real(dp), intent(in) ::                        dDx
-        real(dp), intent(in) ::                        dDw
-        real(dp), intent(in) ::                        dKcutoff
+        complex(dpc), intent(out) ::                    fAperture(:, :, :)
+        real(dp), intent(in) ::                         dDx
+        real(dp), intent(in) ::                         dDw
+        real(dp), intent(in) ::                         dKcutoff
 
 ! *****************************************************************************
 !
@@ -1118,13 +1118,13 @@ CONTAINS
 !   error           i8b   error number
 !   acTemp          char  temporary char array for output log messages
 !
-        integer(i8b) :: i, j, k, ispan, jspan, Ksource, Lsource, Msource, error
-        real(dp) :: phasedelay
-        real(dp), allocatable :: waxis(:), xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:)
-        complex(dpc), allocatable :: sourceshapelrg(:, :), sourceshapesml(:, :)
-        character(LEN=2048) ::                acTemp; 
-        real(dp), parameter :: oversampling = 8.0_dp
-        integer(i8b) :: ioversampling = oversampling
+        integer(i8b)                :: i, j, k, ispan, jspan, Ksource, Lsource, Msource, error
+        real(dp)                    :: phasedelay
+        real(dp), allocatable       :: waxis(:), xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:)
+        complex(dpc), allocatable   :: sourceshapelrg(:, :), sourceshapesml(:, :)
+        character(LEN=2048)         :: acTemp; 
+        real(dp), parameter         :: oversampling = 8.0_dp
+        integer(i8b)                :: ioversampling = oversampling
 
 ! *****************************************************************************
 !
@@ -1260,9 +1260,9 @@ CONTAINS
 !   dDx        i  dp   Stepsize in x
 !   dKcutoff   i  dp   Cutoff spatial angular frequency
 !
-        complex(dpc), intent(out) ::        fAperture(:, :, :)
-        real(dp), intent(in) ::                        dDx
-        real(dp), intent(in) ::                        dKcutoff
+        complex(dpc), intent(out) ::                    fAperture(:, :, :)
+        real(dp), intent(in) ::                         dDx
+        real(dp), intent(in) ::                         dKcutoff
 
 ! *****************************************************************************
 !
@@ -1289,13 +1289,12 @@ CONTAINS
 !   error           i8b   error number
 !   acTemp          char  temporary char array for output log messages
 !
-        integer(i8b) :: i, j, k, Ksource, Lsource, Msource, Lstart, Lend, Mstart, Mend, &
-                        error
-        real(dp), allocatable ::        xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:)
-        complex(dpc), allocatable :: sourceshapelrg(:, :), sourceshapesml(:, :)
-        character(LEN=2048) ::        acTemp; 
-        real(dp), parameter :: oversampling = 8.0_dp
-        integer(i8b) :: ioversampling = oversampling
+        integer(i8b)                :: i, j, k, Ksource, Lsource, Msource, Lstart, Lend, Mstart, Mend, error
+        real(dp), allocatable       :: xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:)
+        complex(dpc), allocatable   :: sourceshapelrg(:, :), sourceshapesml(:, :)
+        character(LEN=2048)         :: acTemp; 
+        real(dp), parameter         :: oversampling = 8.0_dp
+        integer(i8b)                :: ioversampling = oversampling
 
 ! *****************************************************************************
 !
@@ -1399,9 +1398,9 @@ CONTAINS
 !   dDx        i  dp   Stepsize in x
 !   dKcutoff   i  dp   Cutoff spatial angular frequency
 !
-        complex(dpc), intent(out) ::        fAperture(:, :, :)
-        real(dp), intent(in) ::                        dDx
-        real(dp), intent(in) ::                        dKcutoff
+        complex(dpc), intent(out) ::                    fAperture(:, :, :)
+        real(dp), intent(in) ::                         dDx
+        real(dp), intent(in) ::                         dKcutoff
 
 ! *****************************************************************************
 !
@@ -1427,12 +1426,12 @@ CONTAINS
 !   error           i8b   error number
 !   acTemp          char  temporary char array for output log messages
 !
-        integer(i8b) :: i, j, k, ispan, icenter, jspan, Ksource, Lsource, Msource, error
-        real(dp), allocatable ::        xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:)
-        complex(dpc), allocatable :: sourceshapelrg(:, :), sourceshapesml(:, :)
-        character(LEN=2048) ::        acTemp; 
-        real(dp), parameter :: oversampling = 8.0_dp
-        integer(i8b) :: ioversampling = oversampling
+        integer(i8b)                :: i, j, k, ispan, icenter, jspan, Ksource, Lsource, Msource, error
+        real(dp), allocatable       :: xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:)
+        complex(dpc), allocatable   :: sourceshapelrg(:, :), sourceshapesml(:, :)
+        character(LEN=2048)         :: acTemp; 
+        real(dp), parameter         :: oversampling = 8.0_dp
+        integer(i8b)                :: ioversampling = oversampling
 
 ! *****************************************************************************
 !
@@ -1536,8 +1535,8 @@ CONTAINS
 !                      (x,omega) domain.
 !   dDx        i  dp   Stepsize in x
 !
-        complex(dpc), intent(out) :: fAperture(:, :, :)
-        real(dp), intent(in) ::                        dDx
+        complex(dpc), intent(out) ::                    fAperture(:, :, :)
+        real(dp), intent(in) ::                         dDx
 
 ! *****************************************************************************
 !
@@ -1545,7 +1544,7 @@ CONTAINS
 !
 !   acTemp          char  temporary char array for output log messages
 !
-        character(LEN=2048) ::                acTemp; 
+        character(LEN=2048) ::                          acTemp; 
 ! *****************************************************************************
 !
 !   I/O
@@ -1653,14 +1652,14 @@ CONTAINS
 !   error           i8b   error number
 !   acTemp          char  temporary char array for output log messages
 !
-        integer(i8b) :: i, j, k, Ksource, Lsource, Msource, Mstart, Mend, error
-        real(dp) :: phasedelay, temp, si1, si2, sourcexprofile
-        real(dp), allocatable ::        waxis(:), xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:), &
-                                 sourceapotemp(:), sourcetdtemp(:), el_tdelay(:), el_apo(:), el_x(:)
-        complex(dpc), allocatable :: sourceyprofilelrg(:, :), sourceyprofile(:, :), el_term(:)
-        character(LEN=2048) ::        acTemp; 
-        real(dp), parameter :: oversampling = 8.0_dp
-        integer(i8b) :: ioversampling = oversampling
+        integer(i8b)                    :: i, j, k, Ksource, Lsource, Msource, Mstart, Mend, error, YDimSource
+        real(dp)                        :: phasedelay, temp, si1, si2, sourcexprofile, band
+        real(dp), allocatable           :: waxis(:), xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:), &
+                                            sourceapotemp(:), sourcetdtemp(:), el_tdelay(:), el_apox(:), el_apoy(:), el_x(:)
+        complex(dpc), allocatable       :: sourceyprofilelrg(:, :), sourceyprofile(:, :), el_term(:)
+        character(LEN=2048)             :: acTemp; 
+        real(dp), parameter             :: oversampling = 8.0_dp
+        integer(i8b)                    :: ioversampling = oversampling
 
 ! *****************************************************************************
 !
@@ -1711,7 +1710,8 @@ CONTAINS
         allocate (sourceyprofilelrg(1:Ksource, 1:ioversampling*Msource), &
                   sourceyprofile(1:Ksource, 1:Msource), &
                   el_tdelay(1:cSourceParams%numel), &
-                  el_apo(1:cSourceParams%numel), &
+                  el_apox(1:cSourceParams%numel), &
+                  el_apoy(1:Msource), &
                   el_x(1:cSourceParams%numel), el_term(1:Ksource), &
                   waxis(1:Ksource), xaxis(1:Lsource), yaxis(1:Msource), &
                   xaxislrg(1:ioversampling*Lsource), yaxislrg(1:ioversampling*Msource), STAT=error)
@@ -1777,33 +1777,42 @@ CONTAINS
         el_tdelay = el_tdelay - minval(el_tdelay)
 
         !load apodization file
-        if (trim(cSourceParams%phaseapodfilename) == 'none') then
-            el_apo = 1.0_dp
+        if (trim(cSourceParams%phaseapodxfilename) == 'none') then
+            el_apox = 1.0_dp
         else
-            i = index(cSourceParams%phaseapodfilename, '.')
+            i = index(cSourceParams%phaseapodxfilename, '.')
             allocate (sourceapotemp(1:cSourceParams%numel))
-            if (cSourceParams%phaseapodfilename(i + 1:i + 3) == 'bin') then
-                if (BINARY_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodfilename)) /= cSourceParams%numel) then
+            if (cSourceParams%phaseapodxfilename(i + 1:i + 3) == 'bin') then
+                if (BINARY_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename)) /= cSourceParams%numel) then
                     call PrintToLog("Error: number of items in apodization file is not equal to number of array elements", 1)
                     stop
                 end if
-                call BINARY_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodfilename), sourceapotemp)
+                call BINARY_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename), sourceapotemp)
             else
-                if (ASCII_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodfilename)) /= cSourceParams%numel) then
+                if (ASCII_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename)) /= cSourceParams%numel) then
                     call PrintToLog("Error: number of items in apodization file is not equal to number of array elements", 1)
                     stop
                 end if
-                call ASCII_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodfilename), sourceapotemp)
+                call ASCII_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename), sourceapotemp)
             end if
-            el_apo = sourceapotemp
+            el_apox = sourceapotemp
             deallocate (sourceapotemp)
+        end if
+
+        if (trim(cSourceParams%phaseapodyfilename) == 'none') then
+            el_apoy = 1.0_dp
+        else
+            el_apoy = 0.0_dp
+            YDimSource = ceiling(cSourceParams%elheight/(2.0_dp*dDx))
+            band = 0.4_dp*(2*YDimSource + 1)*dDx/2.0_dp
+            el_apoy(Msource/2 + 1 - YDimSource:Msource/2 + 1 + YDimSource) = 1.0_dp*dTaperingWindow(2*YDimSource + 1, dDx, band, band)
         end if
 
         !fill fAperture elementwise
         do i = 1, cSourceParams%numel
 
             !element excitation with apodization and focusing delay
-            el_term = el_apo(i)*exp(-im*waxis*el_tdelay(i))
+            el_term = el_apox(i)*exp(-im*waxis*el_tdelay(i))
 
             !obtain (analytically) filtered x profile
             do j = 1, Lsource
@@ -1814,14 +1823,14 @@ CONTAINS
                 do k = 1, Ksource
                     !add xy-line of the element to fAperture
                     fAperture(k, j, :) = fAperture(k, j, :) + &
-                                         sourcexprofile*el_term(k)*sourceyprofile(k, :)
+                                         sourcexprofile*el_term(k)*sourceyprofile(k, :)*el_apoy
                 end do
             end do
 
         end do
 
         !Deallocate temp variables
-        deallocate (sourceyprofilelrg, sourceyprofile, el_tdelay, el_apo, el_x, el_term, &
+        deallocate (sourceyprofilelrg, sourceyprofile, el_tdelay, el_apox, el_apoy, el_x, el_term, &
                     waxis, xaxis, yaxis, xaxislrg, yaxislrg)
 
     END SUBROUTINE InitPhasedArrayAperture
@@ -1858,10 +1867,10 @@ CONTAINS
 !   dDw        i  dp   Stepsize in omega
 !   dKcutoff   i  dp   Cutoff spatial angular frequency
 !
-        complex(dpc), intent(out) ::        fAperture(:, :, :)
-        real(dp), intent(in) ::                        dDx
-        real(dp), intent(in) ::                        dDw
-        real(dp), intent(in) ::                        dKcutoff
+        complex(dpc), intent(out) ::                    fAperture(:, :, :)
+        real(dp), intent(in) ::                         dDx
+        real(dp), intent(in) ::                         dDw
+        real(dp), intent(in) ::                         dKcutoff
 
 ! *****************************************************************************
 !
@@ -1903,14 +1912,14 @@ CONTAINS
 !   error           i8b   error number
 !   acTemp          char  temporary char array for output log messages
 !
-        integer(i8b) :: i, j, k, Ksource, Lsource, Msource, Mstart, Mend, error
-        real(dp) :: phasedelay, temp, si1, si2, sourcexprofile
-        real(dp), allocatable ::        waxis(:), xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:), &
-                                 sourceapotemp(:), el_tdelay(:), el_apo(:), el_x(:)
-        complex(dpc), allocatable :: sourceyprofilelrg(:, :), sourceyprofile(:, :), el_term(:)
-        character(LEN=2048) ::        acTemp; 
-        real(dp), parameter :: oversampling = 8.0_dp
-        integer(i8b) :: ioversampling = oversampling
+        integer(i8b)                :: i, j, k, Ksource, Lsource, Msource, Mstart, Mend, error
+        real(dp)                    :: phasedelay, temp, si1, si2, sourcexprofile
+        real(dp), allocatable       :: waxis(:), xaxis(:), yaxis(:), xaxislrg(:), yaxislrg(:), &
+                                        sourceapotemp(:), el_tdelay(:), el_apo(:), el_x(:)
+        complex(dpc), allocatable   :: sourceyprofilelrg(:, :), sourceyprofile(:, :), el_term(:)
+        character(LEN=2048)         ::        acTemp; 
+        real(dp), parameter         :: oversampling = 8.0_dp
+        integer(i8b)                :: ioversampling = oversampling
 
 ! *****************************************************************************
 !
@@ -2005,23 +2014,23 @@ CONTAINS
         !x profile: determine elementwise, use analytically filtered elements
 
         !load apodization file
-        if (trim(cSourceParams%phaseapodfilename) == 'none') then
+        if (trim(cSourceParams%phaseapodxfilename) == 'none') then
             el_apo = 1.0_dp
         else
-            i = index(cSourceParams%phaseapodfilename, '.')
+            i = index(cSourceParams%phaseapodxfilename, '.')
             allocate (sourceapotemp(1:cSourceParams%numel))
-            if (cSourceParams%phaseapodfilename(i + 1:i + 3) == 'bin') then
-                if (BINARY_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodfilename)) /= cSourceParams%numel) then
+            if (cSourceParams%phaseapodxfilename(i + 1:i + 3) == 'bin') then
+                if (BINARY_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename)) /= cSourceParams%numel) then
                     call PrintToLog("Error: number of items in apodization file is not equal to number of array elements", 1)
                     stop
                 end if
-                call BINARY_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodfilename), sourceapotemp)
+                call BINARY_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename), sourceapotemp)
             else
-                if (ASCII_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodfilename)) /= cSourceParams%numel) then
+                if (ASCII_read1Darraysize(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename)) /= cSourceParams%numel) then
                     call PrintToLog("Error: number of items in apodization file is not equal to number of array elements", 1)
                     stop
                 end if
-                call ASCII_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodfilename), sourceapotemp)
+                call ASCII_read1Darray(trim(sInputDir)//trim(cSourceParams%phaseapodxfilename), sourceapotemp)
             end if
             el_apo = sourceapotemp
         end if
