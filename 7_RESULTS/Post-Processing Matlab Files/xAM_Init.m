@@ -55,7 +55,7 @@ Bubble.mindist           = 10e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 0;
+domain.beamiterations       = 1;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
@@ -69,8 +69,9 @@ file.lin_name            = 'TESTNeumann';
 % file.dirname             = '../test/1PS_1MB_at_0';
 % file.dirname             = '../IEEE_2022/David_200deg_x_400kPa_15MHz_NL_Lagr';
 % file.dirname             = '../xAM_elf8mm/David_0deg_x_2MPa_Full';
-file.dirname             = '../EchoContrast_2023/David_0deg_x_2E4MBs_1E5LinSc_c0_400_3Fnyq_2E5Pa';
-file.dirname             = '../Validation/David_200deg_x_Lagrangian_FFT_001';
+% file.dirname             = '../EchoContrast_2023/David_0deg_x_2E4MBs_1E5LinSc_c0_400_3Fnyq_2E5Pa';
+file.dirname             = '../Paper/David_0deg_x_4E3MBs_2E4LinSc_c0_400_3_5Fnyq_1E5Pa';
+file.dirname             = '../Paper/David_0deg_x_test_cat_2';
 % file.dirname             = '../../../INCS_3D_PS_CLOUD/7_RESULTS/Phased/Phased_1E5MB_1MHz_5E4Pa_DHPC';
 % file.dirname_left        = '../Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm_apod02_Cylinder';
 % file.dirname_right       = '../Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm_apod02_Cylinder';

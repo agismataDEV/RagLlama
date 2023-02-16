@@ -77,7 +77,7 @@
 	real(dp) 				::  norm_factor(3), P_interp(1)
 	real(dp)				::  R_bub(n_samples,3), dTaperSupportWindowN(n_samples), P_bub(n_samples)
  
-	character(len = 1024)	::  actemp 
+	character(len = 1024)	::  actemp  
 	
 	logical					::  log_isnan
     
@@ -100,8 +100,8 @@
 	endif 
 
     itol = 2            !  if atol scalar, itol = 1 and  if atol array, itol = 2, if atol and rtol array, itol = 4
-    rtol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-8.0D0)
-    atol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-8.0D0)
+    rtol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-10.0D0)
+    atol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-10.0D0)
 	
 	dTaperSupportWindowN = dTaperingWindow(n_samples,(RealTimeIn(2)-RealTimeIn(1))* cModelParams%freq0,2.0_dp,2.0_dp)
 

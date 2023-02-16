@@ -650,8 +650,8 @@ CONTAINS
             case (iCI_NONLINKAPPADZ)
                 call NonlinearKappaOperatorDZAli(cSpace); 
             case (iCI_NONLIN)
-                ! call NonlinContrastOperator_Ali(cSpace);
-                call LagrangianDensity_Ali(cSpace)
+                call NonlinContrastOperator_Ali(cSpace);
+                ! call LagrangianDensity_Ali(cSpace)
                 ! call LagrangianDensity_Simpl_Ali(cSpace)
             case (iCI_SCATTERER)                                                                    ! A.M Added 29/01/2020
                 call BubbleContrastOperator(cSpace)
@@ -660,9 +660,9 @@ CONTAINS
             end select
         else
             select case (iContrastID)
-            case (iCI_NONLIN)
-                ! call NonlinContrastOperator(cSpace);
-                call LagrangianDensity_Ali(cSpace)
+            case (iCI_NONLIN) 
+                call NonlinContrastOperator(cSpace);
+                ! call LagrangianDensity_Ali(cSpace)
                 ! call LagrangianDensity_Simpl_Ali(cSpace)
             case (iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
                 call InhomContrastOperator(cSpace, cInhomContrast); 
@@ -1281,117 +1281,6 @@ CONTAINS
         call SWStop(cswDisk)
 
     END SUBROUTINE StoreField
-
-    SUBROUTINE LoadInitField(cSpace, acStoredFieldName)
-
-        ! =============================================================================
-        !
-        !   Programmer: Koos Huijssen
-        !
-        !   Language: Fortran 90
-        !
-        !   Version Date    Comment
-        !   ------- -----   -------
-        !   1.0     090505  Original code (KH)
-        !
-        ! *****************************************************************************
-        !
-        !   DESCRIPTION
-        !
-        !   The subroutine LoadField loads the field from a temporary file in the temp
-        !   dir to a given space. The data array is in Distr. 0, it is assumed
-        !   that all other information in the space is correct. The storing was done in
-        !   a blockwise fashion.
-        !
-        ! *****************************************************************************
-        !
-        !   INPUT/OUTPUT PARAMETERS
-        !
-        !   cSpace             io   type(space)  Space to which the data array needs
-        !                                        to be loaded.
-        !   acStoredFieldName  io   char         Filename of the temp storage file.
-        !
-        type(Space), intent(inout)::            cSpace
-        character(*), intent(in):: acStoredFieldName
-
-        ! *****************************************************************************
-        !
-        !   LOCAL PARAMETERS
-        !
-        !   iErr            i8b    Error number
-        !   iLi             i8b    Loop counter over the blocks to load
-        !   iLast           i8b    Index of the last full block
-        !   iBlockL         i8b    Size of the blocks
-        !   parBuffer       dp     Temporary buffer for a block load
-        !   acFilename      char   Total filename including path and suffix
-        !   acTemp          char   Temporary char array for output log messages
-        !
-        integer(i8b)::                          iErr
-        integer(i8b)::                          iLi, iLast; 
-        integer(i8b), parameter::               iBlockL = real(2**20, dp); 
-        real(dp), allocatable::                 parBuffer(:); 
-        character(len=1024)::                   acFileName
-        character(len=1024)::                   acTemp; 
-        ! *****************************************************************************
-        !
-        !   I/O
-        !
-        !   log file entries and loading of the data array from temporary file
-        !
-        ! *****************************************************************************
-        !
-        !   SUBROUTINES/FUNCTIONS CALLED
-        !
-        !   SwStartAndCount
-        !   PrintToLog
-        !   int2str
-        !   SWStop
-        !
-        ! =============================================================================
-
-        call PrintToLog("LoadField", 1)
-
-        if (cSpace%cGrid%iDistr /= 0) then
-            write (acTemp, '("Error occurred during the execution of LoadField, aborting program")'); 
-            call PrintToLog(acTemp, -1); 
-            write (acTemp, '("the grid provided as input is not in distribution 0, but in distribution ", I3, "")') cSpace%cGrid%iDistr; 
-            call PrintToLog(acTemp, -1); 
-            stop
-        end if
-
-        ! We read the original values and put them in cSpace
-        allocate (parBuffer(iBlockL)); 
-        iMemAllocated = iMemAllocated + PRODUCT(SHAPE(parBuffer))*dpS
-
-        call PrintToLog("Buffer allocated", 3)
-        call PrintToLog('Read Stored field from disk', 2); 
-        call SwStartAndCount(cswDiskAcces)
-        acFileName = trim(sInputDir)//trim(acStoredFieldName)//int2str(cSpace%cGrid%iProcID); 
-
-        open (unit=iExportUNIT, file=trim(acFileName), status="OLD", form="UNFORMATTED", iostat=iErr)
-        if (iErr /= 0) then
-            write (acTemp, "('Error in LoadField, file ',A,' does not exist')") trim(acStoredFieldName)
-            call PrintToLog(acTemp, -1)
-            stop
-        end if
-
-        iLast = int(cSpace%cGrid%iD0LocSize/iBlockL); 
-        do iLi = 0, iLast - 1
-            read (unit=iExportUNIT, iostat=iErr) parBuffer; 
-            cSpace%cGrid%parD0(1 + iLi*iBlockL:(iLi + 1)*iBlockL) = parBuffer
-        end do
-        read (unit=iExportUNIT, iostat=iErr) parBuffer(1:cSpace%cGrid%iD0LocSize - iLast*iBlockL); 
-        cSpace%cGrid%parD0(1 + iLast*iBlockL:cSpace%cGrid%iD0LocSize) = parBuffer(1:cSpace%cGrid%iD0LocSize - iLast*iBlockL)
-        close (unit=iExportUNIT); 
-        call SWStop(cswDiskAcces)
-
-        call SWStop(cswDisk)
-        iMemAllocated = iMemAllocated - PRODUCT(SHAPE(parBuffer))*dpS
-
-        deallocate (parBuffer); 
-        call PrintToLog("Free buffer", 3)
-
-    END SUBROUTINE LoadInitField
 
     SUBROUTINE LoadField(cSpace, acStoredFieldName)
 
@@ -3262,6 +3151,87 @@ CONTAINS
         end do
 
     END SUBROUTINE CopyDataD2
+
+    SUBROUTINE CopyToLargeDataD2(cGridSource, cGridDest, iXYZMargin) 
+
+        ! =============================================================================
+        !
+        !   Programmer: Koos Huijssen
+        !
+        !   Language: Fortran 90
+        !
+        !   Version Date    Comment
+        !   ------- -----   -------
+        !   1.0     090505  Original code (KH)
+        !
+        ! *****************************************************************************
+        !
+        !   DESCRIPTION
+        !
+        !   The subroutine CopyDataD2 copies the data from one grid to a grid with
+        !   smaller dimensions in X,Y and Z. This subroutine is used for stripping the
+        !   margins in X, Y and Z that were necessary for the d/dz finite difference
+        !   evaluation. It only works for grids in distribution 2. The margin which has
+        !   to be removed at the beginning the XYZ dimensions need to be given as
+        !   input.
+        !
+        ! *****************************************************************************
+        !
+        !   INPUT/OUTPUT PARAMETERS
+        !
+        !   cGridSource   io   type(Grid)   Source grid
+        !   cGridDest     io   type(Grid)   Destination grid
+        !   iXYZMargin    i    i8b          Margin at the beginning of the XYZ
+        !                                   dimensions
+        !
+        type(Grid), intent(inout)::                cGridSource, cGridDest; 
+        integer(i8b), intent(in)::                iXYZMargin(:); 
+        ! *****************************************************************************
+        !
+        !   LOCAL PARAMETERS
+        !
+        !   iT           i8b   loop counter over the t-axis in the beam
+        !   iX           i8b   loop counter over the x-axis in the beam
+        !   iY           i8b   loop counter over the y-axis in the beam
+        !   iZ           i8b   loop counter over the z-axis in the beam
+        !   iIndSource   i8b   index of the source data array
+        !   iIndDest     i8b   index of the destination data array
+        !
+        integer(i8b)::                                iT, iX, iY, iZ, iIndSource, iIndDest
+
+        ! *****************************************************************************
+        !
+        !   I/O
+        !
+        !   log file entries
+        !
+        ! *****************************************************************************
+        !
+        !   SUBROUTINES/FUNCTIONS CALLED
+        !
+        !   PrintToLog
+        !
+        ! =============================================================================
+
+        call PrintToLog("CopyDataD2", 4)
+
+        ! Copy the contents of the slices without the XYZ margin
+        do iT = 0, cGridSource.iD2LocN - 1
+            do iY = 0, cGridSource.iD2YL - 1
+                do iX = 0, cGridSource.iD2XL - 1
+                    iIndDest= 1 + iT*cGridDest.iD2IS + (iX + iXYZMargin(1))*cGridDest.iD2XS + (iY + iXYZMargin(2))*cGridDest.iD2YS + iXYZMargin(3)*cGridDest.iD2ZS; 
+                    iIndSource = 1 + iT*cGridSource.iD2IS + iX*cGridSource.iD2XS + iY*cGridSource.iD2YS; 
+                    do iZ = 0, cGridSource.iD2ZL - 1
+
+                        cGridDest.pacD2(iIndDest) = cGridSource.pacD2(iIndSource); 
+                        iIndSource = iIndSource + cGridSource.iD2ZS; 
+                        iIndDest = iIndDest + cGridDest.iD2ZS; 
+                    end do
+                end do
+            end do
+        end do
+
+    END SUBROUTINE CopyToLargeDataD2 
 
     SUBROUTINE test_isnan(cSpace)
 

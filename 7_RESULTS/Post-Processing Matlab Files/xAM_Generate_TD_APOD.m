@@ -9,13 +9,13 @@ location = '';
 c0 = 1480;
 
 arr.N_el = 64;
-arr.W_el = 0.1; %mm
-arr.Kerf = 0.0; %mm
+arr.W_el = 0.08; %mm
+arr.Kerf = 0.02; %mm
 
 arr.W = (arr.W_el + arr.Kerf)* (arr.N_el-1) + arr.W_el;
 
 x_el = arr.W_el/2 + (0:arr.N_el-1)*( arr.W_el + arr.Kerf);
-apod_val = 0.5;
+apod_val = 0.3;
 %% XWAVE
 td_filename = ['../../5_Input_Files/TD/', location,'td_' num2str(i_theta*10) 'deg_x.dat'];
 td_x = abs(x_el - arr.W/2 )*sind(i_theta);

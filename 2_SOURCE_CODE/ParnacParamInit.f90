@@ -436,10 +436,7 @@ CONTAINS
             errstatus = errstatus + readstatus
             call remove_CR(acTemp)
             cModelParams.PrimarySourceType = iEI_LOADFIELD
-            cModelParams.FieldFilename = trim(acTemp)
-            ! do i = 1, 3
-            !     read (iImportUNIT, *, IOSTAT=readstatus) cModelParams.xyzfielddim(i, :)
-            ! end do
+            cModelParams.FieldFilename = trim(acTemp) 
         else
             cModelParams.PrimarySourceType = 0 ! Doesn't exist
         end if

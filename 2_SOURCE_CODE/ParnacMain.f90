@@ -64,7 +64,7 @@ PROGRAM Parnac_Main
         iBeamOffsetT, iBeamOffsetX, iBeamOffsetY, &
         InitRRMSNorm, DestroyRRMSNorm, &
         InitRRMSPreviousCorrection, DestroyRRMSPreviousCorrection, &
-        InitSaveSlices
+        InitSaveSlices, GridDistr2CreateEmpty
     USE ParnacParamInit, ONLY: &
         ReadCommandLineAndEnvironment, ReadConfigFile, &
         ConfigFileInfo, NormalizeConfigParameters, &
@@ -73,14 +73,16 @@ PROGRAM Parnac_Main
         PrimarySourceToField, PlaneWaveField, &
         ContrastSourceToField, ContrastSourcetoFieldConj, FieldToContrastSource, FieldtoContrastSourceLin, & !! LSCM L.D. 12-07-2010
         CFPlaneSourceToField, &
-        LoadField, LoadInitField, StoreField, AddStoredToField, AddStoredtoFieldDFM, SubtractData, SumData, Copydata, SubtractStoredToFieldBis, SubtractStoredToFieldTris, sumsquare, sumandmultiply, sumandmultiplyCG, sumandmultiplyCGbis, sumandmultiplyCGtris, TwoRealValueCalculation, AbsoluteValueCalculation, &
+        LoadField, StoreField, AddStoredToField, AddStoredtoFieldDFM, SubtractData, SumData, Copydata, SubtractStoredToFieldBis, SubtractStoredToFieldTris, sumsquare, sumandmultiply, sumandmultiplyCG, sumandmultiplyCGbis, sumandmultiplyCGtris, TwoRealValueCalculation, AbsoluteValueCalculation, &
         LoadPlane, StorePlane, ZeroFirstPlane, &
         StoreSlices, UpdateRRMSError, ExportRRMSError, &
-        test_isnan, PointSourceCloudField
+        test_isnan, PointSourceCloudField, CopyDataD2, CopyToLargeDataD2
     USE ParnacContrastFunctions, ONLY: &
         InitContrastSpace
     USE ParnacOutput, ONLY: &
         ExportSlice, Print_Error
+    USE ParnacDataRedist, ONLY: &
+        ReorderDistr0ToDistr1, ReorderDistr1ToDistr2, ReorderDistr2ToDistr1, ReorderDistr1ToDistr0
 
     !! *****************************************************************************
     !!
@@ -565,10 +567,10 @@ PROGRAM Parnac_Main
 
         ! Either from source description or as plane wave, this function generates the primary field
         ! given the source type defined in the input file
-        if ( cModelParams%PrimarySourceType==iEI_LOADFIELD) then
+        if (cModelParams%PrimarySourceType == iEI_LOADFIELD) then
             call GridDistr0CreateEmpty(cBeam.cGrid); 
             cBeam%iSpaceIdentifier = iSI_FIELD; 
-            call LoadInitField(cBeam,trim(cModelParams.FieldFilename))
+            call LoadField(cBeam, trim(cModelParams.FieldFilename))
         elseif (cModelParams%PrimarySourceType /= iEI_PLANEWAVE .AND. cModelParams%PrimarySourceType /= iEI_POINTSOURCECLOUD) then
             call PrimarySourcetoField(cBeam); 
         elseif (cModelParams%PrimarySourceType == iEI_PLANEWAVE) then
@@ -1137,7 +1139,7 @@ PROGRAM Parnac_Main
         !If necessary, store the primary field solution for use in iterative scheme- note that in case
         ! Dual Frequency Modality (DFM) or linearization (LCSM) are on other fields have to be stored
         if (cModelParams%Numiterations(1 + iBeam) > 1) then
-            call StoreField(cBeam, "BeamSol0")
+            if (cModelParams%PrimarySourceType /= iEI_LOADFIELD) call StoreField(cBeam, "BeamSol0")
 
             if (DFM == 1) then
 
@@ -1161,7 +1163,7 @@ PROGRAM Parnac_Main
             end if
 
         end if
-        call MPI_BARRIER(MPI_COMM_WORLD,iErr)
+        call MPI_BARRIER(MPI_COMM_WORLD, iErr)
         !-------------------------------------------------------------------------------------
         ! start Linearization pre-loop code L.D. 20-07-2011
         !-------------------------------------------------------------------------------------
@@ -2150,6 +2152,14 @@ PROGRAM Parnac_Main
                 ! start Neumann case
                 !-----------------------------------------------------------
             else
+                i = 100
+                ! Obtain the new starting positions for the previous beam
+                iStartT = cRefBeam.iStartT + iBeamOffsetT(cRefBeam, i)
+                iStartX = cRefBeam.iStartX + iBeamOffsetX(cRefBeam, i)
+                iStartY = cRefBeam.iStartY + iBeamOffsetY(cRefBeam, i)
+                iStartZ = cRefBeam.iStartZ + i
+                
+
                 do iIter = 1, cModelParams%Numiterations(1 + iBeam) - 1
 
                     call PrintToLog("***************************************************************", 0)
@@ -2157,6 +2167,20 @@ PROGRAM Parnac_Main
                     call PrintToLog(acTemp, 0)
                     call PrintToLog("***************************************************************", 0)
                     cModelParams%iIter = iIter
+
+                    call InitSpace(cBeamCS, iSI_FIELD, cRefBeam%bYSymm, &
+                    cRefBeam%iDimT, cRefBeam%iDimX, cRefBeam%iDimY, cRefBeam%iDimZ-i, &
+                    iStartT, iStartX, iStartY, iStartZ, &
+                    0_i8b, 0_i8b, 0_i8b, &
+                    cRefBeam%dFnyq, cRefBeam%dTanX, cRefBeam%dTanY, cRefBeam%dTanT)
+                    call InitGrid(cBeamCS, iProcN, iProcID, (/.false., .false., .false., .false./)); ! Define the structure to store the data on the near-field
+                    call GridDistr2CreateEmpty(cBeamCS%cGrid)
+                    call ReorderDistr0ToDistr1(cBeam%cGrid)
+                    call ReorderDistr1ToDistr2(cBeam%cGrid)
+                    call CopyDataD2(cBeam%cGrid, cBeamCS%cGrid, (/ INT(0,i8b), INT(0,i8b), INT(i,i8b)/))
+                    call ReorderDistr2ToDistr1(cBeamCS%cGrid)
+                    call ReorderDistr1ToDistr0(cBeamCS%cGrid)
+
                     !-----------------------------------------------------------
                     !LCSM - Linearized Neumann
                     !-----------------------------------------------------------
@@ -2173,14 +2197,17 @@ PROGRAM Parnac_Main
                         call FieldtoContrastSourceLin(cBeam, cBeamST, 6, cInhomContrast)
 
                     else
-                        call FieldtoContrastSource(cBeam, cModelParams.ContrastSourceType, cInhomContrast)
+                        ! call FieldtoContrastSource(cBeam, cModelParams.ContrastSourceType, cInhomContrast)
+                        call FieldtoContrastSource(cBeamCS, cModelParams.ContrastSourceType, cInhomContrast)
                     end if
 
                     ! Test whether there is a NaN in cBeam - indication of an error,
                     ! no use to continue the program
-                    call test_isnan(cBeam)
+                    ! call test_isnan(cBeam)
+                    call test_isnan(cBeamCS)
 
-                    call ContrastSourcetoField(cBeam, cBeam, .false.)
+                    ! call ContrastSourcetoField(cBeam, cBeam, .false.)
+                    call ContrastSourcetoField(cBeamCS, cBeamCS, .false.)
                                 !! Residual Calculation
                     if (ResidualNeumann == 1) then
 
@@ -2233,6 +2260,13 @@ PROGRAM Parnac_Main
 
                     !--------------------------------------------------------------------------------------------------------
 
+                    call ReorderDistr0ToDistr1(cBeamCS%cGrid)
+                    call ReorderDistr1ToDistr2(cBeamCS%cGrid)
+                    call CopyToLargeDataD2(cBeamCS%cGrid, cBeam%cGrid, (/ INT(0,i8b), INT(0,i8b), INT(i,i8b)/))
+                    call DestructSpace(cBeamCS)
+
+                    call ReorderDistr2ToDistr1(cBeam%cGrid)
+                    call ReorderDistr1ToDistr0(cBeam%cGrid)
                     call UpdateRRMSerror(cRRMSNorm, cBeam, iBeam, iIter)
                     ! If necessary, add the Previous beam contributions to the current solution
 
@@ -2249,6 +2283,7 @@ PROGRAM Parnac_Main
                     !-----------------------------------------------------------
                     !LCSM - Linearized Neumann
                     !-----------------------------------------------------------
+
 
                     if (LCSM == 1) then
                         call AddStoredtoField(cBeam, "BeamStatic"); 
@@ -2272,7 +2307,11 @@ PROGRAM Parnac_Main
                                              "p", cBeam, iBeam, .true.)
                         end if
 
-                        call AddStoredtoField(cBeam, "BeamSol0"); 
+                        if (cModelParams%PrimarySourceType == iEI_LOADFIELD) then
+                            call AddStoredtoField(cBeam, trim(cModelParams.FieldFilename)); 
+                        else
+                            call AddStoredtoField(cBeam, "BeamSol0"); 
+                        end if
                         ! Output slices if required
                         if ((((cModelParams%Slicesavespecifier == iAI_FIRSTANDLAST) &
                               .or. (cModelParams%Slicesavespecifier == iAI_LAST)) &
@@ -2287,7 +2326,6 @@ PROGRAM Parnac_Main
                     ! Test whether there is a NaN in cBeam - indication of an error,
                     ! no use to continue the program
                     call test_isnan(cBeam)
-                    ! if (iIter == cModelParams%Numiterations(1 + iBeam) - 1) call StoreField(cBeam,"BeamSol0_Full")
 
                 end do
             end if
@@ -2366,13 +2404,13 @@ PROGRAM Parnac_Main
     deallocate (cModelParams%numiterations)
     deallocate (cModelParams%xyzslicedim, cModelParams%xyzslicepos, cModelParams%xyzslicebeam, cModelParams%xyzsliceindex)
     if (cModelParams.ContrastSourceType == iCI_SCATTERER) then
-        do i = 1,cSourceParams%ScCloudNo
+        do i = 1, cSourceParams%ScCloudNo
             deallocate (ScattererParams(i)%ClusterSliceDim)
-        enddo
-    end if  
-     
-    open (unit=iExportUNIT, file=trim(trim(sOutputDir)//'BeamSol0'//int2str(iProcID)) , status="OLD", form="UNFORMATTED", iostat=iErr)
-    close(iExportUNIT, status='delete')
+        end do
+    end if
+
+    open (unit=iExportUNIT, file=trim(trim(sOutputDir)//'BeamSol0'//int2str(iProcID)), status="OLD", form="UNFORMATTED", iostat=iErr)
+    close (iExportUNIT, status='delete')
 
     ! Deinitialization
     call StopWatchesStop; 

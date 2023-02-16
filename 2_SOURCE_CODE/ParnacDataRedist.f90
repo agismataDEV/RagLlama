@@ -186,7 +186,7 @@ CONTAINS
 
         ! If iProcN = 1, then the grid is in T-local as well as XYZ-local distribution,
         ! no need to redistribute
-        if (cGrid.iProcN > 1) then
+        if (cGrid.iProcN > 1) then 
 
             write (acTemp, '("Allocate mem for redistribution")'); call PrintToLog(acTemp, 4); 
             ! First we allocate cGrid.pacD2, we use this as a buffer
@@ -219,7 +219,7 @@ CONTAINS
             ! the distributing itself. We have to send one block of data from each processor, to each other processor.
             ! This is done by the MPI_Alltoall primitive.
             write (acTemp, '(" Communicate")');        call PrintToLog(acTemp, 4);
-            call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+
             call MPI_Alltoall(cGrid.pacD2, &
                               int(Local1XYZ*Local2T), &
                               MPI_DOUBLE_COMPLEX, &
@@ -402,19 +402,19 @@ CONTAINS
             ! this operation is not in-place. This command is not inplace either, but we could fiddle around with it for a bit,
             ! such that it might BECOME inplace. Therefore, to keep options open we use this method.
             write (acTemp, '(" Communicate")'); call PrintToLog(acTemp, 4); 
-            call MPI_BARRIER(MPI_COMM_WORLD, iErr)
+
             call MPI_Alltoall(cGrid.pacD1, &
                               int(Local1XYZ*Local2T), &
                               MPI_DOUBLE_COMPLEX, &
                               cGrid.pacD2, &
                               int(Local1XYZ*Local2T), &
-                              MPI_DOUBLE_COMPLEX, &
+                              MPI_DOUBLE_COMPLEX, & 
                               MPI_COMM_WORLD, &
-                              iErr)
+                              iErr) 
 
             !        if (cGrid.iProcN > 1) then
             !                call SWStart(cswDBG1);
-    !!KH Is this one necessary since the MPI_WAIT is also included???
+            !!KH Is this one necessary since the MPI_WAIT is also included???
             !        call MPI_Barrier(MPI_COMM_WORLD, iErr);
             !                call SWStop(cswDBG1);
             !        end if

@@ -246,7 +246,7 @@ for i = 1:i_end
     splot_div = 1;
     harmonics=1;
     Add = 0;
-    dBVALUES=200;
+    dBVALUES=10;
     
     FontSize = 20;
     
@@ -275,7 +275,7 @@ for i = 1:i_end
 %     pnl_harmi = eval(['pnl.harm_' name{i}  num2str(k)])*1E-3;
 %     pnl_harmi= eval(['pnl.diff_' name{i}  num2str(k)]);
 %     pnl_harmi = 20*log10(squeeze(max(abs(pnl.xwave_data))));
-    pnl_harmi = (squeeze(max(abs(plin.data*1E-3))));
+    pnl_harmi = (squeeze(max(abs(pf *1E-3))));
 %     pnl_harmi = squeeze(rot90(q4,3))*1E-3;
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
     
