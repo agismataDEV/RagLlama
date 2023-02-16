@@ -113,3 +113,14 @@ ParnacPointSourceCloud.f90 :
 Removed PPW from everywhere!!
 Also from the input files!
 
+=============================================================================================================
+16/02/2023 
+=============================================================================================================
+ParnacMain.f90 / ParnacParamInit.f90: 
+1. LoadField is improved  
+
+ParnacPointSourceCloud.f90 : 
+1. Now you can set specific dimensions for the bubble cloud (-X X , -Y Y and 0 Z)
+
+Removed PPW from everywhere!!
+Also from the input files!

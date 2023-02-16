@@ -142,7 +142,7 @@ end
 if (strcmp(load_operator,'yes'))
     for iProcID =0:0
         
-        filename_loc = [file.dirname '/Bubbles/',filename,int2string_ICS(iProcID)];
+        filename_loc = [file.dirname '/Bubbles/',filename];
         if isfile(filename_loc)
             fileID_loc = fopen(filename_loc,fformat);
             formatSpec = '%f %f %f';

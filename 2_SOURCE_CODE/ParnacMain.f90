@@ -597,14 +597,17 @@
 
         ! Either from source description or as plane wave, this function generates the primary field
         ! given the source type defined in the input file
-        if(cModelParams%PrimarySourceType/=iEI_PLANEWAVE .AND. cModelParams%PrimarySourceType/=iEI_POINTSOURCECLOUD) then
-            call PrimarySourcetoField(cBeam);
-        elseif (cModelParams%PrimarySourceType==iEI_PLANEWAVE) then
-            call PlanewaveField(cBeam);
-		! elseif ( cModelParams%PrimarySourceType==iEI_LOADFIELD) then
-			! call LoadField_FF(cBeam,cModelParams.FieldFilename)
-		elseif(cModelParams%PrimarySourceType==iEI_POINTSOURCECLOUD) then
-			call PointSourceCloudField(cBeam);
+
+        if (cModelParams%PrimarySourceType == iEI_LOADFIELD) then
+            call GridDistr0CreateEmpty(cBeam.cGrid); 
+            cBeam%iSpaceIdentifier = iSI_FIELD; 
+            call LoadField(cBeam, trim(cModelParams.FieldFilename))
+        elseif (cModelParams%PrimarySourceType /= iEI_PLANEWAVE .AND. cModelParams%PrimarySourceType /= iEI_POINTSOURCECLOUD) then
+            call PrimarySourcetoField(cBeam); 
+        elseif (cModelParams%PrimarySourceType == iEI_PLANEWAVE) then
+            call PlanewaveField(cBeam); 
+        elseif (cModelParams%PrimarySourceType == iEI_POINTSOURCECLOUD) then
+            call PointSourceCloudField(cBeam); 
         end if
 
         if (ResidualNeumann==1) then 
@@ -1195,7 +1198,7 @@
         !If necessary, store the primary field solution for use in iterative scheme- note that in case
         ! Dual Frequency Modality (DFM) or linearization (LCSM) are on other fields have to be stored
         if(cModelParams%Numiterations(1+iBeam)>1) then
-            call StoreField(cBeam,"BeamSol0")
+			if (cModelParams%PrimarySourceType /= iEI_LOADFIELD) call StoreField(cBeam, "BeamSol0")
 
             if (DFM==1) then
 
@@ -2379,7 +2382,12 @@
 				                    "p", cBeam, iBeam, .true.)
 				    endif
 				    
-				    call AddStoredtoField(cBeam,"BeamSol0");
+				    
+					if (cModelParams%PrimarySourceType == iEI_LOADFIELD) then
+						call AddStoredtoField(cBeam, trim(cModelParams.FieldFilename)); 
+					else
+						call AddStoredtoField(cBeam, "BeamSol0"); 
+					end if
 				    ! Output slices if required
 				    if((    ((cModelParams%Slicesavespecifier==iAI_FIRSTANDLAST) &
 				        .or.(cModelParams%Slicesavespecifier==iAI_LAST))&

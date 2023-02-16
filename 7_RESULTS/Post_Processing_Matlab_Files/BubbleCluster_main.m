@@ -14,7 +14,7 @@ for slicenum1 = [2]%[12,3,4,5,6]
     [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');
     PS=Bubble ; domainPS = domain; domainPS.beamiterations=0;[PS] = BubbleCluster_LocCon(medium,domainPS,file,PS,'PS');
     %%  Bubble Cluster Positions
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','k.',5);
+    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','ko',8);
     [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx',8);
     
     %% PlayMovies
@@ -26,7 +26,7 @@ for slicenum1 = [2]%[12,3,4,5,6]
     %% Compare Analytic solution with simulation results
     BubbleCluster_Compare(medium,domain,dslice,file,plin,pnl,Bubble);
     %% Plot residuals
-    Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,[1E2 1E3 1E4],'../test/Phased_2E5Pa_2micron_1MHz_')
+    Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,[1E5],'../Paper/Phased_2E5Pa_2micron_1MHz_')
     
     fclose('all');
     %%

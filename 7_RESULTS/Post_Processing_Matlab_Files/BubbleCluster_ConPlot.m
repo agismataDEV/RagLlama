@@ -63,7 +63,7 @@ for i = 1:i_end
             plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
             pnl.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
             for i = 1: harmonics
-                eval(['pnl.harm' num2str(i) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+                pnl.harm{i}((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=20*log10(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,(i-0.3)*medium.freq0,(i+0.3)*medium.freq0,order));
             end
 %                         pnl.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(pnl.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
 %                         plin.atten((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.1*medium.freq0,(domain.Fnyq-0.3)*medium.freq0,order);
@@ -73,7 +73,7 @@ for i = 1:i_end
         end
 % 		plin.fund =20*log10(maxhilbert_vec(plin.data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order));
 % 		for i = 1: harmonics
-%             eval(['pnl.harm' num2str(i) '=20*log10(maxhilbert_vec(pharm,domain.dtpar,' num2str(i-0.3) '*medium.freq0,' num2str(i+0.3) '*medium.freq0,order));']);
+%             pnl.harm{i}=20*log10(maxhilbert_vec(pharm,domain.dtpar,(i-0.3)*medium.freq0,(i+0.3)*medium.freq0,order));
 %         end
     
     %% PLOTS
@@ -110,7 +110,7 @@ for i = 1:i_end
     dBVALUES=20;
     harmonics = 1;
     Add = 0;
-    plin_plot = squeeze(20*log10(max(abs(pnl.contrastdata1))));
+    plin_plot = pnl.harm1;%squeeze(20*log10(max(abs(p_curr1))));
     FontSize = 40;
     
     f4=figure('WindowState','maximized');
@@ -143,7 +143,7 @@ for i = 1:i_end
     set(gcf, 'Color', 'white');
     set(gca,'FontSize',FontSize);
     hold off;
-    axis image
+%     axis image
     %%
 %     caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
  

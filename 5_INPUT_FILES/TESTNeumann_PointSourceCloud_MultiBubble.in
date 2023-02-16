@@ -70,11 +70,11 @@ none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
 1.000000E+003		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
-60.00000E+000		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
+20.00000E+000		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
-2.00000E+000		*** Twidth = Width of gaussian window
-20.00000E+000		*** Tdelay = Delay of gaussian window
+1.00000E+000		*** Twidth = Width of gaussian window
+10.00000E+000		*** Tdelay = Delay of gaussian window
 2					*** Power  = Power of gaussian window	
 ***************************
 ***  Switches  		***
@@ -122,7 +122,7 @@ gaussian
 *** Parameters-Bubble Cluster  ***
 **********************************
 microbubble		***	type of scatterer
-5.800000E-009   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
+3.000000E-008   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
 0.072000E+000   *** sigma_w	 = Surface tension of water  [N/m]
 0.036000E+000   *** sigma_R0 = Initial surface tension   [N/m]
 1.070000E+000   *** kappa	 = Gas polytropic exponent
@@ -130,15 +130,15 @@ microbubble		***	type of scatterer
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius *** Normalize , 'none', 'time', 'radius', 'freq0_and_radius','Minnaert_and_radius'
 ****
-1.000000E+002	*** No. of Bubbles consisting the cluster
+3.000000E+003	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse
-2.4E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
-0.55 0.593	  	    *** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.55 0.593 	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.55 0.593  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
-4.53e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
+6E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
+-2 3  	        *** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len - X_Len/2
+-2 3 	 	    *** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len - Y_Len/2
+3 8 	        *** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+15e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
 close

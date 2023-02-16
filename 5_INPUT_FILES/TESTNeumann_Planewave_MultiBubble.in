@@ -121,15 +121,15 @@ microbubble		***	type of scatterer
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-1.00000E+003	*** No. of Bubbles consisting the cluster
+1.000000E+003	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
 2E-6 			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
-0.25 0.75	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.25 0.75	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.31 0.69		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
-60e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
+-2.5 2.5	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len - X_Len/2
+-2.5 2.5	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len - Y_Len/2
+3.1 6.9		    *** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
 close

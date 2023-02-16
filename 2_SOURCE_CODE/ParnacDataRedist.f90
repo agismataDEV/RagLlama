@@ -218,7 +218,7 @@ CONTAINS
 !             Now we have allocated the buffer space and have packed the data, it is time to start with
 !             the distributing itself. We have to send one block of data from each processor, to each other processor.
 !         This is done by the MPI_Alltoall primitive.
-            ! write (acTemp, '(" Communicate")');        call PrintToLog(acTemp, 4);
+            write (acTemp, '(" Communicate")');        call PrintToLog(acTemp, 4);
             call MPI_Alltoall(cGrid.pacD2, &
                               int(Local1XYZ*Local2T), &
                               MPI_DOUBLE_COMPLEX, &

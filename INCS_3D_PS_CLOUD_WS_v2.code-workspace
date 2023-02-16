@@ -1,0 +1,25 @@
+{
+	"folders": [
+		{
+			"name": "2_SOURCE_CODE",
+			"path": "2_SOURCE_CODE"
+		},
+		{
+			"name": "3_COMPILED_FILES",
+			"path": "3_COMPILED_FILES"
+		},
+		{
+			"name": "5_INPUT_FILES",
+			"path": "5_INPUT_FILES"
+		},
+		{
+			"name": "6_RUN",
+			"path": "6_RUN"
+		}
+	],
+	"settings": {
+		"fortran-ls.executablePath": "C:\\Users\\AgisM\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.7_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python37\\Scripts\\fortls.exe",
+		"editor.wordWrap": "off",
+		"editor.wordWrapColumn": 50
+	}
+}

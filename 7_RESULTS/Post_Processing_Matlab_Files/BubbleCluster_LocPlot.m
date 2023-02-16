@@ -77,7 +77,7 @@ if (Bubble.N >0 )
     set(gca,'FontSize',LocPlot_FontSize)
     %% ======================= 3D Microbubble Cluster Focused position =============
     subplot(2,3,2)
-    figure
+%     figure
     hold on;
     box on;
     [Z,X] = meshgrid(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)});
@@ -186,7 +186,7 @@ if (Bubble.N >0 )
     integerPart=deblank(integerPart(1:(end-1)));
     integerPart = integerPart(end:-1:1);
     
-    sgtitle([name,' Cluster of ',integerPart,' ',name,'(s) per ',num2str(round(Bubble.Volume,2)),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
+    sgtitle([name,' Cluster of ',integerPart,' ',name,'(s) per ',num2str(round(Bubble.Volume,ceil(-log10(Bubble.Volume)))),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
     
     % set(gcf, 'Color', 'w');
     set(gca, 'Color', 'none'); % Sets axes background

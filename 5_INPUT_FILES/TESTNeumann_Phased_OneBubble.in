@@ -142,9 +142,9 @@ time_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
 2.0E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
-0.25 0.75	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.25 0.75	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.2 0.90		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+-2.5 2,5	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len - X_Len/2
+-1.25 1.25	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len - Y_Len/2
+2 9		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
 10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0			*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to the gridpoints close to scatterers "close"

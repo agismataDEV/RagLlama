@@ -430,15 +430,11 @@
                 read (iImportUNIT, *, IOSTAT=readstatus) PointSourceCloudParams%ClusterDimsRatio(:, 3)
                 read (iImportUNIT, *, IOSTAT=readstatus) PointSourceCloudParams%MinInBetweenDist
             else if (trim(acTemp) == 'filename') then
-                read (iImportUNIT, *)
                 read (iImportUNIT, *, IOSTAT=readstatus) acTemp
                 errstatus = errstatus + readstatus
                 call remove_CR(acTemp)
                 cModelParams.PrimarySourceType = iEI_LOADFIELD
-                cModelParams.FieldFilename = acTemp
-                do i = 1, 3
-                    read (iImportUNIT, *, IOSTAT=readstatus) cModelParams.xyzfielddim(i, :)
-                end do
+                cModelParams.FieldFilename = trim(acTemp) 
             else
                 cModelParams.PrimarySourceType = 0 ! Doesn't exist
             end if

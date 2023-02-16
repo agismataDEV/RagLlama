@@ -54,7 +54,7 @@ Bubble.mindist           = 10e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 6;
+domain.beamiterations       = 3;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
@@ -65,8 +65,10 @@ domain.symmetry             = 0;
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../test/1E4P_12mPa_3cycles_1E3MBs_2_4um_9Fnyq';
-file.dirname             = '../Paper/Phased_2E5Pa_2micron_1MHz_1E5MBs_90T';
-file.dirname             = '../Phased/Phased_1E5MB_1MHz_5E1Pa_2_4um_DHPC';
+file.dirname             = '../Paper/PW_2E5Pa_2micron_1MHz_1E0Linear';
+file.dirname             = '../Paper/Phased_2E5Pa_2micron_1MHz_1E5MBs_90T_25iter_1ml';
+file.dirname             = '../test/PW_1E4LS';
+% file.dirname             = '../ProtonBubble/1E2PS_1E2Pa_1E3MB_6um_1_7MHz';
 % file.dirname             = '../ProtonBubbleSync/1E2PS_1E2MB_1_7MHz_1E2Pa_2cycles_regular';
 % file.dirname             = '../ProtonBubbleSync/1E0PS_5E3MB_5MHz_1E3Pa_5cycles_regular_mono';
 % file.dirname             = '../width_3cycl_round2/PW_2E5Pa_2micron_1MHz_2E4LS';

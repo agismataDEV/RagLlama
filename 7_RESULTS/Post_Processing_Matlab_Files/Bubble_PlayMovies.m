@@ -49,7 +49,7 @@ if (strcmp(file.play_movies,'yes'))
     
     i_end = sizeP(1);
     dBVALUES = 70;
-    plot_value = 20*log10(abs(plin.data));
+    plot_value = 20*log10(abs(pnl.contrastdata));
     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================

@@ -94,11 +94,11 @@ if (strcmp(file.plot_converr,'yes'))
         LS = split(cellstr(ls([file.dirname,'/',file.rootname,'*_',dslice.savedim(dslice.num),int2string_ICS(dslice.num),int2string_ICS(0),int2string_ICS(0),'*.h5'])),[file.rootname,'_']);
         
         LS = split(LS(:,2) ,'_y_');
-        IterationNumber = max(str2double(LS(:,1)));
+        IterationNumber = max(str2double(LS(:,1))); IterationNumber=25;
         
         ii = 0;
         txt_err = {'total'; 'contrast'};
-        file_dirname = [filename, erase(num2str(BubbleList(Bubblei),'%.0E'),'+0'),'MBs'];
+%         file_dirname = [filename, erase(num2str(BubbleList(Bubblei),'%.0E'),'+0'),'MBs'];
         file_dirname = file.dirname;
         
         for i =1:1
@@ -110,7 +110,7 @@ if (strcmp(file.plot_converr,'yes'))
             output = load_ICS_slice_par(current);
             p_curr  = squeeze(output.data); p_first = p_curr;
                 
-            for jj=2:IterationNumber+mod(i,2)
+            for jj=18:IterationNumber+mod(i,2)
                     p_prev = p_curr; 
                     prev = current;
                     disp(['Loading ... ',current])
@@ -120,9 +120,19 @@ if (strcmp(file.plot_converr,'yes'))
                     output = load_ICS_slice_par(current);
                     p_curr  = squeeze(output.data);
 
-                    eval(['Error_prev_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_prev.^2))));']);
-                    eval(['Error_init_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_first).^2)))./sum(sum(sum(p_first.^2))));']);
+                    if (jj==2) ;eval(['dp = p_curr-p_prev;']);end
+                    Error_prev{i}(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_prev.^2))));
+                    Error_dp{i}(Bubblei,jj-1) =  sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(dp.^2))));
+                    Error_init{i}(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_first.^2))));
+                    dp_val{i}(Bubblei,jj-1) = squeeze(max(abs(p_curr(:,round(size(p_curr,2)/2)+1,470)-p_prev(:,round(size(p_curr,2)/2)+1,470))));
+%                     eval(['Error_prev_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_prev.^2))));']);
+%                     eval(['Error_dp_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(dp.^2))));']);
+%                     eval(['Error_init_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_first.^2))));']);
+%                     eval(['dp_',txt_err{i},'(Bubblei,jj-1) = squeeze(max(abs(p_curr(:,round(size(p_curr,2)/2)+1,470)-p_prev(:,round(size(p_curr,2)/2)+1,470))));']);
             end
+            Error_prev{i}(Bubblei,1:jj) = ([1,Error_prev(Bubblei,2:jj)]);
+            Error_init{i}(Bubblei,1:jj) = ([1,Error_init(Bubblei,2:jj)]);
+            Error_dp{i}(Bubblei,1:jj) = ([1,Error_dp(Bubblei,2:jj)]);
         end
         
         % PLOTS
@@ -130,36 +140,33 @@ if (strcmp(file.plot_converr,'yes'))
         legend_data2{Bubblei,1} = [int2str(BubbleList(Bubblei)), ' MB',i_end ];
         legend_data2{Bubblei,2} = [int2str(BubbleList(Bubblei)), ' MB',i_end ];
         %  plot(0:IterationNumber,log([1,Error]))
-        Error_prev_total(Bubblei,1:jj) = ([1,Error_prev_total(Bubblei,2:jj)]);
-        Error_init_total(Bubblei,1:jj) = ([1,Error_init_total(Bubblei,2:jj)]);
-        Error_prev_contrast(Bubblei,1:jj-1) = ([1,Error_prev_contrast(Bubblei,2:jj-1)]);
-        Error_init_contrast(Bubblei,1:jj-1) = ([1,Error_init_contrast(Bubblei,2:jj-1)]);
     end
     %% Plot
     % hold on;
     % Create multiple lines using matrix input to plot
 %     hold on
-    for i = 1:1
-        
         f8=figure('WindowState','maximized');
-hold on;
-        eval(['plot',num2str(i),' = semilogy(0:size(Error_prev_',txt_err{i},',2)-1,flipud(Error_prev_',txt_err{i},'))'])
-
-        set(eval(['plot',num2str(i),'(1)']),'DisplayName',[num2str(BubbleList(1)),' Bubble(s) Pres'],'Marker','o','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
-            'Color','#994C00');
-        set(eval(['plot',num2str(i),'(2)']),'DisplayName',[num2str(BubbleList(2)),' Bubble(s) Pres'],'Marker','x','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
-            'Color','#606060');
-        set(eval(['plot',num2str(i),'(3)']),'DisplayName',[num2str(BubbleList(3)),' Bubble(s) Pres'],'Marker','*','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
-            'Color','#009999');
-        set(eval(['plot',num2str(i),'(4)']),'DisplayName',[num2str(BubbleList(4)),' Bubble(s) Pres'],'Marker','square','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
-            'Color','#990000');
-        % set(plot2(4),'DisplayName','1000 Bubbles','Marker','diamond',...
-        %     'Color',[0.611764705882353 0.596078431372549 0.596078431372549]);
-        % set(plot2(5),'DisplayName','10000 Bubbles','Marker','o',...
-        %     'Color',[0.611764705882353 0.596078431372549 0.596078431372549]);
-        % set(plot2(6),'DisplayName','100000 Bubbles','Marker','*',...
-        %     'Color',[0.611764705882353 0.596078431372549 0.596078431372549]);
-        
+    for i = 1:1
+        hold on;
+        for Bubblei =1:4
+               plot_h(Bubblei) =  semilogy(0:size(Error_prev{i}(Bubblei,:),2)-1,flipud(dp_val{i}(Bubblei,:)));
+    %         eval(['plot',num2str(i),' = semilogy(0:size(Error_prev_',txt_err{i},',2)-1,[flipud(dp_',txt_err{i},')])'])
+    %            
+    %         set(eval(['plot',num2str(i),'(1)']),'DisplayName',[num2str(BubbleList(1)),' Bubble(s) Pres'],'Marker','o','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
+    %             'Color','#994C00');
+    %         set(eval(['plot',num2str(i),'(2)']),'DisplayName',[num2str(BubbleList(2)),' Bubble(s) Pres'],'Marker','x','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
+    %             'Color','#606060');
+    %         set(eval(['plot',num2str(i),'(3)']),'DisplayName',[num2str(BubbleList(3)),' Bubble(s) Pres'],'Marker','*','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
+    %             'Color','#009999');
+    %         set(eval(['plot',num2str(i),'(4)']),'DisplayName',[num2str(BubbleList(4)),' Bubble(s) Pres'],'Marker','square','MarkerSize',12,'LineWidth',2,'LineStyle','--',...
+    %             'Color','#990000');
+    %         set(plot2(4),'DisplayName','1000 Bubbles','Marker','diamond',...
+    %             'Color',[0.611764705882353 0.596078431372549 0.596078431372549]);
+    %         set(plot2(5),'DisplayName','10000 Bubbles','Marker','o',...
+    %             'Color',[0.611764705882353 0.596078431372549 0.596078431372549]);
+    %         set(plot2(6),'DisplayName','100000 Bubbles','Marker','*',...
+    %             'Color',[0.611764705882353 0.596078431372549 0.596078431372549]);
+        end
         grid on;
         % Create ylabel
         ylabel('RRMSE(n)');
@@ -168,7 +175,7 @@ hold on;
         title(['Convergence error of ',lower(txt_err{i}),' pressure'])
         % grid(axes1,'on');
         % Set the remaining axes properties
-        legend(legend_data2{:,1})
+%         legend(legend_data2{:,1})
         % legend([legend_data1 legend_data2])
         set(gca,'FontSize',30)
         set(gcf,'Color','w')    

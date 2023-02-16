@@ -23,42 +23,43 @@
 %
 % *********************************************************************************
 
-function [V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f)
+function [par, V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f,domain)
 %% ========================Initialization==============================================================
 
 % -------------Bubble parameters
-par.R0 = 4.2e-6 ;                         % [μm],  initial bubble radius R0
-par.S_vis = 3.0e-8         ;            % [Pa*sec] , Shell viscosity
-% par.S_vis = 1.5E-9*exp(8E5*par.R0);
+par.R0 = 0.62e-6 ;                         % [μm],  initial bubble radius R0
+par.S_vis = 5.8e-9         ;            % [Pa*sec] , Shell viscosity
+par.S_vis = 1.5E-9*exp(8E5*par.R0);
 
 %------------------ Medium parameters (water, Room temperature =20° and 1 atm ambient pressure)
 par.P0 = 1.01e+5 ;                             % [Pa], ambient pressure 1 [atm] = 10^5 [Pa]
 par.sigma_w  = 0.072 ;                      % [N/m] surface tension
-par.sigma_R0 = 0.036;                      % [N/m], surface tension at initial radius R0
+par.sigma_R0 = 0.01;                      % [N/m], surface tension at initial radius R0
 par.P_g0 = par.P0+2*par.sigma_R0/par.R0 ;   % [Pa] Initial gas pressure , (Sometimes = P0)
 par.gamma = 1.07   ;                           %  (or κ), dimensionless, polytropic exponent of the gas inside the bubble
 par.mu = 2e-3 ;                             % [Pa*sec], dynamic viscocity of medium
-par.c = c;
-par.rho = rho;
-par.f = f;
+% par.c = c;
+% par.rho = rho;
+% par.f = f;
 %---------------Marmottant model parameters
-par.chi = 0.4   ;                                     % [N/m] shell elasticity
+par.chi = 0.5   ;                                     % [N/m] shell elasticity
 par.R_b = par.R0/sqrt(par.sigma_R0/par.chi+1);     % buckling radius
 par.R_r = par.R_b*sqrt(par.sigma_w/par.chi+1);       % upper limit radius after rupture
 
 par.f0 = 1/(2*pi*par.R0*sqrt(par.rho))*sqrt(3*par.gamma*par.P0+ (3*par.gamma-1)*2*par.sigma_R0/par.R0  + 4*par.chi/par.R0);
 par.omega = 3*par.P0*par.gamma/par.R0^2/par.rho+4*par.chi/par.R0^3/par.rho;
 par.delta = par.R0/par.c + 4*par.mu/(par.rho*par.R0^2*par.omega) + 4*par.S_vis/(par.rho*par.R0^3*par.omega);
-par.fresonance = par.f0*sqrt(1-par.delta^2/2)/1E6  %MHz
+par.fresonance = par.f0*sqrt(1-par.delta^2/2)/1E6;  %MHz
+par.fresonance
 
 %% Create p_driv manually
-w_driving   = 2*pi*par.f;
-gauss_dl    = 3/par.f;
-gauss_win   = 1/par.f;
-dt = 1/(2*7*f);
-t_p_driv = [1:600]*dt;
-
-p_driv   = 2E5*exp( - ((t_p_driv-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t_p_driv-gauss_dl));
+% w_driving   = 2*pi*par.f;
+% gauss_dl    = 3/par.f;
+% gauss_win   = 1/par.f;
+% dt = 1/(2*7*f);
+% t_p_driv = [1:1000]*dt;
+% 
+% p_driv   = 1E3*exp( - ((t_p_driv-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t_p_driv-gauss_dl));
 %% ========================= Solve ODE with Marmottant ==================================================
 T_start = t_p_driv(1) ;
 T_end   = t_p_driv(end)   ;
@@ -84,12 +85,12 @@ R_d = R(:,2);
 R_ = R(:,1);
 % R(:,3) = R_dd;
 
-V_dd_norm = (4*pi*R_.*(R_.*R_dd+2.*R_d.^2))';     % Should be divided by the total volume
+V_dd_norm = 1000*(4*pi*R_.*(R_.*R_dd+2.*R_d.^2))';     % Should be divided by the total volume
 
 r = R_;
 psc1 = par.rho*R_./r.*((2*R_d.^2 + R_.*R_dd) - R_.^3.*R_d.^2./(2.*r.^3));
 psc2 = par.rho*V_dd_norm/4/pi./r';
-psc2 = par.rho*V_dd_norm/4/pi./r' - par.rho*R_.d.^2.*(R_/r).^4;
+% psc2 = par.rho*V_dd_norm/4/pi./r' - par.rho*R_d.^2.*(R_/r).^4;
 disp(['Pressure @ ' num2str(max(r)) ' [um] is ', num2str(max(psc1*1E-3)) ' [kPa].', num2str(max(psc2*1E-3)), '[kPa].'])
 %% ======================= Spectral Response ====================================================
 F_s = length(t_p_driv)/(abs(T_end) + abs(T_start));                    % [Hz] , 1/dt
@@ -110,7 +111,7 @@ Sp_p = 20*log10(P1_p);                                  % Convert pressure to am
 
 % Spectrum of radial oscillations
 t_data=t_p_driv(jj);
-Data=R(jj,1);
+Data=V_dd_norm;R(jj,1);
 Nfft_r = 2^nextpow2(2*length(Data));
 Y_r = abs(fft(Data-par.R0,Nfft_r));
 f_r = F_s/2*linspace(0,1,Nfft_r/2+1);
@@ -128,25 +129,27 @@ hold on;
 h_f1 = subplot(2,2,1);
 h = plot(t_p_driv(jj),p_driv(jj), '-', 'LineWidth', 1.5);
 fig_color = get(h,'Color');
-xlabel('time [s]'); ylabel('pressure [Pa]'); title('driving pulse'); box on;
+xlabel('time [s]'); ylabel('$\textit{p}$ [Pa]'); title('Driving pulse'); box on;
 hold off;
 
 hold on;
 % Create plot of radial oscillation in respect with time , p(t)
 h_f2 = subplot(2,2,3);
-plot(t_p_driv(jj),R(jj,1), '-', 'LineWidth', 1.5, 'color', fig_color);
-xlabel('time [s]'); ylabel('Radius [m]'); title('bubble radius'); box on;
+plot(t_p_driv(jj),R(jj,1)*1E6, '-', 'LineWidth', 1.5, 'color', fig_color);
+xlabel('time [s]'); ylabel('R [$\mu$m]'); title('Bubble Radius'); box on;
 hold off;
 
 % Create plot of frequency spectrum for driving pulse and radial oscillations
 h_f3 = subplot(2,2,4);
 hold on;
+f_r=f_r*1E-6;
+f_p=f_p*1E-6;
 m=plot(f_r,Sp_r-max(Sp_r), '-', 'LineWidth', 1.5, 'color', fig_color);
 pr=plot(f_p,Sp_p-max(Sp_p),':','LineWidth', 1, 'color', fig_color);
 legend([m, pr], 'Radial', 'Driving pulse' )
 ylim([-45 max(Sp_r-max(Sp_r))]);
-ylabel('normalized amplitude [dB]'); title('power spectra'); box on;
-xlim([0 3*f]);
+ylabel('$\hat{p}$ [dB]'); xlabel('$\textit{f}$ [MHz]');title('power spectra'); box on;
+xlim([0 domain.Fnyq*par.f*1E-6]);
 hold off;
 
 % Create Plot Radius-surface tension curve
@@ -156,7 +159,7 @@ hold on;
 sigma_R = @(R) par.chi*(R.^2/par.R_b^2-1) ;
 buck_reg = [min(0.95*par.R_b,min(0.98.*R(:,1))) par.R_b] ;
 rupt_reg = [par.R_r max(1.05*par.R_r,max(1.02.*R(:,1)))];
-plot(buck_reg, zeros(length(buck_reg),1), ':', 'LineWidth', 1.5, 'color', fig_color); xlabel('radius [m]'); ylabel('surface tension [N/m]')
+plot(buck_reg, zeros(length(buck_reg),1), ':', 'LineWidth', 1.5, 'color', fig_color); xlabel('$\textit{R}$ [$\mu$m]'); ylabel('${\sigma}$ [N/m]')
 hold on; plot([par.R_b par.R0 par.R_r], sigma_R([par.R_b par.R0 par.R_r]), ':', 'LineWidth', 1.5, 'color', fig_color);
 hold on; plot(rupt_reg, par.sigma_w.*ones(length(rupt_reg),1), ':', 'LineWidth' ,1.5, 'color', fig_color); box on;
 xlim([buck_reg(1),rupt_reg(2)])
@@ -180,13 +183,14 @@ text (max(R(:,1))+hor, min(sigma_R(max(R(:,1))),par.sigma_w)+vert, 'R_{max}', 'c
 title('surface tension');
 
 
-set(h_f1,'XTickLabel',h_f1.XTick*1e+6) ; h_f1.XLabel.String = 'Time [μsec]';
+set(h_f1,'XTickLabel',h_f1.XTick*1e+6) ; h_f1.XLabel.String = 'Time [$\mu$s]';
 
-set(h_f2,'XTickLabel',h_f2.XTick*1e+6) ; h_f2.XLabel.String = 'Time [μsec]';
+set(h_f2,'XTickLabel',h_f2.XTick*1e+6) ; h_f2.XLabel.String = 'Time [$\mu$s]';
 
 % set(h_f3,'XTickLabel',h_f3.XTick*1e-6) ; h_f3.XLabel.String = 'Frequency [MHz]';
 
-set(h_f4,'XTickLabel',h_f4.XTick*1e+6) ; h_f4.XLabel.String = 'Radius [μm]';
-
+set(h_f4,'XTickLabel',h_f4.XTick*1e+6) ; h_f4.XLabel.String = 'Radius [$\mu$m]';
+set(gcf,'Color','white')
+set(findall(gcf,'-property','FontSize'),'FontSize',20)
 end
 

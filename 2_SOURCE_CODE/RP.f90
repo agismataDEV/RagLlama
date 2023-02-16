@@ -100,8 +100,8 @@ CONTAINS
         end if
 
         itol = 2            !  if atol scalar, itol = 1 and  if atol array, itol = 2, if atol and rtol array, itol = 4
-        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
-        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
+        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 15.0D0)
+        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 15.0D0)
 
         dTaperSupportWindowN = dTaperingWindow(n_samples, (RealTimeIn(2) - RealTimeIn(1))*cModelParams%freq0, 2.0_dp, 2.0_dp)
 
@@ -148,7 +148,7 @@ CONTAINS
                 RTOL_UP = RTOL
                 tout = ScattererParams%T_driv(iout) !tout + (RealTimeIn(2)-RealTimeIn(1)) * ScattererParams%time_norm ;
                 y(5) = ScattererParams%P_driv(iout)
-                call dlsoda(MARMOTTANT, NEQ_ODEPACK, y, t, tout, itol, rtol, atol, itask, istate, iopt, rwork, lrw, iwork, liw, JACDUM, jt)
+                call dlsode(MARMOTTANT, NEQ_ODEPACK, y, t, tout, itol, rtol, atol, itask, istate, iopt, rwork, lrw, iwork, liw, JACDUM, mf)
 
                 do while (ISTATE < 0)
 
@@ -190,7 +190,7 @@ CONTAINS
                     IF (ISTATE > 0) RWORK((/5, 7, 8, 9/)) = 0
                     IF (ISTATE > 0) IWORK(5:6) = 0
 
-                end do
+                end do 
                 R_bub(iout, :) = y(1:3)
                 RealTimeOut(iout) = t
 
@@ -246,9 +246,9 @@ CONTAINS
         real(dp) P_interp(1), R_VanderWaals
         real(dp) P_elas, P_vis, P_gas, Damp_ac, Damp_visc, P_total
 
-        iBubble = NINT(R(4))
+        iBubble = NINT(R(4))  
         ! ScattererParams%kappa_s = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
-        call INTERP1D(ScattererParams%T_driv, ScattererParams%P_driv, real((/t/), dp), P_interp); 
+        call INTERP1D(ScattererParams%T_driv, ScattererParams%P_driv, (/t/), P_interp); 
         ! P_interp(1) = R(5);
         ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
         ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)
@@ -257,7 +257,7 @@ CONTAINS
         R_norm(2) = ScattererParams%rad_norm*ScattererParams%time_norm*R(2) ! Normalized R = r * tau*  (1+x)
 
         sigma_R = ScattererParams%chi*(R_norm(1)**2/ScattererParams%R_b**2 - 1.0D0)
-
+ 
         if (R_norm(1) .lt. ScattererParams%R_b) then                                !rupture state
             sigma_R = 0.0D0
         else if (R_norm(1) .ge. ScattererParams%R_r) then                                         !buckled state
@@ -376,7 +376,7 @@ CONTAINS
         real(dp)                ::        P_interp(1), R_VanderWaals
 
         iBubble = NINT(R(4))
-        ScattererParams%kappa_s = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
+        ! ScattererParams%kappa_s = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
         call interp1D(ScattererParams%T_driv, ScattererParams%P_driv, real((/t/), dp), P_interp); 
         R_norm(1) = ScattererParams%rad_norm*real(R(1) + 1.0D0, dp)   ! Normalized R = r *  (1+x)
         R_norm(2) = ScattererParams%rad_norm*ScattererParams%time_norm*R(2) ! Normalized R = r * tau*  (1+x)

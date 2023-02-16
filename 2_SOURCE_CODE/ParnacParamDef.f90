@@ -98,7 +98,6 @@ MODULE ParnacParamDef
         logical(lgt) :: UseSupportTapering !Taper the support at beginning and end
         logical(lgt) :: UseFreqTapering !Taper the frequency at the end
         character(LEN=128) :: FieldFilename
-        real(dp) :: xyzfielddim(3, 2)        !Which dimension: x, y, z or t
 
         !Beams, iterations, save slices
         integer(i8b) :: numbeams                                                !Number of sub-beams in which to split the z-dimension

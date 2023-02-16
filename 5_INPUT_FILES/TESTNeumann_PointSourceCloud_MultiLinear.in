@@ -130,9 +130,9 @@ linear		***	type of scatterer
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
 4.4E-6			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
-0.1 0.9	  	    *** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
-0.2 0.8 	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-0.1 0.7  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+-4 4 	    *** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
+-3 3 	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
+1 7  		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
 10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"

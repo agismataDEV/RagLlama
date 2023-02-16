@@ -641,7 +641,7 @@ CONTAINS
 ! =============================================================================
 
         call SwStartAndCount(cswTrans); call SwStartAndCount(cswTransTInv)
-        call PrintToLog("AttenuationEval6", 2); 
+        call PrintToLog("AttenuationEval6", 2);  
         ! Standard test, to make sure that we are in the correct distribution
         if (cGrid%iDistr /= 1) then
             write (*, '("Attempted to do an inverse transform on a grid, with respect to the T-axis, however the grid is in distribution ", I3, "(should be 1)")') cGrid%iProcID
@@ -1661,7 +1661,7 @@ CONTAINS
         dTaxis = real((/(i, i=0, iDimT - 1)/), dp)*dDt
 
         dTaperingWindow = 1.0_dp
-        do ctr = 1, iDimT
+        do ctr = 1, iDimT 
             if (dTaxis(ctr) < dLeftBand) then
                 dTaperingWindow(ctr) = 0.5_dp + &
                                        9.0_dp/16.0_dp*cos(pi*((dLeftBand - dTaxis(ctr))/dLeftBand)) &
@@ -1671,7 +1671,7 @@ CONTAINS
                                        9.0_dp/16.0_dp*cos(pi*((dTaxis(ctr) - (dTaxis(iDimT) - dRightBand))/dRightBand)) &
                                        - 1.0_dp/16.0_dp*cos(3.0_dp*pi*((dTaxis(ctr) - (dTaxis(iDimT) - dRightBand))/dRightBand)); 
             end if
-        end do
+        end do  
 
     END FUNCTION dTaperingWindow
 
@@ -1771,7 +1771,7 @@ CONTAINS
         ! This is done by initializing OutputValW with 0 ( Really small number due to precision)
         ! Replace the first half part with the values of initial variable.
         OutputValW = 0.0D0
-        OutputValW(1:iDimW) = InputValW(1:iDimW)*dTaperMaxFreqWindow(1:iDimW)/InputLen
+        OutputValW(1:iDimW) = InputValW(1:iDimW)/InputLen*dTaperMaxFreqWindow(1:iDimW)
 
         ! Inverse FFT of OutputLen-point
         call dfftw_plan_dft_c2r_1d(iNumPlanTransform_inv, OutputLen, OutputValW, OutputVal, FFTW_ESTIMATE)
@@ -1816,7 +1816,7 @@ CONTAINS
         real(dp), intent(inout)                ::                Bubble_diff(3)
         integer(i8b), intent(inout)        ::                iTargetIndex(3)
 
-        type(Space), intent(in)         ::                 cSpace
+        type(Space), intent(in)          ::                 cSpace
 
         ! *****************************************************************************
         !
@@ -1833,23 +1833,23 @@ CONTAINS
         !   dRightBand                                   dp    Right limit of banded tapering
         !
         integer(i8b)                                ::                        interp_factor
-        complex(dpc)                                 ::                         Green(size(InputVal, 1) + 1)
-        complex(dpc)                                 ::                         InputValWT(size(InputVal, 1) + 1), OutputValWT(size(InputVal, 1) + 1)
+        complex(dpc)                                ::                        Green(size(InputVal, 1) + 1)
+        complex(dpc)                                ::                        InputValWT(size(InputVal, 1) + 1), OutputValWT(size(InputVal, 1) + 1)
 
-        integer(i8b)                                 ::                        InputLen, OutputLen, EvenOrOdd, iDimW
+        integer(i8b)                                ::                        InputLen, OutputLen, EvenOrOdd, iDimW
 
         !Filtering and windowing parameters
-        real(dp)                                         ::                        dTaperMaxFreqWindow(size(InputVal, 1) + 1), dLeftBand, dRightBand, dDomega
-        integer                                                ::                        i, iErr
+        real(dp)                                    ::                        dTaperMaxFreqWindow(size(InputVal, 1) + 1), dLeftBand, dRightBand, dDomega
+        integer                                     ::                        i, iErr
 
         !Green's function parameters:
 
-        integer(i8b)                                 ::                         iIndZ, iOmega, iDifft
-        real(dp)                                         ::                        dStartT, dEndT, dRad
-        real(dp)                                         ::                        dSi1, dSi2, dCi1, dCi2; 
-        real(dp)                                         ::                        dOmega, dCorrection, dKcutoff
-        complex(dpc)                                 ::                        dKangular, E1mm, E1mp, E1pm, E1pp
-        integer(i8b)                                 ::                         error
+        integer(i8b)                                ::                        iIndZ, iOmega, iDifft
+        real(dp)                                    ::                        dStartT, dEndT, dRad
+        real(dp)                                    ::                        dSi1, dSi2, dCi1, dCi2; 
+        real(dp)                                    ::                        dOmega, dCorrection, dKcutoff
+        complex(dpc)                                ::                        dKangular, E1mm, E1mp, E1pm, E1pp
+        integer(i8b)                                ::                        error
 
         ! *****************************************************************************
         !
@@ -1897,7 +1897,6 @@ CONTAINS
                 call cisi4((dKcutoff - dOmega)*dRad, dCi1, dSi1)
                 call cisi4((dKcutoff + dOmega)*dRad, dCi2, dSi2)
                 Green(iOmega + 1) = 1.0D0/(dRad*4.0D0*pi**2)*(cos(dOmega*dRad)*(dSi1 + dSi2) + sin(dOmega*dRad)*(dCi1 - dCi2 - im*pi)); 
-                ! Green(iOmega+1)=(1.0_dp/(dRad*4.0_dp*pi)*(cos(dOmega * dRad)-im*sin(dOmega * dRad)));
                 InputValWT(iOmega + 1) = InputValWT(iOmega + 1)*Green(iOmega + 1)*cSpace%dDx**3/real((interp_factor + 1)*InputLen, dp)
             end do
         else
@@ -1928,7 +1927,7 @@ CONTAINS
         ! Zero-padding after the values which will be used for interpolation
         ! This is done by initializing OutputValW with 0 ( Really small number due to precision)
         ! Replace the first half part with the values of initial variable.
-        OutputValWT = InputValWT * dTaperMaxFreqWindow
+        OutputValWT = InputValWT*dTaperMaxFreqWindow
 
         ! Inverse FFT of OutputLen-point
         call dfftw_execute_dft_c2r(cSpace%cGrid%cTransforms%iPlanTransform1D_Own_inv, OutputValWT, OutputValWT)
