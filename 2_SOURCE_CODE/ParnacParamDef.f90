@@ -268,6 +268,7 @@ MODULE ParnacParamDef
         integer(i8b)                                ::  ClusterSlicesN
         character(LEN=1), allocatable               ::  ClusterSliceDim(:)
         integer(i8b), allocatable                   ::  OutputIndexes(:)
+        integer                                     ::  ScPerCPU 
 
         !------------------ Bubble parameters
 
@@ -275,7 +276,7 @@ MODULE ParnacParamDef
         real(dp)                                    ::  PDRange(2)
         real(dp)                                    ::  kappa_s
 
-        !------------------ Medium parameters (water, Room temperature =20� and 1 atm ambient pressure)
+        !------------------ Medium parameters (water, Room temperature =20C and 1 atm ambient pressure)
         real(dp)                                    ::  sigma_w
         real(dp)                                    ::  sigma_R0
         real(dp)                                    ::  sigma_R

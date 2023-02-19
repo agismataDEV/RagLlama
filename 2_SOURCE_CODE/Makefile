@@ -44,7 +44,7 @@ $(OBJDIR)/Constants.o : Constants.f90
 $(OBJDIR)/Stopwatch.o : Stopwatch.f90
 	mpiifort -c Stopwatch.f90 $(CFLAGS) -o $(OBJDIR)/Stopwatch.o -module $(OBJDIR)
 $(OBJDIR)/Types.o : Types.f90
-	mpiifort -o $(OBJDIR)/Types.o -module $(OBJDIR) -c Types.f90 $(CFLAGS) 
+	mpiifort -c Types.f90 $(CFLAGS) -o $(OBJDIR)/Types.o -module $(OBJDIR)
 $(OBJDIR)/FDWeight.o : FDWeight.f90
 	mpiifort -c FDWeight.f90 $(CFLAGS) -o $(OBJDIR)/FDWeight.o -module $(OBJDIR)
 $(OBJDIR)/f2kcli.o : f2kcli.f90 
@@ -52,7 +52,7 @@ $(OBJDIR)/f2kcli.o : f2kcli.f90
 $(OBJDIR)/Cisi.o : Cisi.f90
 	mpiifort -c Cisi.f90 $(CFLAGS) -o $(OBJDIR)/Cisi.o -module $(OBJDIR)
 $(OBJDIR)/fftw3.o : fftw3.f90
-	mpiifort -o $(OBJDIR)/fftw3.o -module $(OBJDIR) -c fftw3.f90  $(CFLAGS) 
+	mpiifort -c fftw3.f90 $(CFLAGS) -o $(OBJDIR)/fftw3.o -module $(OBJDIR)
 
 ##Parnac Files
 ##Definitions

@@ -45,6 +45,7 @@ MODULE ParnacTransformFilter
         cisi4, cisi, dSinc, ExpInt_Prime
     USE ParnacDataSpaceInit, ONLY: &
         iBeamOffsetT, iBeamOffsetX, iBeamOffsetY
+    USE ParnacDataRedist
 
 ! *****************************************************************************
 !
@@ -1782,7 +1783,7 @@ CONTAINS
         DEALLOCATE (dTaperMaxFreqWindow)
     END SUBROUTINE INTERP1DFREQ
 
-    SUBROUTINE GREENS1DFREQ(cSpace, InputVal, OutputVal, iTargetIndex, Bubble_diff)
+    SUBROUTINE GREENS1DFREQ(cSpace, cSpaceTemp, SrcPos, DestPos)
 
         ! =============================================================================
         !
@@ -1813,12 +1814,10 @@ CONTAINS
         !                             where we want to compute the pressure 
         !
         !
-        real(dp), intent(in)                    ::                  InputVal(:)
-        real(dp), intent(out)                   ::                  OutputVal(:)
-        real(dp), intent(inout)                 ::                  Bubble_diff(3)
-        integer(i8b), intent(inout)             ::                  iTargetIndex(3)
+        real(dp), intent(in)            ::                  SrcPos(3), DestPos(3)
+        type(Space), intent(in)         ::                  cSpace
 
-        type(Space), intent(in)                 ::                  cSpace
+        type(Space), intent(inout)      ::                  cSpaceTemp
 
         ! *****************************************************************************
         !
@@ -1834,15 +1833,9 @@ CONTAINS
         !   dLeftBand                             dp    Left limit of banded tapering
         !   dRightBand                                   dp    Right limit of banded tapering
         !
-        integer(i8b)                                ::                        interp_factor
-        complex(dpc)                                ::                        Green(size(InputVal, 1) + 1)
-        complex(dpc)                                ::                        InputValWT(size(InputVal, 1) + 1), OutputValWT(size(InputVal, 1) + 1)
-
-        integer(i8b)                                ::                        InputLen, OutputLen, EvenOrOdd, iDimW
-
-        !Filtering and windowing parameters
-        real(dp)                                    ::                        dTaperMaxFreqWindow(size(InputVal, 1) + 1), dLeftBand, dRightBand, dDomega
-        integer                                     ::                        i, iErr
+        integer(i8b)                                ::                        iDimT, iDimW, iTargetIndex(3)
+        complex(dpc)                                ::                        Green(cSpaceTemp%iDimT + 1)
+        integer                                     ::                        i
 
         !Green's function parameters:
         integer(i8b)                                ::                        iIndZ, iOmega, iDifft
@@ -1866,46 +1859,44 @@ CONTAINS
         !
         ! =============================================================================
 
-        ! Same proceedure from ReorderDistr1to0 or the other way , but it is implemented for 1d arrays
-        OutputLen = size(OutputVal, 1)
-        InputLen = size(InputVal, 1)
-        EvenOrOdd = mod(InputLen, 2_i8b)
-        iDimW = InputLen/2 + 1
-        interp_factor = 1
+        iDimT = cSpaceTemp%iDimT
+        iDimW = cSpaceTemp%iDimT/2 + 1
 
-        InputValWT = 0.0
-        InputValWT(1:InputLen/2) = InputVal(1:InputLen - EvenOrOdd:2) + im*InputVal(2:InputLen - EvenOrOdd:2)
-        if (EvenOrOdd == 1) then
-            InputValWT(InputLen/2 + EvenOrOdd) = InputVal(InputLen)
-        end if
-
-        ! Do a FFT of InputLen-point (Initial Variable Length) with complex numbers
-        call dfftw_execute_dft_r2c(cSpace%cGrid%cTransforms%iPlanTransform1D_Own, InputValWT, InputValWT)
+        iDebugLvl=0
+        call ReorderDistr0ToDistr1(cSpaceTemp%cGrid)
+        call TransformT(cSpaceTemp%cGrid)
+        iDebugLvl=5
 
         dKcutoff = two_pi*(1.0_dp + 0.5_dp/real(cSpace%iDimX, dp))*cSpace%dFnyq
         iDiffT = 0; 
+
+        iTargetIndex(3) = nint(DestPos(3)/cSpace%dDx)
+        iTargetIndex(1) = nint(DestPos(1)/cSpace%dDx) - iBeamOffsetX(cSpace, iTargetIndex(3))
+        iTargetIndex(2) = nint(DestPos(2)/cSpace%dDx) - iBeamOffsetY(cSpace, iTargetIndex(3))
+
         iIndZ = mod(iTargetIndex(3) + cSpace%iDimZ - 1, cSpace%iDimZ) + cSpace%iDimZ - 1; 
         dEndT = (iDiffT + iBeamOffSetT(cSpace, iIndZ) + cSpace%iDimT + 0.5)*cSpace%dDt; 
         dStartT = (iDiffT + iBeamOffSetT(cSpace, iIndZ) - cSpace%iDimT + 0.5)*cSpace%dDt; 
-        dRad = SQRT(sum(Bubble_diff**2))
+       
+        dRad = SQRT(sum((SrcPos - DestPos)**2))
         Green = 0.0; 
         if (cMediumParams%a_att == 0.0_dp) then
-            do iOmega = 0, InputLen
-                dOmega = two_pi*iOmega*cSpace%dFnyq/real(InputLen, dp)
+            do iOmega = 0, iDimT
+                dOmega = two_pi*iOmega*cSpace%dFnyq/real(iDimT, dp)
                 call cisi4((dKcutoff - dOmega)*dRad, dCi1, dSi1)
                 call cisi4((dKcutoff + dOmega)*dRad, dCi2, dSi2)
-                Green(iOmega + 1) = 1.0D0/(dRad*4.0D0*pi**2)*(cos(dOmega*dRad)*(dSi1 + dSi2) + sin(dOmega*dRad)*(dCi1 - dCi2 - im*pi)); 
-                InputValWT(iOmega + 1) = InputValWT(iOmega + 1)*Green(iOmega + 1)*cSpace%dDx**3/real((interp_factor + 1)*InputLen, dp)
+                Green(iOmega + 1) = 1.0_dp/(dRad*4.0_dp*pi**2)*(cos(dOmega*dRad)*(dSi1 + dSi2) + sin(dOmega*dRad)*(dCi1 - dCi2 - im*pi)); 
+                cSpaceTemp%cGrid%pacD1(iOmega+1) = cSpaceTemp%cGrid%pacD1(iOmega+1)*Green(iOmega + 1)*cSpace%dDx**3/real(2*iDimT, dp)
             end do
         else
-            do iOmega = 0, InputLen
-                dOmega = two_pi*iOmega*cSpace%dFnyq/InputLen
+            do iOmega = 0, iDimT
+                dOmega = two_pi*iOmega*cSpace%dFnyq/iDimT
 
-                dKangular = cMediumParams%c0/cModelParams%freq0*(dOmega*cModelParams%freq0/cMediumParams%c0 &
-                                                                 + cMediumParams%alpha0_att*tan(half_pi*cMediumParams%b_att)*dOmega*cModelParams%freq0 &
-                                                                 *(abs(dOmega*cModelParams%freq0)**(cMediumParams%b_att - 1) - &
-                                                                   (two_pi*cMediumParams%fc0)**(cMediumParams%b_att - 1)) &
-                                                                 - im*cMediumParams%alpha0_att*abs(dOmega*cModelParams%freq0)**cMediumParams%b_att)
+                dKangular = (dOmega*cModelParams%freq0/cMediumParams%c0 &
+                            + cMediumParams%alpha0_att*tan(half_pi*cMediumParams%b_att)*dOmega*cModelParams%freq0 &
+                            *(abs(dOmega*cModelParams%freq0)**(cMediumParams%b_att - 1) - &
+                            (two_pi*cMediumParams%fc0)**(cMediumParams%b_att - 1)) &
+                            - im*cMediumParams%alpha0_att*abs(dOmega*cModelParams%freq0)**cMediumParams%b_att)*cMediumParams%c0/cModelParams%freq0
 
                 call Expint_prime(-im*(dKcutoff - dKangular)*dRad, E1mm, error)
                 call Expint_prime(im*(dKcutoff - dKangular)*dRad, E1pm, error)
@@ -1915,23 +1906,14 @@ CONTAINS
                 Green(iOmega + 1) = 1.0_dp/(4.0_dp*pi*dRad)*(exp(-im*dKangular*dRad) &
                                                              + (-exp(im*dKcutoff*dRad)*(E1mm + E1mp) &
                                                                 + exp(-im*dKcutoff*dRad)*(E1Pm + E1pp))/(im*two_pi))
-                InputValWT(iOmega + 1) = InputValWT(iOmega + 1)*Green(iOmega + 1)*cSpace%dDx**3/real((interp_factor + 1)*InputLen, dp)
+                cSpaceTemp%cGrid%pacD1(iOmega+1) = cSpaceTemp%cGrid%pacD1(iOmega+1)*Green(iOmega + 1)*cSpace%dDx**3/real(2*iDimT, dp)
             end do
         end if
 
-        ! Tapering of the max frequency because of artifact created due to higher frequencies
-        dTaperMaxFreqWindow = dTaperingWindow(InputLen + 1, 1.0_dp/(2*InputLen*cSpace%dDt), 0.0D0, 0.1D0)
-
-        ! Zero-padding after the values which will be used for interpolation
-        ! This is done by initializing OutputValW with 0 ( Really small number due to precision)
-        ! Replace the first half part with the values of initial variable.
-        OutputValWT = InputValWT*dTaperMaxFreqWindow
-
-        ! Inverse FFT of OutputLen-point
-        call dfftw_execute_dft_c2r(cSpace%cGrid%cTransforms%iPlanTransform1D_Own_inv, OutputValWT, OutputValWT)
-
-        OutputVal(1:OutputLen:2) = real(OutputValWT(1:OutputLen/2 + EvenOrOdd), dp)
-        OutputVal(2:OutputLen:2) = dimag(OutputValWT(1:OutputLen/2))
+        iDebugLvl=0
+        call TransformTInv(cSpaceTemp%cGrid)
+        call ReorderDistr1ToDistr0(cSpaceTemp%cGrid)
+        iDebugLvl=5 
 
     END SUBROUTINE GREENS1DFREQ
 

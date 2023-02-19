@@ -130,7 +130,7 @@
 
 
 
-    real(dp) ::				codeversion=1.3, inputfileversion=1.3
+    real(dp) ::				codeversion=2.0, inputfileversion=2.0
     real(8) ::              deltaepsilonNegative,deltaepsilon, ThirOrderPolinomialValueDeltaNegative, ThirOrderPolinomialValueDelta, ThirOrderPolinomialValue
     real(8) ::              AlphaCG, OmegaCG, RhoOld, RhoNew, BetaCG, RandomNumber,AlphaCoeffCGscheme,Phi2,Phi3,Phi4,TempPhi,z,q,acoefficient1,acoefficient2,singacoefficient1,singacoefficient2,TempResidualOutput1,TempResidualOutput2,TempResidualOutput3
     REAL(8), ALLOCATABLE :: TempResidualOutputVectorNum(:,:), TempResidualOutputVectorDen(:,:)

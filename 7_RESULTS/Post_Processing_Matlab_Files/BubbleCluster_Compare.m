@@ -222,7 +222,7 @@ if (Bubble.N <=10 && Bubble.N>0)
     gauss_dl    = 6/freq;
     gauss_win   = 3/freq;
       
-    domain.tpar_OS = interp(domain.tpar(1:300),OSFactor);
+    domain.tpar_OS = interp(domain.tpar,OSFactor);
     domain.dtpar_OS = domain.tpar_OS(2) - domain.tpar_OS(1);
     domain.tdimpar_OS = length(domain.tpar_OS);
     

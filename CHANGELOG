@@ -123,3 +123,8 @@ ParnacPointSourceCloud.f90 :
 1. Now you can set specific dimensions for the bubble cloud (-X X , -Y Y and 0 Z)
 2. IMPORTANT! Corrections made for calculate the scattered pressure at a region around the bubble cloud.
 
+=============================================================================================================
+19/02/2023 
+=============================================================================================================
+First clean version
+Unnecessary functions are removed
