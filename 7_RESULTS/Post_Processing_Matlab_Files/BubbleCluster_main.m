@@ -4,18 +4,18 @@
 % close all;
 for slicenum1 = [2]%[12,3,4,5,6]
     
-    clearvars -except slicenum1 atten atten_fund Loc q1 q2
+    clearvars -except slicenum1 atten atten_fund Loc pnl_all
     %     close all
     clc
     %% Initialize parameters for all the significant variables
     [medium,domain,dslice,file,plin,pnl,Bubble] = BubbleCluster_Init(slicenum1);
-    %%
+    %% Scatterers' cloud positions
 %     %% Bubble Location and Pressure
     [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');
+    [Bubble] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','ko',8);
+    %%  Point Source Cloud Positions
     PS=Bubble ; domainPS = domain; domainPS.beamiterations=0;[PS] = BubbleCluster_LocCon(medium,domainPS,file,PS,'PS');
-    %%  Bubble Cluster Positions
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','ko',8);
-    [domain] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx',8);
+    [PS] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx',8);
     
     %% PlayMovies
      Bubble_PlayMovies(medium,domain,dslice,file,plin,pnl,Bubble,PS)

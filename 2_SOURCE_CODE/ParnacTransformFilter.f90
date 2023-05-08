@@ -228,6 +228,7 @@ CONTAINS
 !        print *, cGrid%cTransforms%iPlanTransformT_inv
 !        print *, "Size in-out"
 !        print *,size(cGrid%pacD1(:))
+
         call dfftw_execute_dft_c2r(cGrid%cTransforms%iPlanTransformT_inv, cGrid%pacD1(:), cGrid%pacD1(:))
 
         call SWStop(cswTrans); call SWStop(cswTransTInv)
@@ -346,7 +347,7 @@ CONTAINS
 !   SwStop
 !   dfftw_execute_dft
 !
-! =============================================================================
+! ============================================================================
 
         call SwStartAndCount(cswTrans); call SwStartAndCount(cswTransXYInv)
         call PrintToLog("TransformXYInv", 5)
@@ -1841,7 +1842,7 @@ CONTAINS
         integer(i8b)                                ::                        iIndZ, iOmega, iDifft
         real(dp)                                    ::                        dStartT, dEndT, dRad
         real(dp)                                    ::                        dSi1, dSi2, dCi1, dCi2; 
-        real(dp)                                    ::                        dOmega,  dKcutoff
+        real(dp)                                    ::                        dOmega,  dKcutoff, dTaperMaxFreqWindow(cSpaceTemp%iDimT+1)
         complex(dpc)                                ::                        dKangular, E1mm, E1mp, E1pm, E1pp
         integer(i8b)                                ::                        error
 
@@ -1869,6 +1870,7 @@ CONTAINS
 
         dKcutoff = two_pi*(1.0_dp + 0.5_dp/real(cSpace%iDimX, dp))*cSpace%dFnyq
         iDiffT = 0; 
+        dTaperMaxFreqWindow = dTaperingWindow(iDimT+1, 1.0_dp/(2*iDimT*cSpace%dDt), 0.0D0, 0.1D0)
 
         iTargetIndex(3) = nint(DestPos(3)/cSpace%dDx)
         iTargetIndex(1) = nint(DestPos(1)/cSpace%dDx) - iBeamOffsetX(cSpace, iTargetIndex(3))
@@ -1878,36 +1880,38 @@ CONTAINS
         dEndT = (iDiffT + iBeamOffSetT(cSpace, iIndZ) + cSpace%iDimT + 0.5)*cSpace%dDt; 
         dStartT = (iDiffT + iBeamOffSetT(cSpace, iIndZ) - cSpace%iDimT + 0.5)*cSpace%dDt; 
        
-        dRad = SQRT(sum((SrcPos - DestPos)**2))
+        dRad = SQRT(SUM((SrcPos - DestPos)**2) )
         Green = 0.0; 
         if (cMediumParams%a_att == 0.0_dp) then
-            do iOmega = 0, iDimT
-                dOmega = two_pi*iOmega*cSpace%dFnyq/real(iDimT, dp)
-                call cisi4((dKcutoff - dOmega)*dRad, dCi1, dSi1)
-                call cisi4((dKcutoff + dOmega)*dRad, dCi2, dSi2)
-                Green(iOmega + 1) = 1.0_dp/(dRad*4.0_dp*pi**2)*(cos(dOmega*dRad)*(dSi1 + dSi2) + sin(dOmega*dRad)*(dCi1 - dCi2 - im*pi)); 
-                cSpaceTemp%cGrid%pacD1(iOmega+1) = cSpaceTemp%cGrid%pacD1(iOmega+1)*Green(iOmega + 1)*cSpace%dDx**3/real(2*iDimT, dp)
-            end do
+                do iOmega = 0, iDimT
+                    dOmega = two_pi*iOmega*cSpace%dFnyq/real(iDimT, dp)
+                    call cisi4((dKcutoff - dOmega)*dRad, dCi1, dSi1)
+                    call cisi4((dKcutoff + dOmega)*dRad, dCi2, dSi2)
+                    Green(iOmega + 1) = 1.0_dp/(dRad*4.0_dp*pi**2)*(cos(dOmega*dRad)*(dSi1 + dSi2) + sin(dOmega*dRad)*(dCi1 - dCi2 - im*pi))
+                    cSpaceTemp%cGrid%pacD1(1+iOmega) = cSpaceTemp%cGrid%pacD1(1+iOmega)*Green(iOmega + 1)*cSpace%dDx**3/real(2*iDimT, dp) &
+                                                       *dTaperMaxFreqWindow(iOmega+1)
+                end do
         else
-            do iOmega = 0, iDimT
-                dOmega = two_pi*iOmega*cSpace%dFnyq/iDimT
+                do iOmega = 0, iDimT
+                    dOmega = two_pi*iOmega*cSpace%dFnyq/iDimT
 
-                dKangular = (dOmega*cModelParams%freq0/cMediumParams%c0 &
-                            + cMediumParams%alpha0_att*tan(half_pi*cMediumParams%b_att)*dOmega*cModelParams%freq0 &
-                            *(abs(dOmega*cModelParams%freq0)**(cMediumParams%b_att - 1) - &
-                            (two_pi*cMediumParams%fc0)**(cMediumParams%b_att - 1)) &
-                            - im*cMediumParams%alpha0_att*abs(dOmega*cModelParams%freq0)**cMediumParams%b_att)*cMediumParams%c0/cModelParams%freq0
+                    dKangular = (dOmega*cModelParams%freq0/cMediumParams%c0 &
+                                + cMediumParams%alpha0_att*tan(half_pi*cMediumParams%b_att)*dOmega*cModelParams%freq0 &
+                                *(abs(dOmega*cModelParams%freq0)**(cMediumParams%b_att - 1) - &
+                                (two_pi*cMediumParams%fc0)**(cMediumParams%b_att - 1)) &
+                                - im*cMediumParams%alpha0_att*abs(dOmega*cModelParams%freq0)**cMediumParams%b_att)*cMediumParams%c0/cModelParams%freq0
 
-                call Expint_prime(-im*(dKcutoff - dKangular)*dRad, E1mm, error)
-                call Expint_prime(im*(dKcutoff - dKangular)*dRad, E1pm, error)
-                call Expint_prime(-im*(dKcutoff + dKangular)*dRad, E1mp, error)
-                call Expint_prime(im*(dKcutoff + dKangular)*dRad, E1pp, error)
+                    call Expint_prime(-im*(dKcutoff - dKangular)*dRad, E1mm, error)
+                    call Expint_prime(im*(dKcutoff - dKangular)*dRad, E1pm, error)
+                    call Expint_prime(-im*(dKcutoff + dKangular)*dRad, E1mp, error)
+                    call Expint_prime(im*(dKcutoff + dKangular)*dRad, E1pp, error)
 
-                Green(iOmega + 1) = 1.0_dp/(4.0_dp*pi*dRad)*(exp(-im*dKangular*dRad) &
-                                                             + (-exp(im*dKcutoff*dRad)*(E1mm + E1mp) &
-                                                                + exp(-im*dKcutoff*dRad)*(E1Pm + E1pp))/(im*two_pi))
-                cSpaceTemp%cGrid%pacD1(iOmega+1) = cSpaceTemp%cGrid%pacD1(iOmega+1)*Green(iOmega + 1)*cSpace%dDx**3/real(2*iDimT, dp)
-            end do
+                    Green(iOmega + 1) = 1.0_dp/(4.0_dp*pi*dRad)*(exp(-im*dKangular*dRad) &
+                                                                + (-exp(im*dKcutoff*dRad)*(E1mm + E1mp) &
+                                                                    + exp(-im*dKcutoff*dRad)*(E1Pm + E1pp))/(im*two_pi))*cSpace%dDx**3/real(2*iDimT, dp)
+                    cSpaceTemp%cGrid%pacD1(1+iOmega) = cSpaceTemp%cGrid%pacD1(1+iOmega)*Green(iOmega + 1)*cSpace%dDx**3/real(2*iDimT, dp) &
+                                                       *dTaperMaxFreqWindow(iOmega+1)
+                end do
         end if
 
         iDebugLvl=0

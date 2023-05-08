@@ -2847,7 +2847,8 @@ CONTAINS
         !        end do
 
     !!L.D.
-        do i = 1, cModelParams%numslices
+       
+        do i = 1, cModelParams%numslices 
             if ((cModelParams%xyzslicebeam(i) == iBeam) .or. (cModelParams%xyzslicebeam(i) == -1)) then
                 mmpos = int((i))
                 filename = trim(pszFileName)//'_'//cModelParams%xyzslicedim(i)// &

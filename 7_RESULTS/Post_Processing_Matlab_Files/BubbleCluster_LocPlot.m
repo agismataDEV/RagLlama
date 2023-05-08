@@ -23,7 +23,7 @@
 %
 % ***********************************************************************************************************
 
-function [domain] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,name,MarkerStyle,MarkerSize)
+function [Bubble] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,name,MarkerStyle,MarkerSize)
 
 %%
 disp('Ploting the microbubble cluster...')
@@ -113,18 +113,18 @@ if (Bubble.N >0 )
     
     % Create dimensions that encloses the microbubble cluster but includes the
     % slice of the domain stored in the output file
-    domain.min_dim = min([Bubble.LocGlob ; domain.par{1}(end) domain.par{2}(end) domain.par{3}(end)]);
-    domain.max_dim = max([Bubble.LocGlob ; domain.par{1}(1) domain.par{2}(1) domain.par{3}(1)]);
-    domain.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = min(domain.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
-    domain.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = max(domain.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
+    Bubble.min_dim = min([Bubble.LocGlob ; domain.par{1}(end) domain.par{2}(end) domain.par{3}(end)]);
+    Bubble.max_dim = max([Bubble.LocGlob ; domain.par{1}(1) domain.par{2}(1) domain.par{3}(1)]);
+    Bubble.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = min(Bubble.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
+    Bubble.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = max(Bubble.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
     
-    rect_w =  0.01*(domain.max_dim(domain.dimval(1))+domain.dypar - (domain.min_dim(domain.dimval(1))-domain.dypar));
-    r = rectangle('Position',[floor(10*(domain.min_dim(domain.dimval(3))-domain.dzpar))/10 dslice.pos(dslice.num)-rect_w  ceil(10*(domain.max_dim(domain.dimval(3))+domain.dzpar-(domain.min_dim(domain.dimval(3))-domain.dzpar)))/10 rect_w],...
+    rect_w =  0.01*(Bubble.max_dim(domain.dimval(1))+domain.dypar - (Bubble.min_dim(domain.dimval(1))-domain.dypar));
+    r = rectangle('Position',[floor(10*(Bubble.min_dim(domain.dimval(3))-domain.dzpar))/10 dslice.pos(dslice.num)-rect_w  ceil(10*(Bubble.max_dim(domain.dimval(3))+domain.dzpar-(Bubble.min_dim(domain.dimval(3))-domain.dzpar)))/10 rect_w],...
         'EdgeColor','k', 'FaceColor' , [55 90 83]/255);%'#8BE5D3'); %% Visualization of slice
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ; r.FaceColor = [ 192 192 192]/255;end
     
-    xlim(floor(10*(domain.min_dim(domain.dimval(3))-domain.dzpar))/10 + ceil(10*(domain.max_dim(domain.dimval(3))+domain.dzpar-(domain.min_dim(domain.dimval(3))-domain.dzpar)))/10*[0 1])
-    ylim(round(10*([ domain.min_dim(domain.dimval(1)) domain.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
+    xlim(floor(10*(Bubble.min_dim(domain.dimval(3))-domain.dzpar))/10 + ceil(10*(Bubble.max_dim(domain.dimval(3))+domain.dzpar-(Bubble.min_dim(domain.dimval(3))-domain.dzpar)))/10*[0 1])
+    ylim(round(10*([ Bubble.min_dim(domain.dimval(1)) Bubble.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     
     xlabel(dslice.xlabel)
     ylabel(dslice.zlabel)
@@ -158,13 +158,13 @@ if (Bubble.N >0 )
     hold on;
     p = plot(Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',MarkerSize );
     
-    r = rectangle('Position',[floor(10*(domain.min_dim(domain.dimval(2))-domain.dxpar))/10 dslice.pos(dslice.num)-rect_w  ...
-        ceil(10*(domain.max_dim(domain.dimval(2))+domain.dxpar-(domain.min_dim(domain.dimval(2))-domain.dxpar)+domain.dxpar))/10 rect_w],...
+    r = rectangle('Position',[floor(10*(Bubble.min_dim(domain.dimval(2))-domain.dxpar))/10 dslice.pos(dslice.num)-rect_w  ...
+        ceil(10*(Bubble.max_dim(domain.dimval(2))+domain.dxpar-(Bubble.min_dim(domain.dimval(2))-domain.dxpar)+domain.dxpar))/10 rect_w],...
         'EdgeColor','k', 'FaceColor'  , [55 90 83]/255);%'#8BE5D3') ;%% Visualization of slice
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ; r.FaceColor = [ 192 192 192]/255;end
     
-    xlim(round(10*([ domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(2))] + [-domain.dxpar domain.dxpar]))/10)
-    ylim(round(10*([ domain.min_dim(domain.dimval(1)) domain.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
+    xlim(round(10*([ Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(2))] + [-domain.dxpar domain.dxpar]))/10)
+    ylim(round(10*([ Bubble.min_dim(domain.dimval(1)) Bubble.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     % xlim([-0.1 0.1])
     % ylim([-0.1 0.1])
     

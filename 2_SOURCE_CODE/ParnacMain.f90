@@ -1188,7 +1188,6 @@
             call Storeslices(trim(sOutputDir) // trim(sOutputRoot) // int2str(0_i8b), &
                 "p0", cBeam, iBeam, .true.)
             end if
-
         end if
 
         ! Test whether there is a NaN in cBeam - indication of an error,

@@ -5,6 +5,7 @@ MODULE Types
     
     IMPLICIT NONE
     SAVE
+    include "mkl.fi"
 
 !DEC$ NOFREEFORM
 !IBM* SOURCEFORM (FIXED)

@@ -110,7 +110,7 @@ for i = 1:i_end
     dBVALUES=20;
     harmonics = 1;
     Add = 0;
-    plin_plot = pnl.harm1;%squeeze(20*log10(max(abs(p_curr1))));
+    plin_plot = squeeze(20*log10(max(abs(pnl.data))));
     FontSize = 40;
     
     f4=figure('WindowState','maximized');
@@ -118,15 +118,15 @@ for i = 1:i_end
     hold on;
     caxis([max(max(plin_plot))-dBVALUES max(max(plin_plot ))]+Add)
     if Bubble.N >6
-        rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
+        rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
     elseif Bubble.N>=1
         plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
     end
-   if PS.N >6
-        rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
-    elseif PS.N>=1
-        plot(PS.LocGlob(:,domain.dimval(3)),PS.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
-    end
+%    if PS.N >6
+%         rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
+%     elseif PS.N>=1
+%         plot(PS.LocGlob(:,domain.dimval(3)),PS.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
+%     end
     title('Linear Pressure Field')
         title(['F0, [0.7 - 1.3] MHz'] )
         title(['2H, [1.7 - 2.3] MHz'] )
@@ -158,7 +158,7 @@ for i = 1:i_end
         caxis([max(max(pnl_harmi))-dBVALUES max(max(pnl_harmi))]+Add)
 %         if (i>=1); caxis(caxislim(i,:)); end
         if Bubble.N >6
-            rectangle('Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',2)
+            rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',2)
         elseif Bubble.N>=1
             plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
         end

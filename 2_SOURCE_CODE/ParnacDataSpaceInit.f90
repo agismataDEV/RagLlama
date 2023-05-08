@@ -1831,6 +1831,7 @@ CONTAINS
             j = (j - mod(j, cSpace%iDimY))/cSpace%iDimY; 
             cSpace%cGrid%aiD0Loc(1 + i, 3) = j; 
         end do
+        
 #endif
 
         ! We initialize the lookup-table for Distribution 1, note that it is block-distributed

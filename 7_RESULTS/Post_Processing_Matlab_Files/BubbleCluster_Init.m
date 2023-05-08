@@ -43,7 +43,7 @@ for i = 1:length(index_interpreter)
 end
 
 %% Medium Parameters
-medium.freq0               = 1E6;                    %fundamental frequency
+medium.freq0               = 1.7E6;                    %fundamental frequency
 medium.c0                  = 1482;                     % Speed of Sound [m/sec]
 medium.rho0                = 1060;
 medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
@@ -57,7 +57,7 @@ Bubble.mindist           = 10e-6;
 domain.beamiterations       = 1;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
-domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
+domain.a_t                  = 1; % Co-moving Time window(1), Non-comoving TIme Window(0)
 domain.strides              = [1 1 1 1];
 domain.offsets              = [0 0 0 0];
 domain.symmetry             = 0;
@@ -65,12 +65,12 @@ domain.symmetry             = 0;
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../test/1E4P_12mPa_3cycles_1E3MBs_2_4um_9Fnyq';
-file.dirname             = '../Paper/PW_2E5Pa_2micron_1MHz_1E0Linear';
-file.dirname             = '../Paper/Phased_2E5Pa_2micron_1MHz_1E5MBs_90T_25iter_1ml';
-file.dirname             = '../test/PW_1E4LS_withoutTaper';
-% file.dirname             = '../ProtonBubble/1E2PS_1E2Pa_1E3MB_6um_1_7MHz';
+file.dirname             = '../Paper/PW_1E5LS_2E5Pa_1ml_9Fnyq';
+% file.dirname             = '../Paper/Phased_2E5Pa_2micron_1MHz_1E5MBs_90T_25iter_1ml';
+% file.dirname             = '../test/PW_1E4LS_all_14mm';
+% file.dirname             = '../ProtonBubble/8E2PS_HalfLambda_4E2MB_Random_1_7MHz';
 % file.dirname             = '../ProtonBubbleSync/1E2PS_1E2MB_1_7MHz_1E2Pa_2cycles_regular';
-% file.dirname             = '../ProtonBubbleSync/1E0PS_5E3MB_5MHz_1E3Pa_5cycles_regular_mono';
+file.dirname             = '../ProtonBubble/1E2PS_1E2Pa_5E2MB_6um_1_7MHz_cocentric';
 % file.dirname             = '../width_3cycl_round2/PW_2E5Pa_2micron_1MHz_2E4LS';
 % file.dirname             = '../width_3cycl_round2/Phased_2E5Pa_2micron_1MHz_1E2MBs';
 % file.dirname             = '../../../INCS_XWAVE/7_RESULTS/Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm';
@@ -84,7 +84,7 @@ file.plot_converr        = 'no';
 file.plot_colour         = 'viridis';          % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
 file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
-file.load_contrast_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
+file.load_contrast_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
 %% Slice Parameters

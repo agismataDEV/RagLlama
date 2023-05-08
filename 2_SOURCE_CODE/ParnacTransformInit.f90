@@ -184,6 +184,7 @@ CONTAINS
         !
         type(Grid), pointer :: pcGrid
         complex(dpc) :: cFFTWtestarray(1)
+        integer      :: iret
 
         ! *****************************************************************************
         !
@@ -231,6 +232,9 @@ CONTAINS
         !   print *, "pcGrid%iD1TL"
         !   print *, pcGrid%iD1TL
 
+        call dfftw_init_threads(iret)
+        call dfftw_plan_with_nthreads(mkl_get_max_threads())
+        
         ! Change this to 2*pcGrid%iD0TL both in T_inv for  2PPW
         call dfftw_plan_guru_dft_r2c(pcGrid%cTransforms%iPlanTransformT, &
                                      1, &

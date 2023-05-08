@@ -18,10 +18,12 @@ INC_PATH_MKL 	= -I ${MKLROOT}/include
 BIN_PATH_FFTW 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3.3.9/bin
 LIB_PATH_FFTW 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3.3.9/lib
 INC_PATH_FFTW 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3.3.9/include
+MTHREAD_OMP     = -lfftw3_omp 
+MTHREAD_FFTW    = -lfftw3_mpi -lfftw3_threads
 
 LIBS_HDF5 	= 	-lhdf5_fortran -lhdf5 -lhdf5_hl -lhdf5hl_fortran  
 LIBS_MPI 	= 	-lmpifort -lmpi
-LIBS_FFTW3 	= 	$(LIB_PATH_FFTW) $(INC_PATH_FFTW) $(BIN_PATH_FFTW) -lfftw3 ##-lfftw3_mpi -lfftw3_threads ##-L ~/FFTW_3.3.9/lib/libfftw3.a -L ~/FFTW_3.3.9/libfftw3_mpi.a -lm 
+LIBS_FFTW3 	= 	$(LIB_PATH_FFTW) $(INC_PATH_FFTW) $(BIN_PATH_FFTW) -lfftw3 #$(MTHREAD_FFTW)##-L ~/FFTW_3.3.9/lib/libfftw3.a -L ~/FFTW_3.3.9/libfftw3_mpi.a -lm 
 LIBS		=  	$(LIBS_HDF5) $(LIBS_MPI) $(LIBS_FFTW3) -lz -lm -shared-intel
 
 CFLAGS_MKL 		= 	-mkl -liomp5 -lpthread -lm -qopenmp $(INC_PATH_MKL)
@@ -44,7 +46,7 @@ $(OBJDIR)/Constants.o : Constants.f90
 $(OBJDIR)/Stopwatch.o : Stopwatch.f90
 	mpiifort -c Stopwatch.f90 $(CFLAGS) -o $(OBJDIR)/Stopwatch.o -module $(OBJDIR)
 $(OBJDIR)/Types.o : Types.f90
-	mpiifort -c Types.f90 $(CFLAGS) -o $(OBJDIR)/Types.o -module $(OBJDIR)
+	mpiifort -c Types.f90 $(CFLAGS) $(CFLAGS_MKL) -o $(OBJDIR)/Types.o -module $(OBJDIR)
 $(OBJDIR)/FDWeight.o : FDWeight.f90
 	mpiifort -c FDWeight.f90 $(CFLAGS) -o $(OBJDIR)/FDWeight.o -module $(OBJDIR)
 $(OBJDIR)/f2kcli.o : f2kcli.f90 
@@ -100,7 +102,7 @@ $(OBJDIR)/ParnacIterStepMain.o  : ParnacIterStepMain.f90
 
 ##Transform and Filter
 $(OBJDIR)/ParnacTransformFilter.o : ParnacTransformFilter.f90
-	mpiifort -c ParnacTransformFilter.f90 $(CFLAGS) $(LIBS_FFTW3) -o $(OBJDIR)/ParnacTransformFilter.o -module $(OBJDIR)
+	mpiifort -c ParnacTransformFilter.f90 $(CFLAGS)  $(LIBS_FFTW3) -o $(OBJDIR)/ParnacTransformFilter.o -module $(OBJDIR)
 $(OBJDIR)/ContrastGenFilt.o : ContrastGenFilt.f90
 	mpiifort -c ContrastGenFilt.f90 $(CFLAGS) $(FFTW_WRAPPERS) -o $(OBJDIR)/ContrastGenFilt.o -module $(OBJDIR)
 

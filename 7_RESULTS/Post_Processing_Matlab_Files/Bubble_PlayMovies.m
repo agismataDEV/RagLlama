@@ -49,12 +49,12 @@ if (strcmp(file.play_movies,'yes'))
     
     i_end = sizeP(1);
     dBVALUES = 70;
-    plot_value = 20*log10(abs(pnl.contrastdata));
+    plot_value = 20*log10(abs(plin.data));
     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
-    mov = VideoWriter('Phased_1E5MB_new_12th.avi','Motion JPEG AVI');
+    mov = VideoWriter('1E2PS_5E2MBs_1_7MHz_cocentric_Linear.avi','Motion JPEG AVI');
     mov.FrameRate = 30; mov.Quality = 75;
     open(mov);
     
@@ -67,19 +67,19 @@ if (strcmp(file.play_movies,'yes'))
     hold on;
     caxis(ax,[max(plot_value,[],'all')-dBVALUES max(plot_value,[],'all')] )
     if Bubble.N >10
-         rectangle(ax,'Position',[Bubble.LocRange(3,1) Bubble.LocRange(1,1) Bubble.LocRange(3,2)-Bubble.LocRange(3,1) Bubble.LocRange(1,2)-Bubble.LocRange(1,1)],'LineStyle','--','EdgeColor','white','LineWidth',2)
+         rectangle(ax,'Position',[Bubble.LocRange(3,1) Bubble.LocRange(1,1) Bubble.LocRange(3,2)-Bubble.LocRange(3,1) Bubble.LocRange(1,2)-Bubble.LocRange(1,1)],'LineStyle','--','EdgeColor','red','LineWidth',2)
        elseif (Bubble.N <=10 && Bubble.N > 0)
         plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
     end
     
     if PS.N >10
-        rectangle(ax,'Position',[domain.min_dim(domain.dimval(3)) domain.min_dim(domain.dimval(2)) domain.max_dim(domain.dimval(3))-domain.min_dim(domain.dimval(3)) domain.max_dim(domain.dimval(2))-domain.min_dim(domain.dimval(2))],'LineStyle','-.','EdgeColor','red','LineWidth',2)
+         rectangle(ax,'Position',[PS.LocRange(3,1) PS.LocRange(1,1) PS.LocRange(3,2)-PS.LocRange(3,1) PS.LocRange(1,2)-PS.LocRange(1,1)],'LineStyle','--','EdgeColor','white','LineWidth',2)
     elseif (Bubble.N <=10 && Bubble.N > 0)
         plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
 %         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
 %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
     end
-    title_txt = 'Linear Pressure Field , $t_i = $';
+    title_txt = 'Incident Pressure Field , $t_i = $';
 %     title_txt = 'Linear Pressure Field , $t_i = $';
 %     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end
     %     if (sum(sum(sum(plot_value==Total_Field)))==numel(plot_value)) ;title_txt = 'Total Pressure Field, t_i = ';end
@@ -87,8 +87,8 @@ if (strcmp(file.play_movies,'yes'))
     xlabel(ax,dslice.xlabel)
     ylabel(ax,dslice.ylabel)
     
-    xlim(ax,[min(domain.par{domain.dimval(3)}) max(domain.par{domain.dimval(3)})])
-    ylim(ax,[min(domain.par{domain.dimval(2)}) max(domain.par{domain.dimval(2)})])
+%     xlim(ax,[min(domain.par{domain.dimval(3)}) max(domain.par{domain.dimval(3)})])
+%     ylim(ax,[min(domain.par{domain.dimval(2)}) max(domain.par{domain.dimval(2)})])
     
     BubbleCluster_Colormaps(file)
     c = colorbar;

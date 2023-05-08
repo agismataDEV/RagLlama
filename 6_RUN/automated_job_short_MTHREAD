@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+INPUT_FILE=${1?Error: No input file given}
+OUTPUT_FOLDER=${2?Error: No output folder given}
+export INPUT_FILE
+export OUTPUT_FOLDER
+IFS=/ read OUTPUT_FOLDER_NAME OUTPUT_FILE_NAME <<< $OUTPUT_FOLDER
+echo $OUTPUT_FOLDER_NAME
+echo $OUTPUT_FILE_NAME
+echo $OUTPUT_FOLDER
+
+export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FILE_NAME.out
+export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER/INCS_$OUTPUT_FILE_NAME.err
+echo $OUT_FILE
+echo $ERR_FILE
+
+cd ../2_SOURCE_CODE/
+rm ../3_COMPILED_FILES/INCS_Agis_*
+make 
+cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME}
+
+#if [ -d ../7_RESULTS/$OUTPUT_FOLDER]; then
+mkdir ../7_RESULTS/$OUTPUT_FOLDER
+#	echo "Directory is created ..."
+#fi
+
+mkdir ../7_RESULTS/empty_dir
+#rsync -a --delete ../7_RESULTS/empty_dir/  ../7_RESULTS/$OUTPUT_FOLDER/
+rm -rf ../7_RESULTS/$OUTPUT_FOLDER
+mkdir ../7_RESULTS/$OUTPUT_FOLDER_NAME
+mkdir ../7_RESULTS/$OUTPUT_FOLDER
+mkdir ../7_RESULTS/$OUTPUT_FOLDER/2_SOURCE_CODE
+mkdir ../7_RESULTS/$OUTPUT_FOLDER/Bubbles
+
+cp *.f90 ../7_RESULTS/$OUTPUT_FOLDER/2_SOURCE_CODE/
+cp ../5_INPUT_FILES/$INPUT_FILE ../7_RESULTS/$OUTPUT_FOLDER/
+cp ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME} ../7_RESULTS/$OUTPUT_FOLDER/
+
+cd ../6_RUN/
+
+MPTHREADNUM=2
+### HERE WE CREATE THE BASH FILE
+echo "#!/bin/bash  									 															
+   											 															
+#SBATCH --job-name=$OUTPUT_FILE_NAME  	 														     	
+#SBATCH --partition=imphys,general  					 													
+#SBATCH --qos=short           				 															
+#SBATCH --nodes=1-4           					 															
+#SBATCH --ntasks=25  				 																		
+#SBATCH --cpus-per-task=${MPTHREADNUM}    				 															
+#SBATCH --mem-per-cpu=5G            				 														
+#SBATCH --time=04:00:00      				 															
+#SBATCH --output=$OUT_FILE  					 															
+#SBATCH --error=$ERR_FILE      				 															
+##SBATCH --exclusive    
+##SBATCH --constraint=IB     				 														
+   											 															
+module use /opt/insy/modulefiles  			 															
+module load intel/2017u4									 															
+   											 															
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64  		
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh  				
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64  		
+   																										
+##ulimit -a 		 																						
+##ulimit -s unlimited  																						
+##ulimit -a 		 																						
+##ulimit -l unlimited  																						
+   					
+export MPIR_CVAR_CH4_OFI_TAG_BITS=31  # BITS FOR TAG TO EXTEND THE LENGTH
+export MPIR_CVAR_CH4_OFI_RANK_BITS=8  # BITS FOR NUMBER OF PROCESS. SUMMATION OF BOTH SHOULD BE <= 39
+																											
+# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so  						
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so  													
+export OMP_NUM_THREADS=${MPTHREADNUM}  																				
+export MKL_NUM_THREADS=${MPTHREADNUM}  																					
+export MKL_THREADING_LAYER=intel  																		
+export MKL_DYNAMIC= 'FALSE'  																				
+#export MKL_VERBOSE=1  																					
+srun ../7_RESULTS/$OUTPUT_FOLDER/INCS_Agis_${OUTPUT_FILE_NAME} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER" > job_INCS_short
+
+
+sbatch ../6_RUN/job_INCS_short &
+
+sleep 5
+squeue --format="%.18i %.9P %.30j %.8u %.8T %.10M %.9l %.6D %R" --me

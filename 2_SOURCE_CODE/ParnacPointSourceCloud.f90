@@ -264,7 +264,6 @@ CONTAINS
         ! =============================================================================
 
         pcGrid => cSpace%cGrid
-
         !********************************************* START OF TAPPERING *********************************************************
         if (cModelParams%UseSupportTapering .EQV. .true.) then
             ! use tapering of the field at start and end to prevent wraparound leakage
@@ -314,6 +313,7 @@ CONTAINS
             
             ! Generate the cluster and save result on slices defined in input file
             call RNDGeneratePSCloud_Eff(cSpace, BubbleAsPointScatterer, dBubbleLocationN, Domain_Range)
+            ! call GeneratePSCloud(cSpace, BubbleAsPointScatterer, dBubbleLocationN, Domain_Range,.true.)
             write (acTemp, "('No. of Bubbles consisting the cluster: ', I<INT(log10(real(ScattererParams%N,dp)))+1>, ' in a volume of ', F5.3, ' [mL].')") ScattererParams%N, PRODUCT(maxval(dBubbleLocationN, 1) - minval(dBubbleLocationN, 1))*(cMediumParams%c0*1E3/cModelParams%freq0)**3*1.0D-3; call PrintToLog(acTemp, 2); 
             ibDimT = iDimT !- FLOOR(minval(dBubbleLocationN(:,3) + cSpace%iStartZ* cSpace%dDx) / cSpace%dDt)  + 20 ! This should not be changed because ibDimT is Integer
         else
@@ -379,14 +379,7 @@ CONTAINS
 
         !****************************************** CALCULATE THE TEMPORAL SIGNAURE OF CONTRAST SOURCE TERM ****************************
         call CalculateTimeSignature(cSpace, dBubbleContrast, ibDimT)
-
-        !****************************************** CALCULATE THE CUMULATIVE CONTRAST SOURCE TERM ****************************
-        write (acTemp, "('Calculate the pressure field due to medium nonlinearity ')"); call PrintToLog(acTemp, 2)
-        ! call NonlinContrastOperator_Ali(cSpace); ! Add Nonlinearities ! If beta=0 then it will result on 0
-        pcGrid%parD0 = 0.0D0
-        call CalculateCloudPressure(cSpace, dBubbleLocationN, dBubbleContrast)
-
-        !*************************************************** END OF CALCULATE PRESSURE FIELD *******************************************
+        !*************************************************** SAVE VARIABLES *******************************************
         if (pcGrid%iProcID <= 0) then
 
             ! Save each Bubble's Position
@@ -409,6 +402,14 @@ CONTAINS
         MPI_FILENAME = trim(trim(sOutputDir)//trim(ScattererParams%sBubbleDir)//'Bubble_Contrast'//int2str(cModelParams%iIter))
         call MPI_WRITE_CONTRAST(cSpace, dBubbleContrast, MPI_FILENAME)
 
+
+        !****************************************** CALCULATE THE CUMULATIVE CONTRAST SOURCE TERM ****************************
+        write (acTemp, "('Calculate the pressure field due to medium nonlinearity ')"); call PrintToLog(acTemp, 2)
+        ! call NonlinContrastOperator_Ali(cSpace); ! Add Nonlinearities ! If beta=0 then it will result on 0
+        pcGrid%parD0 = 0.0D0
+        call CalculateCloudPressure(cSpace, dBubbleLocationN, dBubbleContrast)
+        !****************************************** END OF CALCULATE PRESSURE FIELD ****************************
+
         iMemAllocated = iMemAllocated - (PRODUCT(SHAPE(dBubbleContrast)) + PRODUCT(SHAPE(dBubbleLocationN)))*dpS - PRODUCT(SHAPE(BubbleID))*i4bs
         DEALLOCATE (dBubbleContrast)
         DEALLOCATE (BubbleID)
@@ -417,9 +418,8 @@ CONTAINS
         !****************************************************** FILTER AND TAPPER **********************************************
 
         write (acTemp, "('Tapper and filter contrast source')"); call PrintToLog(acTemp, 2)
-
         call ReorderDistr0ToDistr1(pcGrid)
-        call TaperContrastXYZ(cSpace) ! Taper because of filtered dirac function
+        ! call TaperContrastXYZ(cSpace) ! Taper because of filtered dirac function
         ! call TaperContrastT(cSpace)
 
         call MapVtInv(cSpace)
@@ -537,7 +537,7 @@ CONTAINS
 
                 Nx = ceiling((Domain_Range(2, 1) - Domain_Range(1, 1))/MaxDist(1))
                 Ny = ceiling((Domain_Range(2, 2) - Domain_Range(1, 2))/MaxDist(2))
-                Nz = ceiling((Domain_Range(2, 3) - Domain_Range(1, 3))/MaxDist(3)); !ceiling(size(dBubbleLocationN, 1)*1.0/(Nx*Ny))
+                Nz = ceiling((Domain_Range(2, 3) - Domain_Range(1, 3))/MaxDist(3)); !ceiling(size(dBubbleLocationN, 1)/(Nx*Ny))
 
                 if (Nx*Ny*Nz < size(dBubbleLocationN, 1)) then
                     write (acTemp, "('Error in GeneratePSCloud, less discretized points than Bubble number')")
@@ -547,7 +547,7 @@ CONTAINS
 
                 ALLOCATE (GridDist(Nx*Ny*Nz, 3))
 
-                MaxDist = (Domain_Range(2, :) - Domain_Range(1, :))/(/Nx, Ny, Nz/)
+                MaxDist = (Domain_Range(2, :) - Domain_Range(1, :))/(/Nx+1, Ny+1, Nz+1/)
                 if (minval(MaxDist) < MinDist) then
                     write (acTemp, "('Error ! Bubble Cluster size too small for ',I5,' Bubbles.')") size(dBubbleLocationN, 1)
                     call PrintToLog(acTemp, -1)
@@ -737,7 +737,7 @@ CONTAINS
         ! =============================================================================
 
         write (acTemp, "('Randomly Position the microbubbles in the domain') "); call PrintToLog(acTemp, 2)
-        MultFactor = 1.5D0
+        MultFactor = 5.0D0
 
         PointCloud = PointSourceType
         S = INT(MultFactor*PointCloud%N, 8)
@@ -773,7 +773,7 @@ CONTAINS
             call RANDOM_SEED(PUT=[(1, i=1, 10*S*3)])  ! Random but the same at each run of INCS
             ! Here we generate random points that are located inside the boundaries that we set
             ! else
-            !     call RANDOM_SEED() ! Fully random , even at each run of INCS
+                ! call RANDOM_SEED() ! Fully random , even at each run of INCS
             ! end if
             call RANDOM_NUMBER(randpos)
             randpos(1:n, 1) = randpos(1:n, 1)*(Domain_Range(2, 1) - Domain_Range(1, 1))
@@ -866,7 +866,7 @@ CONTAINS
         dBubbleLocationN(:, 3) = dBubbleLocationN(:, 3) + Domain_Range(1, 3)
 
         ! ================================================================================================================================
-        ! dBubbleLocationN(1,:)=  (/0.0 ,   0.0 ,    4.94/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
+        ! dBubbleLocationN(1,:)=  (/0.0 ,   0.0 ,    10.2917/) ! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
 
         call MPI_BCAST(dBubbleLocationN, INT(PointCloud%N*3), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, iErr)
         call MPI_BCAST(PointCloud%R0, INT(PointCloud%N), MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, iErr)
@@ -884,7 +884,7 @@ CONTAINS
 
         dBubbleLocationN(:, 1) = dBubbleLocationN(:, 1)/dLambdaMM - cSpace%iStartX*cSpace%dDx
         dBubbleLocationN(:, 2) = dBubbleLocationN(:, 2)/dLambdaMM - cSpace%iStartY*cSpace%dDx
-        dBubbleLocationN(:, 3) = dBubbleLocationN(:, 3)/dLambdaMM - cSpace%iStartZ*cSpace%dDx
+        dBubbleLocationN(:, 3) = dBubbleLocationN(:, 3)/dLambdaMM - cSpace%iStartZ*cSpace%dDx 
 
     END SUBROUTINE RNDGeneratePSCloud_Eff
 
@@ -1201,8 +1201,8 @@ CONTAINS
             if (XYZIndex >= 0 .AND. XYZIndex < cSpace%cGrid%iD0LocN) then
                 ! Find the scatterer position and do inside if all the necessary actions because of spatial decomposition
                 ! Place the Bubble in respect to i_loc for later use for storing its values to a file
-                RealPressure = cSpace%cGrid%parD0(1 + XYZIndex*iDimT:(XYZIndex + 1)*iDimT); ! Array buffer with length size of iDimT for every XYZ position
-
+                RealPressure = cSpace%cGrid%parD0(1 + XYZIndex*iDimT:(XYZIndex + 1)*iDimT); ! Array buffer with length size of iDimT for every XYZ position                
+                RealPressure_Own = 1.0D-30;
                 do i = 1, size(ones, 1)
                     ! Save to temp_globloc which is a temporary buffer the position and pressure of the bubbles that are not positioned close to
                     ! each processor's grid.
@@ -1236,8 +1236,9 @@ CONTAINS
                     diff(i, :) = dBubbleLocationN(iBubble, :) - GlobalPos(i, :)
 
                     cSpaceTemp%cGrid%parD0 = tempcon(1 + (i_loc - 1)*ibDimT:i_loc*ibDimT)
-                    if (MAXVAL(ABS(cSpaceTemp%cGrid%parD0)) > 1.0D-20) call GREENS1DFREQ(cSpace, cSpaceTemp, dBubbleLocationN(iBubble, :),  GlobalPos(i, :))
-                    RealPressure_Own(i, :) = cSpaceTemp%cGrid%parD0*(cModelParams%freq0/cMediumParams%c0)*(dK_c/pi)**3
+                    if (MAXVAL(ABS(cSpaceTemp%cGrid%parD0)) > 1.0D-20) call GREENS1DFREQ(cSpace, cSpaceTemp, dBubbleLocationN(iBubble, :),  GlobalPos(i,:))
+                    RealPressure_Own(i,iDimT - ibDimT + 1:iDimT) = cSpaceTemp%cGrid%parD0*(cModelParams%freq0/cMediumParams%c0)*(dK_c/pi)**3
+    
                     ! if ( MAXVAL(ABS(dBubbleLocationN(iBubble,:) - &
                     ! ( (/-0.0366470588235294 ,   -0.0366470588235294 ,    5.12194117647059/)/dLambdaMM  - (/cSpace%iStartX,cSpace%iStartY,cSpace%iStartZ /)* cSpace%dDx))) < 1E-7) then! At a gridpoint  @ 1.7E6 freq0 , 6 Fnyq
                     ! write(*,*) "==================================="
@@ -1247,19 +1248,18 @@ CONTAINS
                     ! write(*,*) nint(GlobalPos(i, :)/cSpace%dDx) - nint(dBubbleLocationN(iBubble, :)/cSpace%dDx)
                     ! write(*,*) RealPressure_i1(i,:)
                     ! endif
-
                     RealPressure_i1(i, :) = RealPressure_i1(i, :) - RealPressure_Own(i, :)
                     ! This is for the non-comoving time window. There should be a time shift
-                    RealPressure_i1(i, 1:iDimT - (ones(i, 3) + size(trilin, 1)/2)) = RealPressure_i1(i, 1 + ones(i, 3) + size(trilin, 1)/2:iDimT)
+                    ! RealPressure_i1(i, 1:iDimT - (ones(i, 3) + size(trilin, 1)/2)) = RealPressure_i1(i, 1 + ones(i, 3) + size(trilin, 1)/2:iDimT)
                 end do
                 ! Do the 3D interpolation in order to acquire the pressure , RealPressureFinal
                 call INTERP3D(GlobalPos, RealPressure_i1, dBubbleLocationN(iBubble, :), Interp_PressureBL)
                 RealPressure = Interp_PressureBL
 
-                call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D, RealPressure, RealPressureC)
-                RealPressureC = RealPressureC*exp(-im*dMultFactor*diff(1, 3))/real(iDimT, dp)*dTaperingWindow(iDimT, 1.0_dp/(2*iDimT*cSpace%dDt), 0.0D0, 0.1D0)
-                call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D_inv, RealPressureC, RealPressure)
-
+                ! call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D, RealPressure, RealPressureC)
+                ! RealPressureC = RealPressureC*exp(-im*dMultFactor*(diff(1, 3)))/real(iDimT, dp)*dTaperingWindow(iDimT, 1.0_dp/(2*iDimT*cSpace%dDt), 0.0D0, 0.1D0)
+                ! call dfftw_execute(cSpace%cGrid%cTransforms%iPlanTransform1D_inv, RealPressureC, RealPressure)
+                
                 tempcon(1 + (i_loc - 1)*ibDimT:i_loc*ibDimT) = RealPressure(iDimT - ibDimT + 1:iDimT); 
                 BubbleID(i_loc) = iBubble
             end if
@@ -1388,10 +1388,12 @@ CONTAINS
 
         RealTime = [(i + iDimT - ibDimT, i=cSpace%iStartT, ibDimT - 1 + cSpace%iStartT)]*cSpace%dDt/cModelParams%freq0   ! Array with the real time unnormalized
         RealTimePad = 0.0D0
-        call linspace(RealTimePad, RealTime(1), RealTime(size(RealTime, 1)), ibDimT*n_pad)
+        call linspace(RealTimePad, RealTime(1), RealTime(size(RealTime, 1)), ibDimT*n_pad) 
 
         if (trim(ScattererParams%ScType) == 'microbubble') then
             write (acTemp, "('Calculate the time signatures of the microbubbles')"); call PrintToLog(acTemp, 2)
+            
+            ALLOCATE (ScattererParams%P_driv(ibDimT*n_pad), ScattererParams%T_driv(ibDimT*n_pad))
             do i = 1, Bubble_per_CPU
                 iBubble = i + ScattererParams%N/pcGrid%iProcN*pcGrid%iProcID
                 RealPressure = dBubbleContrast(1 + (iBubble - 1)*ibDimT:iBubble*ibDimT)
@@ -1423,6 +1425,7 @@ CONTAINS
                 ! endif
 
             end do
+            DEALLOCATE (ScattererParams%P_driv, ScattererParams%T_driv)
         elseif (trim(ScattererParams%ScType) == 'linear') then
             write (acTemp, "('Calculate the time signatures of the linear scatterers')"); call PrintToLog(acTemp, 2)
 
@@ -1443,7 +1446,7 @@ CONTAINS
                 call LinScatterer(cSpaceScatterer, 2)
                 Amplitude = -4.0/3.0*pi*(ScattererParams%R0(iBubble))**3*cMediumParams%rho0* &
                                   (1.0D0/(ScattererParams%rho1*ScattererParams%c1**2) - 1.0D0/(cMediumParams%rho0*cMediumParams%c0**2))
-                ! call NonLinScatterer(cSpaceScatterer, LinearAmplitude* cModelParams%freq0**2, 2, 1 )
+                ! call NonLinScatterer(cSpaceScatterer, 2, 2 )
                 tempcon(1 + (i - 1)*ibDimT:i*ibDimT) = cSpaceScatterer%cGrid%parD0 * Amplitude * cModelParams%freq0**2; 
 
                 ! Check to see if results are realistic
@@ -1456,7 +1459,7 @@ CONTAINS
                 ! write(7,*) RealTime, RealPressure,RealTimePad,RealPressurePad
                 ! close(7)
                 ! open (8, file=trim(trim(sOutputDir)//trim(ScattererParams%sBubbleDir)//trim('v_dd_norm')//int2str(cModelParams%iIter)//int2str(pcGrid%iProcID)//'.txt'),status = 'UNKNOWN', action='write',position='append')
-                ! write(8,*) RealTime,Time_Signature,RealTimePadOut,V_dd_pad
+                ! write(8,*) RealTime,tempcon(1 + (i - 1)*ibDimT:i*ibDimT),RealTimePadOut,V_dd_pad
                 ! close(8)
                 ! call MPI_Abort(MPI_COMM_WORLD, ErrCode, iErr)
                 ! endif
@@ -1913,8 +1916,8 @@ CONTAINS
         integer(i8b)                                ::              iDimT, iDimW
 
         !Filtering and windowing parameters
-        real(dp)                                    ::              dTaperMaxFreqWindow(size(cSpace%cGrid%parD0)/2 + 1), dDomega, dFFTFactor
-        real(dp)                                    ::              arBuffer1(size(cSpace%cGrid%parD0) + 1), arBuffer2(size(cSpace%cGrid%parD0) + 1)
+        real(dp)                                    ::              dTaperMaxFreqWindow(cSpace%iDimT/2 + 1), dDomega, dFFTFactor
+        real(dp)                                    ::              arBuffer1(cSpace%iDimT+ 1), arBuffer2(cSpace%iDimT + 1)
         integer                                     ::              i, iStart, iIndex
 
         ! *****************************************************************************
@@ -1932,7 +1935,7 @@ CONTAINS
         ! =============================================================================
 
         ! Same proceedure from ReorderDistr1to0 or the other way , but it is implemented for 1d arrays
-        iDimT = size(cSpace%cGrid%parD0)
+        iDimT = cSpace%iDimT
         iDimW = iDimT/2 + 1
 
         call ReorderDistr0ToDistr1(cSpace%cGrid)
@@ -1964,7 +1967,7 @@ CONTAINS
         ALLOCATE (dMultFactor(iDimW))
 
         dMultFactor = 1.0D0
-        dFFTFactor = 1.0_dp/real(2.0_dp*real(iDimT, dp)**(2 + OrderP - 1), dp)
+        dFFTFactor = 1.0_dp/real(2.0_dp*real(iDimT, dp)**(2 + OrderP - 1), dp) 
 
         if (OrderFFT /= 0) then
             dDOmega = two_pi/real(iDimT*cSpace%dDt, dp)
@@ -2055,7 +2058,7 @@ CONTAINS
         iDimT = cSpace%iDimT
         iDimW = cSpace%iDimT/2 + 1
 
-        call ReorderDistr0ToDistr1(cSpace%cGrid)
+        ! call ReorderDistr0ToDistr1(cSpace%cGrid)
         call TransformT_sml(cSpace%cGrid)
         if (cModelParams.UseFreqTapering .EQV. .true.) then
             ! Tapering of the highest frequency part; otherwise the chopoff noise around the
@@ -2081,7 +2084,7 @@ CONTAINS
         end if
 
         call TransformTInv_sml(cSpace%cGrid)
-        call ReorderDistr1ToDistr0(cSpace%cGrid)
+        ! call ReorderDistr1ToDistr0(cSpace%cGrid)
 
     END SUBROUTINE TaperContrastT
 
@@ -2140,7 +2143,7 @@ CONTAINS
         !
 
         call ReorderDistr1ToDistr2(cSpace%cGrid)
-        dTaperWidth = 2.0D0
+        dTaperWidth = 1.0D0/(cMediumParams%c0*1E3/cModelParams%freq0)
 
         dTaperX = dTaperingWindow(cSpace%iDimX, cSpace%dDx, dTaperWidth, dTaperWidth)
         dTaperY = dTaperingWindow(cSpace%iDimY, cSpace%dDx, dTaperWidth, dTaperWidth)
@@ -2351,9 +2354,7 @@ CONTAINS
 
             ! Save each Bubble's Position
             open (11, file=trim(trim(sOutputDir)//trim(ScattererParams%sBubbleDir)//'PS_Location'//int2str(cModelParams%iIter)), status='NEW')
-            do iPS = 1, PointSourceCloudParams%N
-                write (11, *) dProtonLocationN(iPS,1), dProtonLocationN(iPS, 2), dProtonLocationN(iPS, 3)
-            end do
+            write (11, *) dProtonLocationN
         close (11)
         end if
 
@@ -2371,26 +2372,8 @@ CONTAINS
         DEALLOCATE (dPointSourceContrast)
 
         call ReorderDistr0ToDistr1(cSpace%cGrid)
-        ! call ReorderDistr1ToDistr2(cSpace%cGrid)
-        ! dTaperWidth = 2.0D0
-
-        ! dTaperX = dTaperingWindow(cSpace%iDimX, cSpace%dDx, dTaperWidth, dTaperWidth)
-        ! dTaperY = dTaperingWindow(cSpace%iDimY, cSpace%dDx, dTaperWidth, dTaperWidth)
-        ! dTaperZ = dTaperingWindow(cSpace%iDimZ, cSpace%dDx, dTaperWidth, dTaperWidth)
-        ! do iOmega = 0, cSpace%cGrid%iD2locN - 1
-        !     do iIndexX = 0, cSpace%cGrid%iD2XL - 1
-        !         do iIndexY = 0, cSpace%cGrid%iD2YL - 1
-        !             do iIndexZ = 0, cSpace%cGrid%iD2ZL - 1
-
-        !                 iIndex = 1 + iOmega*cSpace%cGrid%iD2IS + iIndexX*cSpace%cGrid%iD2XS + iIndexY*cSpace%cGrid%iD2YS + iIndexZ*cSpace%cGrid%iD2ZS
-
-        !                 cSpace%cGrid%pacD2(iIndex) = cSpace%cGrid%pacD2(iIndex)*dTaperX(1 + iIndexX)*dTaperY(1 + iIndexY)*dTaperZ(1 + iIndexZ)
-
-        !             end do
-        !         end do
-        !     end do
-        ! END DO
-        ! call ReorderDistr2ToDistr1(cSpace%cGrid)
+        call TaperContrastXYZ(cSpace) ! Taper because of filtered dirac function
+        ! call TaperContrastT(cSpace)
         call MapVtInv(cSpace)
         call ReorderDistr1ToDistr0(cSpace%cGrid)
         call PrintToLog("End of Pressure Calculation", 2)

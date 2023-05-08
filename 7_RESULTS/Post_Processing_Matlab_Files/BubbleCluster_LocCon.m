@@ -153,6 +153,7 @@ if (strcmp(load_operator,'yes'))
             if (iProcID ==0); input = zeros(Bubble.N,length(ReadBubbleParameter)/Bubble.N); end
                 
             input(1:Bubble.N,:) = reshape(ReadBubbleParameter,size(input,2),Bubble.N)';
+            if (returnN); input(1:Bubble.N,:) = reshape(ReadBubbleParameter,Bubble.N,size(input,2));end
             %         Check if all the values of all the processors are the same
             if iProcID >0
                 if sum(sum(abs(input-input_prev)>1E-26))~=0 ;error(['ERROR in ',filename]); return; end

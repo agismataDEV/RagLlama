@@ -51,7 +51,7 @@ CONTAINS
 
         integer(i8b), intent(in) ::  iBubble, n_samples
         real(dp), intent(in)     ::  RealPressIn(n_samples), RealTimeIn(n_samples)
-        real(dp), intent(inout)    ::  V_dd_pad(n_samples), RealTimeOut(n_samples)
+        real(dp), intent(inout)    ::  V_dd_pad(n_samples), RealTimeOut(n_samples) 
 
         ! *****************************************************************************
         !
@@ -97,15 +97,14 @@ CONTAINS
         elseif (trim(ScattererParams%Solver_Normalize) == 'Minnaert_and_radius') then
             ScattererParams%time_norm = SQRT(cMediumParams%P0/cMediumParams%rho0)/ScattererParams%R0(iBubble)
             ScattererParams%rad_norm = ScattererParams%R0(iBubble)
-        end if
+        end if  
 
         itol = 2            !  if atol scalar, itol = 1 and  if atol array, itol = 2, if atol and rtol array, itol = 4
-        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 15.0D0)
-        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 15.0D0)
+        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
+        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
 
         dTaperSupportWindowN = dTaperingWindow(n_samples, (RealTimeIn(2) - RealTimeIn(1))*cModelParams%freq0, 2.0_dp, 2.0_dp)
 
-        ALLOCATE (ScattererParams%P_driv(n_samples), ScattererParams%T_driv(n_samples))
         ScattererParams%P_driv = RealPressIn * dTaperSupportWindowN
         ScattererParams%T_driv = RealTimeIn*ScattererParams%time_norm
 
@@ -115,6 +114,7 @@ CONTAINS
         ! Marmottant model parameters
         ScattererParams%R_b = ScattererParams%R0(iBubble)*1.0D0/sqrt(ScattererParams%sigma_R0*1.0D0/ScattererParams%chi + 1.0D0)
         ScattererParams%R_r = ScattererParams%R_b*sqrt(ScattererParams%sigma_w*1.0D0/ScattererParams%chi + 1.0D0)
+        ! ScattererParams%kappa_s = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
 
         y(1) = ScattererParams%R0(iBubble)/ScattererParams%rad_norm - 1.0D0
         y(2) = 0.0D0; y(3) = 0.0D0; y(4) = iBubble*1.0D0; 
@@ -137,40 +137,40 @@ CONTAINS
         else
             !For the case of ODEPACK solver
             mf = 22             !   memory flag : 10 (Adams) Stiff - 22 (BDF) Non-stiff code
-            jt = 2                         !   Jacobian Type : 2 - For DLSODA instead of mf
+            jt = 2              !   Jacobian Type : 2 - For DLSODA instead of mf
             iopt = 1            !   0 for not optional inputs, 1 for optional inputs
             itask = 1
             istate = 1
-            CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call, comment for normal messaging                                y(5) = ScattererParams%P_driv(iout)
+            CALL XSETF(0) ! 0 if  no messages should be printed in ODEPACK call, comment for normal messaging
             do iout = 2, n_samples - 1
 
                 ATOL_UP = ATOL
                 RTOL_UP = RTOL
-                tout = ScattererParams%T_driv(iout) !tout + (RealTimeIn(2)-RealTimeIn(1)) * ScattererParams%time_norm ;
+                tout = ScattererParams%T_driv(iout)
                 y(5) = ScattererParams%P_driv(iout)
                 call dlsode(MARMOTTANT, NEQ_ODEPACK, y, t, tout, itol, rtol, atol, itask, istate, iopt, rwork, lrw, iwork, liw, JACDUM, mf)
 
                 do while (ISTATE < 0)
 
-                    if (ISTATE == -2) then
+                    if (ISTATE == -2 ) then
                         TOLSF = RWORK(14); if (isnan(TOLSF)) TOLSF = 1.0D0
                         write (*, *) "Initial tolerance : ", ATOL_UP, RTOL_UP
                         write (*, *) "Tolerance factor used ", TOLSF
-                        ATOL_UP = ATOL_UP*TOLSF*2.0D0
-                        RTOL_UP = RTOL_UP*TOLSF*2.0D0
+                        ATOL_UP = ATOL_UP*TOLSF*1.0D1
+                        RTOL_UP = RTOL_UP*TOLSF*1.0D1
                         if (ATOL_UP(1) .GE. atol(1)*8.0D0) then; ITASK = 4; ISTATE = 2; RWORK(1) = tout; end if
                     elseif (ISTATE == -1) then
                         IWORK(6) = 0
-                        IWORK(6) = INT(IWORK(11)*1.5, i4b); 
-                        tout = ScattererParams%T_driv(iout) + 1D-15; 
-                        write (*, *) "MAXSTEPS, MXSTEPS USED BEFORE ", IWORK(6), IWORK(11)
-                        write (*, *) "Updated tolerance : ", ATOL_UP, RTOL_UP
+                        IWORK(6) = INT(IWORK(11)*5, i4b); 
+                        ! tout = ScattererParams%T_driv(iout) + 1D-15; 
+                        ! write (*, *) "MAXSTEPS, MXSTEPS USED BEFORE ", IWORK(6), IWORK(11)
+                        ! write (*, *) "Updated tolerance : ", ATOL_UP, RTOL_UP
                         ISTATE = 3
                     elseif (ISTATE == -3) then
                         RWORK(5:7) = 0; IWORK(5:7) = 0; 
                         tout = RWORK(13) - RWORK(11)/2.0D0
-                        ATOL_UP = ATOL_UP*2.0D0
-                        RTOL_UP = RTOL_UP*2.0D0
+                        ATOL_UP = ATOL_UP*1.0D1
+                        RTOL_UP = RTOL_UP*1.0D1
                         IWORK(6) = INT(IWORK(11)*2, i4b); 
                         write (*, *) "TOUT CHANGED TO = ", tout, "ATOL = ", ATOL_UP
                         write (*, *) "ISTATE = ", ISTATE
@@ -183,14 +183,14 @@ CONTAINS
                     else
                         write (*, *) "ISTATE = ", ISTATE
                         ISTATE = 3
-                    end if
+                    end if 
 
-                    call dlsoda(MARMOTTANT, NEQ_ODEPACK, y, t, tout, itol, RTOL_UP, ATOL_UP, itask, istate, iopt, rwork, lrw, iwork, liw, JACDUM, jt)
+                    call dlsode(MARMOTTANT, NEQ_ODEPACK, y, t, tout, itol, RTOL_UP, ATOL_UP, itask, istate, iopt, rwork, lrw, iwork, liw, JACDUM, mf)
 
                     IF (ISTATE > 0) RWORK((/5, 7, 8, 9/)) = 0
                     IF (ISTATE > 0) IWORK(5:6) = 0
 
-                end do 
+                end do  
                 R_bub(iout, :) = y(1:3)
                 RealTimeOut(iout) = t
 
@@ -202,10 +202,8 @@ CONTAINS
 
         ! Find volume acceleration d^2V/dt^2 [m^3/s^2]
         ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
-        V_dd_pad = REAL(4.0D0*pi*R_bub(:, 1)*(R_bub(:, 1)*R_bub(:, 3) + 2.0D0*R_bub(:, 2)**2), dp) *dTaperSupportWindowN
-        P_bub = REAL(ScattererParams%P_g0*(R_bub(:, 1)/ScattererParams%R0(iBubble))**(-3.0D0*ScattererParams%gama)*(1.0D0 - 3.0D0*ScattererParams%gama/cMediumParams%c0*R_bub(:, 2)), dp)
-
-        DEALLOCATE (ScattererParams%P_driv, ScattererParams%T_driv)
+        V_dd_pad = REAL(4.0D0*pi*R_bub(:, 1)*(R_bub(:, 1)*R_bub(:, 3) + 2.0D0*R_bub(:, 2)**2), dp) !*dTaperSupportWindowN
+        ! P_bub = REAL(ScattererParams%P_g0*(R_bub(:, 1)/ScattererParams%R0(iBubble))**(-3.0D0*ScattererParams%gama)*(1.0D0 - 3.0D0*ScattererParams%gama/cMediumParams%c0*R_bub(:, 2)), dp)
 
     END SUBROUTINE RP_SOLVER
 
@@ -239,15 +237,14 @@ CONTAINS
         !   Rdot                  r    dp           Rdot variable for the solution of the equation
         !   sigma_R                  r    dp           surface tension as a function of Radius
         !   P_elas                  r    dp           damping due to surface tension
-        !   P_vis                  r    dp           damping due to the viscosity of the fluid
+        !   P_vis                  r    dp           damping due to the viscosity of the fluid  
 
         integer neq, iBubble
-        real(dp) t, R(*), Rdot(*), sigma_R, R_norm(3)
+        real(dp) t, R(*), Rdot(*), sigma_R, R_norm(3) 
         real(dp) P_interp(1), R_VanderWaals
         real(dp) P_elas, P_vis, P_gas, Damp_ac, Damp_visc, P_total
 
         iBubble = NINT(R(4))  
-        ! ScattererParams%kappa_s = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
         call INTERP1D(ScattererParams%T_driv, ScattererParams%P_driv, (/t/), P_interp); 
         ! P_interp(1) = R(5);
         ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
