@@ -43,18 +43,18 @@ for i = 1:length(index_interpreter)
 end
 
 %% Medium Parameters
-medium.freq0               = 1.7E6;                    %fundamental frequency
-medium.c0                  = 1482;                     % Speed of Sound [m/sec]
+medium.freq0               = 1E6;                    %fundamental frequency
+medium.c0                  = 1480;                     % Speed of Sound [m/sec]
 medium.rho0                = 1060;
 medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
 medium.P0                  = 1.01E5  ;
 
 %% Bubble Parameters
-Bubble.mindist           = 10e-6;
+Bubble.mindist              = 10e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 1;
+domain.beamiterations       = 10;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 1; % Co-moving Time window(1), Non-comoving TIme Window(0)
@@ -65,16 +65,27 @@ domain.symmetry             = 0;
 %% File Parameters
 file.rootname            = 'TESTNeumann';
 file.dirname             = '../test/1E4P_12mPa_3cycles_1E3MBs_2_4um_9Fnyq';
-file.dirname             = '../Paper/PW_1E5LS_2E5Pa_1ml_9Fnyq';
-% file.dirname             = '../Paper/Phased_2E5Pa_2micron_1MHz_1E5MBs_90T_25iter_1ml';
+file.dirname             = '../Paper/PW_2E5MBs_2E5Pa_1ml_9Fnyq_Final';
+file.dirname             = '../GG_3Media_Proof_Concept/1E4MBs_Negative_1MHz_poly_25kPa_stronger';
+file.dirname             = '../ProtonBubble_TestCases/1E6PS_17MHz_SRC10_MB1_6um_1E4_Tapper5';
+file.dirname             = '../test/1PS_1MB_Stronger_offloc_2';
+file.dirname             = '../test/PW_1MHz_2E5Pa_5Fnyq_1E6LS_PD_0_25_0_6_c0_100_rho0_10';
+file.dirname             = '../test/PW_1MHz_2E5Pa_9Fnyq_1E6MBs_MD_1um_Fast';
+% file.dirname             = '../test/PW_1MB_2';
+% file.dirname             = '../test/PW_1MHz_2E5Pa_9Fnyq_5E4MBs_MD_2_8um';
+% file.dirname             = '../test/PW_1MHz_1E3Pa_5Fnyq_1E4MB_PD_0_20_c0_100_rho0_10';
+% file.dirname             = '../test/PW_1LS_4';
+% file.dirname             = '../test/PW_1MHz_2E5Pa_3Fnyq_1E5LS_PD_0_10_c0_100_rho0_10_Neumann';
+% file.dirname             = '../test/1PS_20MHz_SRC_MB2_6um_2E3_15mm_elastic';
+% file.dirname             = '../test/1PS_1MB_al';
+% file.dirname             = '../test/PW_NL_BiCG';
+% file.dirname             = '../test/1E6PS_17MHz_SRC10_MB4_1E4_Tapper5';
+% file.dirname             = 'W:\tnw\IST\AK\hpc\agismatalliota\INCS_3D_PS_CLOUD\7_RESULTS\Paper\Phased_2E5Pa_2micron_1MHz_1E5MBs_90T';
 % file.dirname             = '../test/PW_1E4LS_all_14mm';
 % file.dirname             = '../ProtonBubble/8E2PS_HalfLambda_4E2MB_Random_1_7MHz';
 % file.dirname             = '../ProtonBubbleSync/1E2PS_1E2MB_1_7MHz_1E2Pa_2cycles_regular';
-file.dirname             = '../ProtonBubble/1E2PS_1E2Pa_5E2MB_6um_1_7MHz_cocentric';
-% file.dirname             = '../width_3cycl_round2/PW_2E5Pa_2micron_1MHz_2E4LS';
-% file.dirname             = '../width_3cycl_round2/Phased_2E5Pa_2micron_1MHz_1E2MBs';
+% file.dirname             = '../ProtonBubble/1E5PS_r1E2Pa_5E1MBs_1_7MHz_cocentric/';
 % file.dirname             = '../../../INCS_XWAVE/7_RESULTS/Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm';
-% file.dirname             = '../test/Cylinder';
 file.contrast_name       = 'ContrastSrc';
 file.scatterer           = 'passive_lin';         % 'active','passive_lin', 'passive_nonlin'
 
@@ -85,7 +96,7 @@ file.plot_colour         = 'viridis';          % 'gray', 'fake_parula' , 'viridi
 file.saveplot            = 'no';            % 'yes' or 'no'
 file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
 file.load_contrast_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
-file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
+file.load_radius_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
 %% Slice Parameters
 dslice.dims          = [ 'x','y','z'];
@@ -186,4 +197,11 @@ file.savedir             = ['../Images/meeting_',num2str(yyyymmdd(datetime('toda
 if strcmp(file.saveplot,'yes')
     mkdir(file.savedir)
 end
+assignin('base','medium',medium);
+assignin('base','domain',domain);
+assignin('base','dslice',dslice);
+assignin('base','file',file);
+assignin('base','plin',plin);
+assignin('base','pnl',pnl);
+assignin('base','Bubble',Bubble);
 end

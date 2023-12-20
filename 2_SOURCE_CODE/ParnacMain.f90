@@ -1409,7 +1409,7 @@
 			    call LoadField(cTemp, "BeamStatic")
 			    call LoadField(cV, "BeamStatic")
 			    call LoadField(cT, "BeamStatic")
-
+				
 			    ! Output slices if required
 			    if((cModelParams%Slicesavespecifier==iAI_FIRSTANDLAST) &
 			    .or.(cModelParams%Slicesavespecifier==iAI_ALL)) then
@@ -1418,7 +1418,6 @@
 			    end if
 
 			    call LoadField(cBeamST, "BeamStatic") !L.D. 12-10-2010
-
 		end if
 
 		!------------------------------------------
@@ -2090,7 +2089,7 @@
 				write(acTemp,'("****** Bi-CGSTAB Scheme calculate Iterative Beam estimate ",I3," for Beam ",I3," *****")') iIter,iBeam
 				call PrintToLog(acTemp,0)
 				call PrintToLog("***************************************************************",0)
-
+				cModelParams%iIter = iIter
 				call sumsquare(RhoNew,cBeamTot,cResidual)
 				! this function sumsquare does a=sum(sum(B.*C))
 				call MPI_BARRIER(MPI_COMM_WORLD, iErr); !Wait until each processor has checked in
@@ -2242,6 +2241,13 @@
 				end if
 				!-------------------------------------------------------------------------
 
+				if((    ((cModelParams%Slicesavespecifier==iAI_FIRSTANDLAST) &
+				.or.(cModelParams%Slicesavespecifier==iAI_LAST))&
+				.and.iIter==cModelParams%Numiterations(1+iBeam)-1)&
+				.or.(cModelParams%Slicesavespecifier==iAI_ALL)) then
+				call Storeslices(trim(sOutputDir) // trim('ContrastSrc') // int2str(iIter), &
+							"p", cP, iBeam, .true.)
+				endif
 				call AddStoredtoField(cP,"BeamSol0");
 				! Output slices if required
 				if((    ((cModelParams%Slicesavespecifier==iAI_FIRSTANDLAST) &
@@ -2407,6 +2413,7 @@
 				
 	    	end do
     	 end if
+		 call MPI_BARRIER(MPI_COMM_WORLD,iERR)
         !-----------------------------------------------------------
         ! end of the Loop Phase
         !-----------------------------------------------------------

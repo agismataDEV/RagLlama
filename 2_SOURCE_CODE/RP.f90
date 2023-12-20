@@ -100,8 +100,11 @@ CONTAINS
         end if  
 
         itol = 2            !  if atol scalar, itol = 1 and  if atol array, itol = 2, if atol and rtol array, itol = 4
-        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
-        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 12.0D0)
+        rtol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 14.0D0)
+        atol = 10.0**(floor(log10(ScattererParams%R0(iBubble)/ScattererParams%rad_norm)) - 14.0D0)
+
+        ! if (cModelParams%iIter>5) then; rtol=rtol*1E-4;atol=atol*1E-4; endif
+        ! if (cModelParams%iIter>10) then; rtol=rtol*1E-4;atol=atol*1E-4; endif
 
         dTaperSupportWindowN = dTaperingWindow(n_samples, (RealTimeIn(2) - RealTimeIn(1))*cModelParams%freq0, 2.0_dp, 2.0_dp)
 
@@ -244,8 +247,10 @@ CONTAINS
         real(dp) P_interp(1), R_VanderWaals
         real(dp) P_elas, P_vis, P_gas, Damp_ac, Damp_visc, P_total
 
-        iBubble = NINT(R(4))  
+        iBubble= NINT(R(4))
+        ScattererParams%kappa_s  = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
         call INTERP1D(ScattererParams%T_driv, ScattererParams%P_driv, (/t/), P_interp); 
+        ! ScattererParams(cSourceParams%iScCloud)%kappa_s  = (1.5D-9)*EXP(8.0D5*ScattererParams%R0(iBubble))
         ! P_interp(1) = R(5);
         ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
         ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)

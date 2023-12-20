@@ -110,8 +110,11 @@ for i = 1:i_end
     dBVALUES=20;
     harmonics = 1;
     Add = 0;
-    plin_plot = squeeze(20*log10(max(abs(pnl.data))));
-    FontSize = 40;
+    i=10;
+    j=4;
+%     plin_plot = squeeze(20*log10(max(abs(pnl.data_40{i,j}-plin.data_40{i}))));
+    plin_plot = squeeze(20*log10(max(abs(pPD.data))))-20*log10(2E5);
+    FontSize = 25;
     
     f4=figure('WindowState','maximized');
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
@@ -120,17 +123,20 @@ for i = 1:i_end
     if Bubble.N >6
         rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
     elseif Bubble.N>=1
-        plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
+        plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color','white','MarkerSize',10,'LineWidth',3)
     end
-%    if PS.N >6
-%         rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
-%     elseif PS.N>=1
-%         plot(PS.LocGlob(:,domain.dimval(3)),PS.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
-%     end
+   if PS.N >6
+        rectangle('Position',[PS.min_dim(domain.dimval(3)) PS.min_dim(domain.dimval(2)) PS.max_dim(domain.dimval(3))-PS.min_dim(domain.dimval(3)) PS.max_dim(domain.dimval(2))-PS.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','red','LineWidth',2)
+    elseif PS.N>=1
+        plot(PS.LocGlob(:,domain.dimval(3)),PS.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
+    end
     title('Linear Pressure Field')
         title(['F0, [0.7 - 1.3] MHz'] )
         title(['2H, [1.7 - 2.3] MHz'] )
         title(['3H, [2.7 - 3.3] MHz'] )
+%         title(['Incident Pressure Field, 1.7MHz, SRC ',num2str(i/2),'$\lambda$'] )
+%         title(['Scattered Pressure Field, 1.7MHz, SRC ',num2str(i/2),'$\lambda$, MB ',num2str(j),'$\lambda$'] )
+        title({'Scattered Pressure Field,', 'R=4 $\mu$m, f$_{r}$=0.7MHz'} )
     xlabel(dslice.xlabel)
     ylabel(dslice.ylabel )
     BubbleCluster_Colormaps(file)
@@ -143,20 +149,22 @@ for i = 1:i_end
     set(gcf, 'Color', 'white');
     set(gca,'FontSize',FontSize);
     hold off;
+    imgrotate(gca,gcf);    set(gca,'YDir','reverse')
+    caxis([-19 1])
 %     axis image
     %%
 %     caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
- 
+ harmonics=3;
+ subplot_txt={'F0 [0.7 ,1.3] MHz','2H [1.7 ,2.3] MHz','3H [2.7 ,3.3] MHz','4H [3.7 ,4.3] MHz'};
+ f3=figure('WindowState','maximized');
+ t=tiledlayout(ceil(harmonics/4),harmonics/(ceil(harmonics/4)),'TileSpacing','compact','Padding','tight');
     for i = 1: harmonics
-        if (i-4*floor((i-1)/4)==1); f3=figure('WindowState','maximized');end
-        pnl_harmi = 20*log10(squeeze(max(abs(pnl.data))));%eval(['pnl.harm' num2str(i)]);   
-        pnl_harmi =  squeeze(max(abs(pnl.data)) - max(abs(plin.data)));
-        subplot(Nsubplot/splot_div,Nsubplot/(Nsubplot/splot_div),i-4*floor((i-1)/4))
+        nexttile
+        pnl_harmi = pPD.harm{i};   
         imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
+        caxis([max(max(p1.harm{i}))-dBVALUES max(max(p1.harm{i}))]+Add)
         
         hold on;
-        caxis([max(max(pnl_harmi))-dBVALUES max(max(pnl_harmi))]+Add)
-%         if (i>=1); caxis(caxislim(i,:)); end
         if Bubble.N >6
             rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',2)
         elseif Bubble.N>=1
@@ -176,12 +184,18 @@ for i = 1:i_end
         ax = gca;
         ax.FontSize = FontSize;
         set(gcf, 'Color', 'white');
-        sgtitle(subplot_txt,'FontSize',FontSize+3);
-        spl = lower(split(subplot_txt1,' '));
+        title(subplot_txt{i},'FontSize',FontSize+3);
         hold off;
-        axis image;
+        imgrotate(gca,gcf);    set(gca,'YDir','reverse')
+        if (i>1); q=gca;q.YTickLabel=''; q.YLabel.Visible='off';end
+%         axis image;
         
     end
+     title(t,{'Scattered Pressure Field, R=2.8 $\mu$m, f$_{r}$=1MHz'},'FontSize',25,'Interpreter','latex')
+     title(t,{'Scattered Pressure Field, R=[0, 20] $\mu$m'},'FontSize',25,'Interpreter','latex')
+    %%
+    
+    %%
     
     if (strcmp(file.saveplot,'yes'))
         figure(f1)

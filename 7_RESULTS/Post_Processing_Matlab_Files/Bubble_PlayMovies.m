@@ -48,14 +48,15 @@ if (strcmp(file.play_movies,'yes'))
     %% ========================= Initialize first frame=========================
     
     i_end = sizeP(1);
-    dBVALUES = 70;
-    plot_value = 20*log10(abs(plin.data));
-    if (domain.a_t) ;plot_value = Scatter_Field;end
+    plot_value = 20*log10(abs(pnl.contrastdata));
+    AddedDb = 0;
+    dBVALUES = 70;(max(plot_value,[],'all')+AddedDb)*2;
+%     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
-    mov = VideoWriter('1E2PS_5E2MBs_1_7MHz_cocentric_Linear.avi','Motion JPEG AVI');
-    mov.FrameRate = 30; mov.Quality = 75;
+    mov = VideoWriter('SRC10_MB4_Incident_elastic_dB.avi','Motion JPEG AVI');
+    mov.FrameRate = 20; mov.Quality = 75;
     open(mov);
     
     num_frames = i_end;
@@ -65,19 +66,21 @@ if (strcmp(file.play_movies,'yes'))
     ax = gca;
     p=imagesc(ax,domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},squeeze(plot_value(1,:,:)) );
     hold on;
-    caxis(ax,[max(plot_value,[],'all')-dBVALUES max(plot_value,[],'all')] )
+    caxis(ax,max(plot_value,[],'all')+AddedDb+[-dBVALUES 0] )
+% caxis([36 106])
     if Bubble.N >10
-         rectangle(ax,'Position',[Bubble.LocRange(3,1) Bubble.LocRange(1,1) Bubble.LocRange(3,2)-Bubble.LocRange(3,1) Bubble.LocRange(1,2)-Bubble.LocRange(1,1)],'LineStyle','--','EdgeColor','red','LineWidth',2)
+         rectangle(ax,'Position',[Bubble.LocRange(3,1) Bubble.LocRange(1,1) Bubble.LocRange(3,2)-Bubble.LocRange(3,1) Bubble.LocRange(1,2)-Bubble.LocRange(1,1)],'LineStyle','--','EdgeColor','white','LineWidth',4)
        elseif (Bubble.N <=10 && Bubble.N > 0)
         plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
     end
-    
-    if PS.N >10
-         rectangle(ax,'Position',[PS.LocRange(3,1) PS.LocRange(1,1) PS.LocRange(3,2)-PS.LocRange(3,1) PS.LocRange(1,2)-PS.LocRange(1,1)],'LineStyle','--','EdgeColor','white','LineWidth',2)
-    elseif (Bubble.N <=10 && Bubble.N > 0)
-        plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
-%         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
-%         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
+    if (isfield(PS,'LocRange')) 
+        if PS.N >10
+             rectangle(ax,'Position',[PS.LocRange(3,1) PS.LocRange(1,1) PS.LocRange(3,2)-PS.LocRange(3,1) PS.LocRange(1,2)-PS.LocRange(1,1)],'LineStyle','--','EdgeColor','red','LineWidth',2)
+        elseif (PS.N <=10 && PS.N > 0)
+            plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
+    %         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
+    %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
+        end
     end
     title_txt = 'Incident Pressure Field , $t_i = $';
 %     title_txt = 'Linear Pressure Field , $t_i = $';
@@ -92,6 +95,7 @@ if (strcmp(file.play_movies,'yes'))
     
     BubbleCluster_Colormaps(file)
     c = colorbar;
+%     c=colorbar;cm = kwave_cmap(258);colormap(cm);%c.Location='northoutside';
     c.Label.String = 'Normalized Pressure [dB]';
     c.Label.Interpreter = 'latex';
     set(ax,'YDir','normal')

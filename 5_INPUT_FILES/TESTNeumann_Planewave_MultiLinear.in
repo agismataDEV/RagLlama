@@ -15,16 +15,16 @@
 *************************************************
 ***   domain and discretization parameters    ***
 *************************************************
-1.800000E+001		*** Lx in [mm]
-1.800000E+001		*** Ly in [mm]
-2.000000E+001		*** Lt in [cycles]
+2.000000E+001		*** Lx in [mm]
+2.000000E+001		*** Ly in [mm]
+3.000000E+001		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
 2.000000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E+000		*** Thetat [rad]
 1.000000E+006		*** freq0  = Fundamental frequency [Hz]
-9.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+5.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 ************************************
 ***    other model parameters    ***
 ************************************
@@ -108,19 +108,19 @@ gaussian
 **********************************
 *** Parameters-Bubble Cluster  ***
 **********************************
-linear		***	type of scatterer
+linear		    ***	type of scatterer  
 1.000000E+001   *** rho1	 = Surface dilatational viscosity of shell [kg/sec]
 1.000000E+002   *** c1	 	 = Surface tension of water  [N/m]
 ****
-2.000000E+005	*** No. of Bubbles consisting the cluster
+1.000000E+000	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
-1E-6 			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
--7.5 7.5	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len - X_Len/2
--7.5 7.5	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len - Y_Len/2
+10E-6  	*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
+-0.000 0.001  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len - X_Len/2
+-0.000 0.001	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len - Y_Len/2
 3 7.444 		*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
-5e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
+20e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
 close  

@@ -300,6 +300,7 @@ MODULE ParnacParamDef
 
         !------------- Experimental
         real(qp)  :: coeff_fit(11)
+        real(dp)  :: PolyCoeff(200)
         real(qp)  :: A0c
 
     end type ScattererInput

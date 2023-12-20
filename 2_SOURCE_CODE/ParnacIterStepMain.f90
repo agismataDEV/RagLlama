@@ -724,6 +724,7 @@ CONTAINS
         !   acTemp       char   Temporary char array for output log messages
         !
         character(LEN=1024)::                        acTemp; 
+        real(dp) :: RandomNumber
         ! *****************************************************************************
         !
         !   I/O
@@ -767,7 +768,8 @@ CONTAINS
                 call BubbleContrastOperator(cSpace)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             case (iCI_LINCONTRA)                                        !! LCSM L.D. 12-07-2010 6
-                call NonlinContrastOperatorlin_Ali(cSpace, IncSpace);        !! LCSM L.D. 12-07-2010
+                call NonlinContrastOperatorlin_Ali(cSpace, IncSpace);        !! LCSM L.D. 12-07-2010                                     
+                ! call BubbleContrastOperator(cSpace)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             case (iCI_CGCONTRA)                                         !! CG L.D. 12-07-2010   7

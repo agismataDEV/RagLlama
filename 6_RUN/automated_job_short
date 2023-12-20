@@ -42,12 +42,12 @@ echo "#!/bin/bash
    											 															
 #SBATCH --job-name=$OUTPUT_FILE_NAME  	 														     	
 #SBATCH --partition=imphys,general  					 													
-#SBATCH --qos=medium           				 															
-#SBATCH --nodes=1-4           					 															
-#SBATCH --ntasks=50  				 																		
+#SBATCH --qos=long           				 															
+#SBATCH --nodes=1-2         					 															
+#SBATCH --ntasks=100  				 																		
 #SBATCH --cpus-per-task=1     				 															
 #SBATCH --mem-per-cpu=9G            				 														
-#SBATCH --time=4:00:00      				 															
+#SBATCH --time=100:00:00      				 															
 #SBATCH --output=$OUT_FILE  					 															
 #SBATCH --error=$ERR_FILE      				 															
 ##SBATCH --exclusive    
@@ -75,7 +75,7 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel  																		
 #export MKL_DYNAMIC= 'FALSE'  																				
 #export MKL_VERBOSE=1  																					
-srun ../7_RESULTS/$OUTPUT_FOLDER/INCS_Agis_${OUTPUT_FILE_NAME} $INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER" > job_INCS_short
+srun ../7_RESULTS/$OUTPUT_FOLDER/INCS_Agis_${OUTPUT_FILE_NAME} ../7_RESULTS/$OUTPUT_FOLDER/$INPUT_FILE TESTNeumann ../5_INPUT_FILES ../7_RESULTS/$OUTPUT_FOLDER" > job_INCS_short
 
 
 sbatch ../6_RUN/job_INCS_short &

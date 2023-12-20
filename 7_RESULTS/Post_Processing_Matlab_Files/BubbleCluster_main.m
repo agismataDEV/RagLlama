@@ -4,11 +4,11 @@
 % close all;
 for slicenum1 = [2]%[12,3,4,5,6]
     
-    clearvars -except slicenum1 atten atten_fund Loc pnl_all
+    clearvars -except slicenum1 atten atten_fund Loc pnl_all p4 p1 pPD p2_8 q1 q2
     %     close all
     clc
     %% Initialize parameters for all the significant variables
-    [medium,domain,dslice,file,plin,pnl,Bubble] = BubbleCluster_Init(slicenum1);
+    BubbleCluster_Init(slicenum1);
     %% Scatterers' cloud positions
 %     %% Bubble Location and Pressure
     [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');

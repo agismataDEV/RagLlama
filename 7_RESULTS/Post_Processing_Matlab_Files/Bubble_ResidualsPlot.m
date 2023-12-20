@@ -90,11 +90,11 @@ disp(['Ploting the Residuals ... '])
 % Create axes
 
 if (strcmp(file.plot_converr,'yes'))
-    for Bubblei = 1:1
+    for Bubblei = 4:4
         LS = split(cellstr(ls([file.dirname,'/',file.rootname,'*_',dslice.savedim(dslice.num),int2string_ICS(dslice.num),int2string_ICS(0),int2string_ICS(0),'*.h5'])),[file.rootname,'_']);
         
         LS = split(LS(:,2) ,'_y_');
-        IterationNumber = max(str2double(LS(:,1))); IterationNumber=25;
+        IterationNumber = max(str2double(LS(:,1))); 
         
         ii = 0;
         txt_err = {'total'; 'contrast'};
@@ -110,25 +110,21 @@ if (strcmp(file.plot_converr,'yes'))
             output = load_ICS_slice_par(current);
             p_curr  = squeeze(output.data); p_first = p_curr;
                 
-            for jj=18:IterationNumber+mod(i,2)
+            for jj=17:IterationNumber+mod(i,2)
                     p_prev = p_curr; 
                     prev = current;
                     disp(['Loading ... ',current])
                     
-                    filename2 = file.rootname; if i==2;filename2 = file.contrast_name;end
+%                     filename2 = file.rootname; if i==2;filename2 = file.contrast_name;end
                     current       = [file_dirname '/' filename2 int2string_ICS(jj-mod(i,2)) '_' file.focalplanename int2string_ICS(ii)];
                     output = load_ICS_slice_par(current);
                     p_curr  = squeeze(output.data);
 
                     if (jj==2) ;eval(['dp = p_curr-p_prev;']);end
-                    Error_prev{i}(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_prev.^2))));
-                    Error_dp{i}(Bubblei,jj-1) =  sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(dp.^2))));
-                    Error_init{i}(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_first.^2))));
-                    dp_val{i}(Bubblei,jj-1) = squeeze(max(abs(p_curr(:,round(size(p_curr,2)/2)+1,470)-p_prev(:,round(size(p_curr,2)/2)+1,470))));
-%                     eval(['Error_prev_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_prev.^2))));']);
-%                     eval(['Error_dp_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(dp.^2))));']);
-%                     eval(['Error_init_',txt_err{i},'(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr-p_prev).^2)))./sum(sum(sum(p_first.^2))));']);
-%                     eval(['dp_',txt_err{i},'(Bubblei,jj-1) = squeeze(max(abs(p_curr(:,round(size(p_curr,2)/2)+1,470)-p_prev(:,round(size(p_curr,2)/2)+1,470))));']);
+                    Error_prev{i}(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr(1:end-200,:,:)-p_prev(1:end-200,:,:)).^2)))./sum(sum(sum(p_prev(1:end-200,:,:).^2))));
+                    Error_dp{i}(Bubblei,jj-1) =  sqrt(sum(sum(sum((p_curr(1:end-200,:,:)-p_prev(1:end-200,:,:)).^2)))./sum(sum(sum(dp(1:end-200,:,:).^2))));
+                    Error_init{i}(Bubblei,jj-1) = sqrt(sum(sum(sum((p_curr(1:end-200,:,:)-p_prev(1:end-200,:,:)).^2)))./sum(sum(sum(p_first(1:end-200,:,:).^2))));
+%                     dp_val{i}(Bubblei,jj-1) = squeeze(max(abs(p_curr-p_prev)));
             end
             Error_prev{i}(Bubblei,1:jj) = ([1,Error_prev(Bubblei,2:jj)]);
             Error_init{i}(Bubblei,1:jj) = ([1,Error_init(Bubblei,2:jj)]);
@@ -149,7 +145,7 @@ if (strcmp(file.plot_converr,'yes'))
     for i = 1:1
         hold on;
         for Bubblei =1:4
-               plot_h(Bubblei) =  semilogy(0:size(Error_prev{i}(Bubblei,:),2)-1,flipud(dp_val{i}(Bubblei,:)));
+               plot_h(Bubblei) =  semilogy(0:size(Error_prev{i}(Bubblei,:),2),[1 flipud(Error_prev{i}(Bubblei,:))]);
     %         eval(['plot',num2str(i),' = semilogy(0:size(Error_prev_',txt_err{i},',2)-1,[flipud(dp_',txt_err{i},')])'])
     %            
     %         set(eval(['plot',num2str(i),'(1)']),'DisplayName',[num2str(BubbleList(1)),' Bubble(s) Pres'],'Marker','o','MarkerSize',12,'LineWidth',2,'LineStyle','--',...

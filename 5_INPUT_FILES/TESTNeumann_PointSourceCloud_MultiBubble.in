@@ -31,13 +31,13 @@
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave","pointsourcecloud"
 pointsourcecloud
 *** Parameters for point source cloud
-1.000000E+002	*** No. of Point Sources consisting the cluster
+1.000000E+005	*** No. of Point Sources consisting the cluster
 1.000000E+002	*** Amplitude of One Point Source [Pa] (MonoEnergetic)
 100E-6			***	Distance from point source, where Pressure equal to above value [m] 
 1E-6			*** R0		= Point Source Radius [m] 
--0.15 0.15	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
--0.15 0.15	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-4.6 4.9 	    *** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+-1.5 1.5	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
+-1.5 1.5	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
+3.25 6.25 	    *** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
 4.53E-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 *** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
 scatterer
@@ -130,7 +130,7 @@ microbubble		***	type of scatterer
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius *** Normalize , 'none', 'time', 'radius', 'freq0_and_radius','Minnaert_and_radius'
 ****
-5.000000E+002	*** No. of Bubbles consisting the cluster
+5.000000E+001	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse
