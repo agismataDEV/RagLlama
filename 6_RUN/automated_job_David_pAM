@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+INPUT_FILE_DAVID=${1?Error: No input file given}
+OUTPUT_FOLDER_DAVID=${2?Error: No output folder given}
+export INPUT_FILE_DAVID
+export OUTPUT_FOLDER_DAVID
+
+IFS=/ read OUTPUT_FOLDER_NAME OUTPUT_FILE_NAME <<< $OUTPUT_FOLDER_DAVID
+echo $OUTPUT_FOLDER_NAME
+echo $OUTPUT_FILE_NAME
+echo $OUTPUT_FOLDER_DAVID
+
+A2="$(cut -d'_' -f2 <<<$OUTPUT_FILE_NAME)"
+A3="$(cut -d '_' -f3 <<<$OUTPUT_FILE_NAME)"
+A="${A2}_${A3}"
+
+export OUT_FILE=../7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_$OUTPUT_FILE_NAME.out
+export ERR_FILE=../7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_$OUTPUT_FILE_NAME.err
+
+cd ../2_SOURCE_CODE/
+#rm ../3_COMPILED_FILES/INCS_Agis_*
+make 
+cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME}
+
+#if [ -d ../7_RESULTS/$OUTPUT_FILE_NAME]; then
+	mkdir ../7_RESULTS/$OUTPUT_FOLDER_DAVID
+#	echo "Directory is created ..."
+#fi
+
+cd ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+find . -name '*GlobalLoc*' | xargs rm -f
+mkdir 2_SOURCE_CODE
+
+cd ../../../2_SOURCE_CODE/
+
+rm ../7_RESULTS/$OUTPUT_FOLDER_DAVID/*
+rm ../7_RESULTS/$OUTPUT_FOLDER_DAVID/Bubbles/*
+cp *.f90 ../7_RESULTS/$OUTPUT_FOLDER_DAVID/2_SOURCE_CODE/
+cp ../5_INPUT_FILES/$INPUT_FILE_DAVID ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../5_INPUT_FILES/TD/td_$A.dat ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../5_INPUT_FILES/APOD/apod_$A.dat ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME} ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+
+cd ../6_RUN/
+
+### HERE WE CREATE THE BASH FILE
+echo "#!/bin/bash  									 															
+   											 															
+#SBATCH --job-name=${OUTPUT_FILE_NAME}  	 																
+#SBATCH --partition=imphys,general  					 													
+#SBATCH --qos=medium           				 															
+###SBATCH --nodes=1-4           					 															
+##SBATCH --constraint=ib  				 																
+##SBATCH --network=IB  				 																	
+#SBATCH --ntasks=100  		 																			
+#SBATCH --cpus-per-task=1     				 															
+#SBATCH --mem-per-cpu=15000M  				 															
+###SBATCH  --exclusive    						 														
+#SBATCH --time=36:00:00       				 															
+#SBATCH --output=$OUT_FILE  					 															
+#SBATCH --error=$ERR_FILE      				 															
+   											 															
+module use /opt/insy/modulefiles  			 															
+module load intel  							 															
+   											 															
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64  		
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh  				
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64  		
+   																										
+##ulimit -s unlimited  																						
+##ulimit -l unlimited  																					
+   						
+export MPIR_CVAR_CH4_OFI_TAG_BITS=31
+export MPIR_CVAR_CH4_OFI_RANK_BITS=8 	
+
+# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so  						
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so  															
+export OMP_NUM_THREADS=1  																				
+export MKL_NUM_THREADS=1  																				
+#export MKL_THREADING_LAYER=intel  																		
+#export MKL_DYNAMIC= 'FALSE'  																				
+#export MKL_VERBOSE=1  																					
+srun ../7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_Agis_${OUTPUT_FILE_NAME} $INPUT_FILE_DAVID TESTNeumann ../7_RESULTS/$OUTPUT_FOLDER_DAVID ../7_RESULTS/$OUTPUT_FOLDER_DAVID" > job_INCS_David
+
+cp ../6_RUN/job_INCS_David ../7_RESULTS/$OUTPUT_FOLDER_DAVID/
+# sbatch --dependency=afterok:7854157 ../6_RUN/job_INCS_David &
+
+sbatch ../6_RUN/job_INCS_David &
+sleep 5
+squeue --format="%.18i %.9P %.80j %.8u %.8T %.10M %.9l %.6D %R" --me

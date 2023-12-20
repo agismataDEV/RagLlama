@@ -289,7 +289,8 @@ CONTAINS
         ! And finally, we can set the flag to 2!
         cGrid.iDistr = 2; 
         call SWStop(cswBlock); call SWStop(cswBlockRedist1_2)
-    END SUBROUTINE ReorderDistr1ToDistr2
+        call MPI_BARRIER(MPI_COMM_WORLD,iErr)
+    END SUBROUTINE ReorderDistr1ToDistr2 
 
     SUBROUTINE ReorderDistr2ToDistr1(cGrid)
 
@@ -468,6 +469,7 @@ CONTAINS
         ! And finally, we can set the flag to 1!
         cGrid.iDistr = 1; 
         call SWStop(cswBlock); call SWStop(cswBlockRedist2_1)
+        call MPI_BARRIER(MPI_COMM_WORLD,iErr)
     END SUBROUTINE ReorderDistr2ToDistr1
 
 ! %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

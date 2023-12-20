@@ -1,36 +1,38 @@
-#!/bin/bash  									 															
-   				
-#SBATCH --account=research-as-imphys							 															
-#SBATCH --job-name=David_180deg_x_nofocus_noapod_3Fnyq  			 														     	
-#SBATCH --partition=compute		    				 															
-#SBATCH --nodes=8            					 															
-###SBATCH --constraint=ib  				 																
-###SBATCH --network=IB  				 																	
-#SBATCH --ntasks=250  		 																			
-#SBATCH --cpus-per-task=1     				 															
-#SBATCH --mem-per-cpu=15000M  						 														
-#SBATCH --time=36:00:00       				 															
-#SBATCH --output=/scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/test/David_180deg_x_nofocus_noapod_3Fnyq/INCS_David_180deg_x_nofocus_noapod_3Fnyq.out  					 															
-#SBATCH --error=/scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/test/David_180deg_x_nofocus_noapod_3Fnyq/INCS_David_180deg_x_nofocus_noapod_3Fnyq.err 
-    				 															
-module load 2022r2  			 																			
-module load intel			 																			
-module load intel-mkl  	  							 															
+#!/bin/bash  						 															
    											 															
-source /cm/shared/intel/compilers_and_libraries_2020.4.304/linux/bin/compilervars.sh intel64  		
-source /cm/shared/intel/compilers_and_libraries_2020.4.304/linux/mpi/intel64/bin/mpivars.sh  				
-source /cm/shared/intel/compilers_and_libraries_2020.4.304/linux/mkl/bin/mklvars.sh intel64  		
+#SBATCH --job-name=m_	 	 																
+#SBATCH --partition=imphys,general  					 													
+#SBATCH --qos=medium           				 															
+###SBATCH --nodes=1-4           					 															
+##SBATCH --constraint=ib  				 																
+##SBATCH --network=IB  				 																	
+#SBATCH --ntasks=100  		 																			
+#SBATCH --cpus-per-task=1     				 															
+#SBATCH --mem-per-cpu=9000M  				 															
+###SBATCH  --exclusive    						 														
+#SBATCH --time=36:00:00       				 															
+#SBATCH --output=/scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/GG_3Media_Shift/1E4MBs_Positive_1_5MHz_50Pa_p1/INCS_1E4MBs_Positive_1_5MHz_50kPa_p0_50Pa_p1.out  					 															
+#SBATCH --error=/scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/GG_3Media_Shift/1E4MBs_Positive_1_5MHz_50Pa_p1/INCS_1E4MBs_Positive_1_5MHz_50kPa_p0_50Pa_p1.err      				 															
+   											 															
+module use /opt/insy/modulefiles  			 															
+module load intel  							 															
+   											 															
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64  		
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh  				
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64  		
    																										
-ulimit -a 		 																						
-ulimit -s unlimited  																						
-ulimit -a 		 																						
-ulimit -l unlimited  																						
-   																										
+##ulimit -s unlimited  																						
+##ulimit -l unlimited  																					
+   							
+export MPIR_CVAR_CH4_OFI_TAG_BITS=31
+export MPIR_CVAR_CH4_OFI_RANK_BITS=8 		
+
 # export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so  						
-export I_MPI_PMI_LIBRARY=/cm/shared/apps/slurm/current/lib64/libpmi2.so 														
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so  															
 export OMP_NUM_THREADS=1  																				
 export MKL_NUM_THREADS=1  																				
 #export MKL_THREADING_LAYER=intel  																		
 #export MKL_DYNAMIC= 'FALSE'  																				
-#export MKL_VERBOSE=1  																					
-srun /scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/test/David_180deg_x_nofocus_noapod_3Fnyq/INCS_Agis_David_180deg_x_nofocus_noapod_3Fnyq TESTNeumann_David_phased_array_gaussian TESTNeumann /scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/test/David_180deg_x_nofocus_noapod_3Fnyq /scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/test/David_180deg_x_nofocus_noapod_3Fnyq
+#export MKL_VERBOSE=1  			
+			 																							
+srun /scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/GG_3Media_Shift/1E4MBs_Positive_1_5MHz_50Pa_p1/INCS_Agis_1E4MBs_Positive_1_5MHz_50kPa_p0 TESTNeumann_GG_planewave_copy.in TESTNeumann /scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/GG_3Media_Shift/1E4MBs_Positive_1_5MHz_50Pa_p1 /scratch/agismatalliota/INCS_XWAVE_DHPC/7_RESULTS/GG_3Media_Shift/1E4MBs_Positive_1_5MHz_50Pa_p1

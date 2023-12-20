@@ -6,7 +6,7 @@
 ***************************
 1.060000E+003		*** rho0   = Ambient density rho0 [kg/m^3]
 1.480000E+003		*** c0     = Small signal sound velocity [m/s] 
-2.000000E-003		*** �	   = Medium viscosity [Pa*sec]
+2.000000E-003		*** mu	   = Medium viscosity [Pa*sec]
 1.010000E+005		*** P0 	   = Ambient Pressure [Pa]
 15.00000E+006		*** fc0    = Frequency at which sound velocity is given [Hz]
 3.210000E+000		*** beta   = Nonlinearity parameter
@@ -16,15 +16,15 @@
 ***   domain and discretization parameters    ***
 *************************************************
 6.410010E+000		*** Lx in [mm]
-1.501000E+000		*** Ly in [mm]
-21.00000E+001		*** Lt in [cycles]
--0.05000E+001		*** Sz in [mm]	(Start of the field)
-1.850000E+001		*** Lz in [mm]	(length of the field in z)
+12.01000E+000		*** Ly in [mm]
+12.00000E+001		*** Lt in [cycles]
+0.000000E+000		*** Sz in [mm]	(Start of the field)
+10.00000E+000		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E-000		*** Thetat [rad]
 15.00000E+006		*** freq0  = Fundamental frequency [Hz]
-3.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+2.500000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
@@ -38,8 +38,9 @@ nonlin
 5		*** Debug message level 0-5 gives the level of detail of the messages
 1		*** Switch: Use Anti-Aliasing in contrast source evaluation
 1		*** Switch: Use Support Tapering in contrast source evaluation	
-1		*** Switch: Use MaxFreq Tapering in contrast source evaluation 
+1		*** Switch: Use MaxFreq Tapering in cont
 1		*** Switch: Use Symmetry in the Y axis
+0		*** Switch: Use Perfectly Matched Layerrast source evaluation 
 1		*** Number of beams in which the total field is split
 7		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
@@ -57,8 +58,8 @@ z 4.0000
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-2.000000E+006		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
-1.200000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
+4.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+0.600000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
 1.50000E+000			*** Twidth = Width of gaussian window
@@ -72,16 +73,16 @@ phasedarray
 *** pointsource specific: No parameters
 *** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), TimeDelayFilename, PhaseApodFilename
 64			*** Number of elements
-0.0800		*** Element width
-1.5000     	*** Element height
+0.0800000	*** Element width
+12.000000   *** Element height
 0.0200000	*** Kerf
 0.0000000	*** Focus x
 1.00000E+30	*** Focus z
 1.00000E+30	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-td_150deg_x.dat *** td_210deg_left.dat
+td_200deg_x.dat *** td_210deg_left.dat
 ***   apodization in azimuthal X inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_150deg_x.dat *** apod_210deg_left.dat
+apod_200deg_x.dat *** apod_210deg_left.dat
 ***   apodization in elevation Y inputfilename    *** Use "standard" for [inputfilename]_apo.mat
 none *** apod_210deg_left.dat
 ***************************

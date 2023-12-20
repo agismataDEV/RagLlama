@@ -45,7 +45,7 @@ end
 %% Medium Parameters
 medium.freq0               = 15E6;                    %fundamental frequency
 medium.c0                  = 1480;                     % Speed of Sound [m/sec]
-medium.rho0                = 1000;
+medium.rho0                = 1060;
 medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
 medium.P0                  = 1.01E5  ;
 
@@ -55,7 +55,7 @@ Bubble.mindist           = 10e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 1;
+domain.beamiterations       = 5;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 0; % Co-moving Time window(1), Non-comoving TIme Window(0)
@@ -65,13 +65,20 @@ domain.symmetry             = 0;
 
 %% File Parameters
 file.lin_name            = 'TESTNeumann';
-% file.dirname             = '../Validation/David_200deg_x_sin_10cycl';
-% file.dirname             = '../test/1PS_1MB_at_0';
+% file.dirname             = '../3rd_Paper/David_200deg_pam_2_5E4MBs_3_5Fnyq_50kPa_22el';
+% file.dirname             = '../Validation/David_200deg_x_gauss_apod_LocalNL_100kPa_3_2Fnyq';
+% file.dirname             = '../test/David_200deg_x_long_element_3Fnyq_noapod';
 % file.dirname             = '../IEEE_2022/David_200deg_x_400kPa_15MHz_NL_Lagr';
-% file.dirname             = '../xAM_elf8mm/David_0deg_x_2MPa_Full';
 % file.dirname             = '../EchoContrast_2023/David_0deg_x_2E4MBs_1E5LinSc_c0_400_3Fnyq_2E5Pa';
-file.dirname             = '../Paper/David_0deg_x_4E3MBs_2E4LinSc_c0_400_3_5Fnyq_1E5Pa';
-file.dirname             = '../Paper/David_0deg_x_test_cat_2';
+% file.dirname             = '../GG_3Media_Proof_Concept/1E4MBs_Positive_1MHz_poly_25kPa_stronger';
+% file.dirname             = '../Paper//David_200deg_pam_2_5E4MB_3_5FNyq';
+% file.dirname             = '../3rd_Paper/BeamForming/xAM/David_200deg_left_3_5Fnyq_m0';
+% file.dirname             = '../3rd_Paper/BeamForming/pAM_22el/David_200deg_odd_3Fnyq_deep_p0';
+% file.dirname             = '../3rd_Paper/MBs_Angle/David_200deg_x_2_5E4MBs_3_5Fnyq';
+file.dirname             = '../3rd_Paper/MBs_Fields/David_0deg_full_2_5E4MBs_3_5Fnyq_200kPa';
+% file.dirname             = '../test/David_200deg_x_small_MBs_Shifted_05';
+% file.dirname             = '../GG_3Media_Proof_Concept/1E4MBs_Negative_1MHz_poly_25kPa_stronger';
+% file.dirname             = '../test/David_200deg_right_cube';
 % file.dirname             = '../../../INCS_3D_PS_CLOUD/7_RESULTS/Phased/Phased_1E5MB_1MHz_5E4Pa_DHPC';
 % file.dirname_left        = '../Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm_apod02_Cylinder';
 % file.dirname_right       = '../Microbubbles/David_200deg_x_400kPa_5E5MBs_3_5Fnyq_Z1cm_apod02_Cylinder';
@@ -87,7 +94,7 @@ file.plot_colour         = 'viridis';        % 'gray', 'fake_parula' , 'viridis'
 file.saveplot            = 'no';            % 'yes' or 'no'
 file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
 file.load_contrast_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
-file.load_radius_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
+file.load_radius_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
 domain.angle   = 0;
 % domain.angle = str2num(file.dirname(strfind(file.dirname,'deg')+[-3:-1]))/10;
@@ -122,29 +129,34 @@ plin.data          = squeeze(output.data);
 domain.tdimpar     = size(plin.data,1);
 domain.iProcN      = output.iNumProc;
 
+%% NONLINEAR DATA
+pnl.filename       = [file.dirname '/' file.rootname int2string_ICS(domain.beamiterations) '_' file.focalplanename int2string_ICS(domain.ibeam)];
+
+output_nonl      = load_ICS_slice(pnl.filename);
+pnl.xwave_data       = squeeze(output_nonl.data);
 %% Source Delay
-% file_srcdelay       = [file.dirname '/' file.rootname  'srcdelay' int2string_ICS(0)];
-% output_srcdelay     = load_ICS_array(file_srcdelay);
-% plin.t_delay             = output_srcdelay.data;
+file_srcdelay       = [file.dirname '/' file.rootname  'srcdelay' int2string_ICS(0)];
+output_srcdelay     = load_ICS_array(file_srcdelay);
+plin.t_delay             = output_srcdelay.data;
 
 %%
-domain.dimlen(domain.dimval(1)) = output.lengthslice;
-domain.dimlen(domain.dimval(2)) = size(plin.data,2);
-domain.dimlen(domain.dimval(3)) = size(plin.data,3);
+domain.dimlen(domain.dimval(1)) = output_nonl.lengthslice;
+domain.dimlen(domain.dimval(2)) = size(pnl.xwave_data,2);
+domain.dimlen(domain.dimval(3)) = size(pnl.xwave_data,3);
 
-domain.TXYoff      = output.TXYoff; if dslice.savedim(dslice.num) =='z' ; domain.TXYoff = repmat(domain.TXYoff,domain.dimlen(3),1); end
-domain.TXYstart    = output.start(1:3);
-dslice.index       = output.sliceindex+1;
-domain.dtpar       = output.stepsize(1);
-domain.dxpar       = output.stepsize(2)*1e+3; % step size dx in mm
-domain.dypar       = output.stepsize(3)*1e+3; % step size dy in mm
-domain.dzpar       = output.stepsize(4)*1e+3; % step size dz in mm
+domain.TXYoff      = output_nonl.TXYoff; if dslice.savedim(dslice.num) =='z' ; domain.TXYoff = repmat(domain.TXYoff,domain.dimlen(3),1); end
+domain.TXYstart    = output_nonl.start(1:3);
+dslice.index       = output_nonl.sliceindex+1;
+domain.dtpar       = output_nonl.stepsize(1);
+domain.dxpar       = output_nonl.stepsize(2)*1e+3; % step size dx in mm
+domain.dypar       = output_nonl.stepsize(3)*1e+3; % step size dy in mm
+domain.dzpar       = output_nonl.stepsize(4)*1e+3; % step size dz in mm
 domain.start(1)    = domain.TXYstart(2)+domain.TXYoff(1,2);
 domain.start(2)    = domain.TXYstart(3)+domain.TXYoff(1,3);
-domain.start(3)    = output.start(4);
+domain.start(3)    = output_nonl.start(4);
 domain.tstart      = domain.TXYstart(1)+domain.TXYoff(1,1);
-domain.xsource     = (output.start(2)+(0:size(plin.data,2)-1))*domain.dxpar;
-domain.ysource     = (output.start(3)+(0:size(plin.data,3)-1))*domain.dypar;
+domain.xsource     = (output_nonl.start(2)+(0:size(pnl.xwave_data,2)-1))*domain.dxpar;
+domain.ysource     = (output_nonl.start(3)+(0:size(pnl.xwave_data,3)-1))*domain.dypar;
 domain.Fnyq        = 1/(domain.dtpar*2)/medium.freq0;
 
 %% generate axes for focal plane
@@ -157,11 +169,6 @@ domain.par{3}      = (domain.start(3)+(0:domain.dimlen(3)-1))*domain.dzpar;
 
 dslice.pos(dslice.num) = domain.par{domain.dimval(1)}(dslice.index(dslice.num)) ;
 
-%% NONLINEAR DATA
-pnl.filename       = [file.dirname '/' file.rootname int2string_ICS(domain.beamiterations) '_' file.focalplanename int2string_ICS(domain.ibeam)];
-
-output_nonl      = load_ICS_slice(pnl.filename);
-pnl.xwave_data       = squeeze(output_nonl.data);
 
 %% CONTRAST DATA WITHOUT ANY BUBBLES
 if strcmp(file.plot_AM,'yes')

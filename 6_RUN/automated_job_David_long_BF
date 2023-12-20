@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+INPUT_FILE_DAVID=${1?Error: No input file given}
+OUTPUT_FOLDER_DAVID=${2?Error: No output folder given}
+export INPUT_FILE_DAVID
+export OUTPUT_FOLDER_DAVID
+echo $INPUT_FILE_DAVID 
+echo $OUTPUT_FOLDER_DAVID
+
+IFS=/ read OUTPUT_FOLDER_NAME OUTPUT_FILE_NAME <<< $OUTPUT_FOLDER_DAVID
+echo $OUTPUT_FOLDER_NAME
+echo $OUTPUT_FILE_NAME
+echo $OUTPUT_FOLDER_DAVID
+INPUT_FOLDER="//tudelft.net/staff-groups/tnw/ist/ak/Promovendi/agismatalliota/INCS_XWAVE"
+
+A2="$(cut -d'_' -f2 <<<$OUTPUT_FILE_NAME)"
+A3="$(cut -d '_' -f3 <<<$OUTPUT_FILE_NAME)"
+A="${A2}_${A3}"
+
+for ShiftInX in {17..19..2} ; 
+do
+
+# mode='left'
+for mode in {'even','odd'}
+do
+
+export OUTPUT_FOLDER_COMPOUND=m$ShiftInX
+export OUTPUT_FOLDER_DAVID=3rd_Paper/BeamForming/$OUTPUT_FOLDER_NAME/David_200deg_${mode}_3Fnyq_deep_${OUTPUT_FOLDER_COMPOUND}
+echo $OUTPUT_FOLDER_DAVID
+export OUT_FILE=$INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_${OUTPUT_FILE_NAME}_${OUTPUT_FOLDER_COMPOUND}.out
+export ERR_FILE=$INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_${OUTPUT_FILE_NAME}_${OUTPUT_FOLDER_COMPOUND}.err
+
+# make 
+# cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_Agis_${OUTPUT_FILE_NAME}
+
+mkdir $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_NAME
+mkdir $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID
+mkdir $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/2_SOURCE_CODE/
+
+# rm -rf $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/*
+rm -rf $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/*.sw
+rm -rf $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/*.log
+rm -rf $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/*.h5
+rm -rf $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/BeamSol*
+rm -rf $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/Bubbles/*
+
+cp ../2_SOURCE_CODE/*.f90 $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/2_SOURCE_CODE/
+cp ../7_RESULTS/3rd_Paper/BeamForming/xAM/David_200deg_x_3Fnyq_deep_p10/$INPUT_FILE_DAVID ../5_INPUT_FILES/$INPUT_FILE_DAVID
+cp ../7_RESULTS/3rd_Paper/BeamForming/pAM_22el/David_200deg_pam_3Fnyq_deep_p10/$INPUT_FILE_DAVID ../5_INPUT_FILES/$INPUT_FILE_DAVID
+
+val=$(echo "scale=4; -${ShiftInX}/10-0.05" |bc)
+sed "152s/.*/${val}/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
+sed "170s/.*/${val}/" ../5_INPUT_FILES/INCS_TEMP.in > ../5_INPUT_FILES/$INPUT_FILE_DAVID
+sed "83s/.*/td_${A2}_${mode}.dat/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
+sed "85s/.*/apod_${A2}_${mode}.dat/" ../5_INPUT_FILES/INCS_TEMP.in > ../5_INPUT_FILES/$INPUT_FILE_DAVID
+sed "87s/.*/apod_${A2}_${mode}.dat/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
+cp ../5_INPUT_FILES/INCS_TEMP.in ../5_INPUT_FILES/$INPUT_FILE_DAVID
+
+cp ../5_INPUT_FILES/$INPUT_FILE_DAVID $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../7_RESULTS/3rd_Paper/BeamForming/xAM/David_200deg_x_3Fnyq_deep_p13/INCS_Agis_* $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+# cp ../7_RESULTS/3rd_Paper/BeamForming/xAM/David_200deg_${mode}_3Fnyq_deep_p13/td_200deg_${mode}.dat $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+# cp ../7_RESULTS/3rd_Paper/BeamForming/xAM/David_200deg_${mode}_3Fnyq_deep_p13/apod_200deg_${mode}.dat $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../7_RESULTS/3rd_Paper/BeamForming/pAM_22el/David_200deg_${mode}_3Fnyq_deep_p13/td_200deg_${mode}.dat $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp ../7_RESULTS/3rd_Paper/BeamForming/pAM_22el/David_200deg_${mode}_3Fnyq_deep_p13/apod_200deg_${mode}.dat $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cd $INPUT_FOLDER/6_RUN/
+
+# # # HERE WE CREATE THE BASH FILE
+echo "#!/bin/bash  									 															
+   											 															
+#SBATCH --job-name=${OUTPUT_FOLDER_COMPOUND}_${mode}  	 																
+#SBATCH --partition=imphys,general  					 													
+#SBATCH --qos=long           				 															
+###SBATCH --nodes=1-4           					 															
+##SBATCH --constraint=ib  				 																
+##SBATCH --network=IB  				 																	
+#SBATCH --ntasks=150  		 																			
+#SBATCH --cpus-per-task=1     				 															
+#SBATCH --mem-per-cpu=18000M  				 															
+###SBATCH  --exclusive    						 														
+#SBATCH --time=36:00:00       				 															
+#SBATCH --output=$OUT_FILE  					 															
+#SBATCH --error=$ERR_FILE      				 															
+   											 															
+module use /opt/insy/modulefiles  		 															
+module load devtoolset/8			 															
+module load intel  							 															
+   											 															
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64  		
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh  				
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64  		
+   																										
+##ulimit -s unlimited  																						
+##ulimit -l unlimited  																					
+   																										
+# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so  						
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so  															
+export OMP_NUM_THREADS=1  																				
+export MKL_NUM_THREADS=1  																				
+#export MKL_THREADING_LAYER=intel  																		
+#export MKL_DYNAMIC= 'FALSE'  																				
+#export MKL_VERBOSE=1  																					
+srun ../7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_Agis_David_200deg_pam_2_5E4MBs_1_4E5LS $INPUT_FILE_DAVID TESTNeumann ../7_RESULTS/$OUTPUT_FOLDER_DAVID ../7_RESULTS/$OUTPUT_FOLDER_DAVID" > job_INCS_David
+cp $INPUT_FOLDER/6_RUN/job_INCS_David $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+
+sbatch $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/job_INCS_David &
+# sleep 5
+# squeue --format="%.18i %.9P %.80j %.8u %.8T %.10M %.9l %.6D %R" --me
+done
+done
+

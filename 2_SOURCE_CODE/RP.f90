@@ -82,7 +82,7 @@
 	logical					::  log_isnan
     
     call ScattererInit()
-    call R_exp(iBubble) 
+    call R_exp(iBubble)  
       
 	! If ScattererParams(cSourceParams%iScCloud)%rad_norm = ScattererParams(cSourceParams%iScCloud)%R0 , The result of the RP Solver is normalized to x = R/ScattererParams(cSourceParams%iScCloud)%rad_norm = R/R0 , so the solved value is multiplied by ScattererParams(cSourceParams%iScCloud)%R0 at the end of the code
     ! atol and rtol shoudld be 1E-5
@@ -100,13 +100,13 @@
 	endif 
 
     itol = 2            !  if atol scalar, itol = 1 and  if atol array, itol = 2, if atol and rtol array, itol = 4
-    rtol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-10.0D0)
-    atol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-10.0D0)
-	
+    rtol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-8.0D0)
+    atol = 10.0**(floor(log10(ScattererParams(cSourceParams%iScCloud)%R0(iBubble)/ScattererParams(cSourceParams%iScCloud)%rad_norm))-8.0D0)
+	 
 	dTaperSupportWindowN = dTaperingWindow(n_samples,(RealTimeIn(2)-RealTimeIn(1))* cModelParams%freq0,2.0_dp,2.0_dp)
 
     ALLOCATE(ScattererParams(cSourceParams%iScCloud)%P_driv(n_samples ),ScattererParams(cSourceParams%iScCloud)%T_driv(n_samples ))
-	ScattererParams(cSourceParams%iScCloud)%P_driv = RealPressIn !* dTaperSupportWindowN
+	ScattererParams(cSourceParams%iScCloud)%P_driv = RealPressIn * dTaperSupportWindowN
 	ScattererParams(cSourceParams%iScCloud)%T_driv = RealTimeIn * ScattererParams(cSourceParams%iScCloud)%time_norm
 	
 	! Medium parameters (water, Room temperature =20° and 1 atm ambient pressure) 
@@ -158,15 +158,16 @@
 						write(*,*) "Tolerance factor used ", TOLSF
 						ATOL_UP = ATOL_UP * TOLSF * 2.0D0
 						RTOL_UP = RTOL_UP * TOLSF * 2.0D0
+						ISTATE = 3
 						if (ATOL_UP(1) .GE. atol(1)*8.0D0) then; ITASK = 4; ISTATE = 2;RWORK(1) = tout; end if
 					elseif (ISTATE == -1) then
 						IWORK(6)=0 
 						IWORK(6) = INT(IWORK(11)*1.5, i4b);
-						tout = ScattererParams(cSourceParams%iScCloud)%T_driv(iout) + 1D-15;
-						write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
-						write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
+						! tout = ScattererParams(cSourceParams%iScCloud)%T_driv(iout) + 1D-15;
+						! write(*,*) "MAXSTEPS, MXSTEPS USED BEFORE " , IWORK(6), IWORK(11)
+						! write(*,*) "Updated tolerance : ", ATOL_UP,RTOL_UP
 						ISTATE = 3
-					elseif(ISTATE == -3) then
+					elseif(ISTATE == -3) then 
 						RWORK(5:7) = 0 ; IWORK(5:7) = 0;
 						tout = RWORK(13)-RWORK(11)/2.0D0
 						ATOL_UP = ATOL_UP  * 2.0D0
@@ -183,8 +184,8 @@
 					else
 						write(*,*) "ISTATE = " ,ISTATE
 						ISTATE = 3
-					endif
-					
+					endif  
+					 
 					call dlsoda(MARMOTTANT,NEQ_ODEPACK,y,t,tout,itol,RTOL_UP,ATOL_UP,itask,istate,iopt,rwork,lrw,iwork,liw,JACDUM,jt)
 					
 					IF (ISTATE>0) RWORK((/5,7,8,9/)) = 0 
@@ -192,7 +193,7 @@
 					
 				end do
 				R_bub(iout,:) = y(1:3)
-				RealTimeOut(iout) = t 
+				RealTimeOut(iout) = t
 				
 		enddo
 	endif 
@@ -203,7 +204,7 @@
 	! Find volume acceleration d^2V/dt^2 [m^3/s^2] 
     ! This way the temporal derivative is calculated analytically so a spectral difference method is not needed.
     V_dd_pad = REAL(4.0D0*pi*R_bub(:,1)*(R_bub(:,1)*R_bub(:,3)+2.0D0*R_bub(:,2)**2),dp)!*dTaperSupportWindowN
-	P_bub  = REAL( ScattererParams(cSourceParams%iScCloud)%P_g0*( R_bub(:,1) /ScattererParams(cSourceParams%iScCloud)%R0(iBubble) )**(-3.0D0*ScattererParams(cSourceParams%iScCloud)%gama) * (1.0D0-3.0D0*ScattererParams(cSourceParams%iScCloud)%gama/cMediumParams%c0 * R_bub(:,2)),dp)
+	! P_bub  = REAL( ScattererParams(cSourceParams%iScCloud)%P_g0*( R_bub(:,1) /ScattererParams(cSourceParams%iScCloud)%R0(iBubble) )**(-3.0D0*ScattererParams(cSourceParams%iScCloud)%gama) * (1.0D0-3.0D0*ScattererParams(cSourceParams%iScCloud)%gama/cMediumParams%c0 * R_bub(:,2)),dp)
 	
     DEALLOCATE(ScattererParams(cSourceParams%iScCloud)%P_driv,ScattererParams(cSourceParams%iScCloud)%T_driv)
 	
@@ -240,7 +241,7 @@
     !   sigma_R		  r    dp           surface tension as a function of Radius
     !   P_elas		  r    dp           damping due to surface tension
     !   P_vis		  r    dp           damping due to the viscosity of the fluid 
-    
+
     integer neq, iBubble
     real(dp) t, R(*), Rdot(*), sigma_R , R_norm(3)
 	real(dp) P_interp(1)  , R_VanderWaals
@@ -248,8 +249,8 @@
 
     iBubble= NINT(R(4))
 	ScattererParams(cSourceParams%iScCloud)%kappa_s  = (1.5D-9)*EXP(8.0D5*ScattererParams(cSourceParams%iScCloud)%R0(iBubble))
-    call INTERP1D(ScattererParams(cSourceParams%iScCloud)%T_driv,ScattererParams(cSourceParams%iScCloud)%P_driv,real((/t/),dp), P_interp);
-	
+    ! call INTERP1D(ScattererParams(cSourceParams%iScCloud)%T_driv,ScattererParams(cSourceParams%iScCloud)%P_driv,real((/t/),dp), P_interp);
+	 P_interp = NINT(R(5))
     ! In this method , the solver solves for x = R/R0 which is easier because it does not have to deal with really low numbers
     ! Accuracy meaning atol and rtol should be increased in this case ( Basically it is the division of the atol and rtol of the other method over R0)
  
@@ -268,7 +269,7 @@
 	! P_gas     =  ScattererParams(cSourceParams%iScCloud)%P_g0*R_VanderWaals
     P_gas     =  ScattererParams(cSourceParams%iScCloud)%P_g0*( R_norm(1) /ScattererParams(cSourceParams%iScCloud)%R0(iBubble) )**(-3.0D0*ScattererParams(cSourceParams%iScCloud)%gama)
 	Damp_ac   =  1.0D0-3.0D0*ScattererParams(cSourceParams%iScCloud)%gama/cMediumParams%c0 * R_norm(2)
-	Damp_visc =  4.0D0*cMediumParams%mu * R_norm(2)/R_norm(1)
+	Damp_visc =  4.0D0*cMediumParams%mu * R_norm(2)/R_norm(1) 
     P_elas    =  2.0D0*sigma_R/R_norm(1)
     P_vis     =  4.0D0*ScattererParams(cSourceParams%iScCloud)%kappa_s * R_norm(2)/R_norm(1)**2
 	P_total   = (P_gas*Damp_ac - cMediumParams%P0 - P_interp(1) - Damp_visc - P_elas - P_vis)

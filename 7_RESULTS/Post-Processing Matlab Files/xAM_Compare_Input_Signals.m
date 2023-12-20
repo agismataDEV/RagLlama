@@ -1,12 +1,12 @@
 function xAM_Compare_Input_Signals
-T_width = 1.87/medium.freq0;
-T_delay = 4.0/medium.freq0 ;% /f0
+T_width = 1.5/medium.freq0;
+T_delay = 3.0/medium.freq0 ;% /f0
 Power = 2;
-OSFactor = 10;
+OSFactor = 1;
 load('15MHz_pulse_for_Agis.mat')
-domain.dtpar_new = 1/(2*medium.freq0*4)/OSFactor;
+domain.dtpar_new = 1/(2*medium.freq0*domain.Fnyq)/OSFactor;
 domain.tpar_new = (1:(domain.tdimpar+1)*OSFactor)* domain.dtpar_new;
-INCS_pulse=4E5*exp( - ((domain.tpar_new-T_delay)/(T_width/2)).^Power).* sin(2*pi*(domain.tpar_new*medium.freq0-T_delay)).* (1 + sign(domain.tpar_new))/2	;
+INCS_pulse=1E5*exp( - ((domain.tpar_new-T_delay)/(T_width/2)).^Power).* sin(2*pi*(domain.tpar_new*medium.freq0-T_delay)).* (1 + sign(domain.tpar_new))/2	;
 % INCS_pulse =max(HF_pulse) /  max(INCS_pulse) * INCS_pulse;
 max(INCS_pulse)
 
@@ -14,12 +14,12 @@ figure('WindowState','Maximized');
 h_f2 = subplot(2,1,1);
 ax = gca;   hold on;
 plot(domain.tpar_new,INCS_pulse*1E-3,'LineWidth',2)
-plot([1:length(HF_pulse)]*1/sampling_freq + T_delay/2+T_width/2,HF_pulse*1E-3,'--','LineWidth',2)
+% plot([1:length(HF_pulse)]*1/sampling_freq + T_delay/2+T_width/2,HF_pulse*1E-3,'--','LineWidth',2)
 % plot(t*1E-6,pulse*1E-3,'--','LineWidth',2)
-xlim([ 1/sampling_freq+ T_delay-T_width length(HF_pulse)*1/sampling_freq+ T_delay-T_width])
+% xlim([ 1/sampling_freq+ T_delay-T_width length(HF_pulse)*1/sampling_freq+ T_delay-T_width])
 legend(['INCS - Tw = ' num2str(T_width*medium.freq0) ', Power = ' , num2str(Power)],'kWave')
-ylabel('Pressure [kPa]')
-xlabel('Time [\mu sec]')
+ylabel('\textit{p} [kPa]')
+xlabel('\textit{t} [$\mu$s]')
 title('Time Signature'); box on;grid on;
 set(gca,'FontSize',20,'XTickLabel',ax.XTick*1e6)
 

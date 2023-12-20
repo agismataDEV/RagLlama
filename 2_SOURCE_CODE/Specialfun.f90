@@ -378,7 +378,7 @@
     end if
     !*** return
     end subroutine cisi4
-	
+
     SUBROUTINE Expint_prime(z,E1p,err)
 
     ! =============================================================================
@@ -557,7 +557,7 @@
     endif
 
     END SUBROUTINE Expint_prime
-
+    
     FUNCTION dSinc(dArg)
 
     ! =============================================================================
@@ -684,46 +684,44 @@
     x = [(x_start + dx*(i-1), i = 1,x_len)]
     END SUBROUTINE LINSPACE
 
-    SUBROUTINE INTERP1D( xData, yData, xVal, yVal )
-    ! Inputs: xData = a vector of the x-values of the data to be interpolated
-    !         yData = a vector of the y-values of the data to be interpolated
-    !         xVal  = a vector of the x-values where interpolation should be performed
-    ! Output: yVal  = a vector of the resulting interpolated values
-    
-    real(dp), intent(in) :: xData(:), yData(:), xVal(:)
-    real(dp), intent(out) :: yVal(:)
-    integer :: inputIndex, dataIndex, i_start, i_end, i_min, i_max,xval_start, xVal_end, max_xData_pos, max_xVal_pos
+    SUBROUTINE INTERP1D(xData, yData, xVal, yVal)
+        ! Inputs: xData = a vector of the x-values of the data to be interpolated
+        !         yData = a vector of the y-values of the data to be interpolated
+        !         xVal  = a vector of the x-values where interpolation should be performed
+        ! Output: yVal  = a vector of the resulting interpolated values
 
-    ! Get length of the vector of X and the one for interpolation
-    max_xData_pos = size(xData,1)
-    max_xVal_pos  = size(xVal,1)
-    
-    ! Find min location at the output X vector where the output value is larger than the input
-    ! This is the starting point of the interpolation 
-    ! if it is greater than the total number of input X, then this means that the first value of output 
-    ! is larger than the last of input. This means that use only the last 2 values for interpolation
-    i_max = maxloc(xVal,DIM = 1, MASK = xVal < xData(max_xData_pos))+1
-    xval_start = max_xData_pos-1;
-    xval_end   = max_xData_pos;
-    
-    yVal(i_max:max_xVal_pos) = (yData(xval_end)-yData(xval_start))*1.0_dp/(xData(xval_end)-xData(xval_start))*(xVal(i_max:max_xVal_pos)-xData(xval_start))+yData(xval_start)
-     
-    ! Find max location at the output X vector where the output value is smaller than the input
-    ! This is the ending point of the interpolation . 
-    i_min = maxloc(xVal, DIM = 1, MASK = xVal< xData(1)) - 1
-    xval_start = 1;
-    xval_end   = 2;
-    
-    yVal(1:i_min) = (yData(xval_end)-yData(xval_start))*1.0_dp/(xData(xval_end)-xData(xval_start))*(xVal(1:i_min)-xData(xval_start))+yData(xval_start)
-    
-    xval_start = i_min+1
-    xval_end = i_max -1 
-    do inputIndex = xval_start,  xval_end
-        i_start = maxloc(xData, 1, xData < xVal(inputIndex))
-        i_end = i_start + 1 
-         
-        yVal(inputIndex) = (yData(i_end)-yData(i_start))*1.0_dp/(xData(i_end)-xData(i_start))*(xVal(inputIndex)-xData(i_start))+yData(i_start)
-    end do
+        real(dp), intent(in) :: xData(:), yData(:), xVal(:)
+        real(dp), intent(out) :: yVal(:)
+        integer :: inputIndex, dataIndex, i_start, i_end, i_min, i_max, xval_start, xVal_end, max_xData_pos, max_xVal_pos
+
+        ! Get length of the vector of X and the one for interpolation
+        max_xData_pos = size(xData, 1)
+        max_xVal_pos = size(xVal, 1)
+
+        ! Find min location at the output X vector where the output value is larger than the input
+        ! This is the starting point of the interpolation
+        ! if it is greater than the total number of input X, then this means that the first value of output
+        ! is larger than the last of input. This means that use only the last 2 values for interpolation
+        i_max = maxloc(xVal, DIM=1, MASK=xVal < xData(max_xData_pos)) + 1
+        xval_start = max_xData_pos - 1; 
+        xval_end = max_xData_pos; 
+        yVal(i_max:max_xVal_pos) = (yData(xval_end) - yData(xval_start))*1.0_dp/(xData(xval_end) - xData(xval_start))*(xVal(i_max:max_xVal_pos) - xData(xval_start)) + yData(xval_start)
+
+        ! Find max location at the output X vector where the output value is smaller than the input
+        ! This is the ending point of the interpolation .
+        i_min = maxloc(xVal, DIM=1, MASK=xVal < xData(1)) - 1
+        xval_start = 1; 
+        xval_end = 2; 
+        yVal(1:i_min) = (yData(xval_end) - yData(xval_start))*1.0_dp/(xData(xval_end) - xData(xval_start))*(xVal(1:i_min) - xData(xval_start)) + yData(xval_start)
+
+        xval_start = i_min + 1
+        xval_end = i_max - 1
+        do inputIndex = xval_start, xval_end
+            i_start = maxloc(xData, 1, xData < xVal(inputIndex))
+            i_end = i_start + 1
+
+            yVal(inputIndex) = (yData(i_end) - yData(i_start))*1.0_dp/(xData(i_end) - xData(i_start))*(xVal(inputIndex) - xData(i_start)) + yData(i_start)
+        end do
     END SUBROUTINE INTERP1D
 
     SUBROUTINE INTERP3D(LOCDATA,FDATA,LOCFINAL,FFINAL)

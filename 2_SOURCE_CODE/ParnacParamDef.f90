@@ -269,12 +269,14 @@ MODULE ParnacParamDef
     !--------------Cluster Parameters--------------
     integer(i8b)   		  			::  N
     real(dp)  			  			::  ClusterDimsRatio(2,3)
+    real(dp)                        ::  ShiftInX
     character(LEN=128)	  			::	Distribution  
     character(LEN=128)	  			::	ScType  
     real(dp)  			  			::  MinInBetweenDist
     integer(i8b)		  			:: 	ClusterSlicesN
     character(LEN=1), allocatable 	:: 	ClusterSliceDim(:)
     integer(i8b),allocatable  		::  OutputIndexes(:)
+    integer                         ::  ScPerCPU 
     
     !------------------ Bubble parameters
     

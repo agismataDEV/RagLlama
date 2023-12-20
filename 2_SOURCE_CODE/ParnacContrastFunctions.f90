@@ -3611,7 +3611,7 @@ CONTAINS
         if ((cModelParams%xyzslicebeam(i) == 0) .or. (cModelParams%xyzslicebeam(i) == -1)) then
             filename = trim(trim(sOutputDir)//trim('MediumNLCST')//int2str(cModelParams%iIter))//'_'//cModelParams%xyzslicedim(i)// &
                        int2str(i)//int2str(0)
-
+ 
             if (cModelParams%xyzslicedim(i) == 't') then
                 call ExportSlice(trim(filename), "p", cSpace, &
                                  (/cModelParams%xyzsliceindex(i), 0_i8b, 0_i8b, 0_i8b/), &
@@ -10700,14 +10700,14 @@ CONTAINS
         call PrintToLog("Compute the Lagrangian Density", 1)
 
         pcGrid => cSpace%cGrid
-        ! call InitSpace(cSpaceTemp, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
-        !                cSpace%iDimT, cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
-        !                cSpace%iStartT, cSpace%iStartX, cSpace%iStartY, cSpace%iStartZ, &
-        !                0_i8b, 0_i8b, 0_i8b, &
-        !                cSpace%dFnyq, cSpace%dTanX, cSpace%dTanY, cSpace%dTanT)
-        ! call InitGrid(cSpaceTemp, pcGrid%iProcN, pcGrid%iProcID, (/.false., .false., .false., .false./));
-        ! call GridDistr0CreateEmpty(cSpaceTemp%cGrid);
-        ! cSpaceTemp%cGrid%parD0 = pcGrid%parD0
+        call InitSpace(cSpaceTemp, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
+                       cSpace%iDimT, cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
+                       cSpace%iStartT, cSpace%iStartX, cSpace%iStartY, cSpace%iStartZ, &
+                       0_i8b, 0_i8b, 0_i8b, &
+                       cSpace%dFnyq, cSpace%dTanX, cSpace%dTanY, cSpace%dTanT)
+        call InitGrid(cSpaceTemp, pcGrid%iProcN, pcGrid%iProcID, (/.false., .false., .false., .false./));
+        call GridDistr0CreateEmpty(cSpaceTemp%cGrid);
+        cSpaceTemp%cGrid%parD0 = pcGrid%parD0
 
         call InitSpace(phi, cSpace%iSpaceIdentifier, cSpace%bYSymm, &
                        cSpace%iDimT, cSpace%iDimX, cSpace%iDimY, cSpace%iDimZ, &
@@ -10842,7 +10842,7 @@ CONTAINS
             ! Each complex value stores two values of t, so we have to differentiate them both
             ! As differentiation is a simple scalar multiplication and addition,
             ! this happens automatically (real -> real, imag -> imag)
-            call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorX, .false., 1)
+            call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorX, .true., 1)
 
             arBuffer1square = real(pcGrid%pacD2(iStart + 1:iStart + iDimX), dp)
             arBuffer2square = dimag(pcGrid%pacD2(iStart + 1:iStart + iDimX))
@@ -10859,36 +10859,38 @@ CONTAINS
 
         call PrintToLog("Multiply the velocity potential with the ky", 2)
 
-        ! ALLOCATE (arBuffer(iDimY_Wrap))
-        ! call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D, iDimY_Wrap, arBuffer, arBuffer, fftw_forward, fftw_estimate)
-        ! call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D_inv, iDimY_Wrap, arBuffer, arBuffer, fftw_backward, fftw_estimate)
-        ! arBuffer = 0;
+        ALLOCATE (arBuffer(iDimY_Wrap), arBuffer1square(iDimY + wrap_error_padY), arBuffer2square(iDimY + wrap_error_padY))
+        call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D, iDimY_Wrap, arBuffer, arBuffer, fftw_forward, fftw_estimate)
+        call dfftw_plan_dft_1d(phi%cGrid%cTransforms%iPlanTransform1D_inv, iDimY_Wrap, arBuffer, arBuffer, fftw_backward, fftw_estimate)
+        arBuffer = 0;
 
-        ! do iLt = 0, phi%cGrid%iD2LocN - 1 ! This is the loop for time instants stored locally
+        do iLt = 0, phi%cGrid%iD2LocN - 1 ! This is the loop for time instants stored locally
 
-        !     ! This is the index that takes into account for the different starting point corresponding to a given time index
-        !     Timestart = 0 + phi%cGrid%iD2IS*iLt
+            ! This is the index that takes into account for the different starting point corresponding to a given time index
+            Timestart = 0 + phi%cGrid%iD2IS*iLt
 
-        !     do iLx = 0, iDimX - 1 ! This is the loop for x points
+            do iLx = 0, iDimX - 1 ! This is the loop for x points
 
-        !         ! Now we calculate dxk p^2 so that afterwards we can apply the derivative to this term
-        !         do iIndex = 0, iDimZ - 1 ! This is the loop for z points
-        !             iStart = iLx + Timestart + phi%cGrid%iD2ZS*iIndex
-        !             arBuffer = 0;
-        !             arBuffer(1 + wrap_error_pad_MirrorY:iDimY_Wrap) = phi%cGrid%pacD2(iStart + 1:iStart + phi%cGrid%iD2ZS:phi%cGrid%iD2YS)
-        !             if (cSpace%bYSymm .EQV. .true.) arBuffer(1:wrap_error_pad_MirrorY) = arBuffer(iDimY_Wrap:wrap_error_pad_MirrorY + 2:-1)
-        !             call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorY, .false., 1)
+                ! Now we calculate dxk p^2 so that afterwards we can apply the derivative to this term
+                do iIndex = 0, iDimZ - 1 ! This is the loop for z points
+                    iStart = iLx + Timestart + phi%cGrid%iD2ZS*iIndex
+                    arBuffer = 0;
+                    arBuffer(1 + wrap_error_pad_MirrorY:iDimY_Wrap) = phi%cGrid%pacD2(iStart + 1:iStart + phi%cGrid%iD2ZS:phi%cGrid%iD2YS)
+                    if (cSpace%bYSymm .EQV. .true.) arBuffer(1:wrap_error_pad_MirrorY) = arBuffer(iDimY_Wrap:wrap_error_pad_MirrorY + 2:-1)
+                    
+                    call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorY, .true., 1)
+                    arBuffer1square = real(arBuffer(1 + wrap_error_pad_MirrorY:iDimY_Wrap), dp)
+                    arBuffer2square = dimag(arBuffer(1 + wrap_error_pad_MirrorY:iDimY_Wrap))
 
-        !             pcGrid%pacD2(iStart + 1:iStart + phi%cGrid%iD2ZS:phi%cGrid%iD2YS) = &
-        !             pcGrid%pacD2(iStart + 1:iStart + phi%cGrid%iD2ZS:phi%cGrid%iD2YS) + &
-        !             (real(arBuffer(1 + wrap_error_pad_MirrorY:iDimY_Wrap), dp)**2 + im*dimag(arBuffer(1 + wrap_error_pad_MirrorY:iDimY_Wrap))**2)
-        !         end do
-        !     end do
-        ! end do
+                    pcGrid%pacD2(iStart + 1:iStart + phi%cGrid%iD2ZS:phi%cGrid%iD2YS) = &
+                    pcGrid%pacD2(iStart + 1:iStart + phi%cGrid%iD2ZS:phi%cGrid%iD2YS) + arBuffer1square**2 + im*arBuffer2square**2
+                end do
+            end do
+        end do
 
-        ! call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D)
-        ! call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D_inv)
-        ! DEALLOCATE (arBuffer)
+        call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D)
+        call dfftw_destroy_plan(phi%cGrid%cTransforms%iPlanTransform1D_inv)
+        DEALLOCATE (arBuffer, arBuffer1square, arBuffer2square)
 
         ! ! ! ============================= COMPUTE THE Z COMPONENT ============================================================
         call PrintToLog("Multiply the velocity potential with the kz", 2)
@@ -10914,7 +10916,7 @@ CONTAINS
                 arBuffer(wrap_error_padZ + 1:iDimZ_Wrap - wrap_error_padZ) = phi%cGrid%pacD2(iStart + 1:iStart + phi%cGrid%iD2IS:phi%cGrid%iD2ZS)
 
                 ! Compute the 1st spatial derivative  in the z direction
-                call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorZ, .false., 1)
+                call SpatialDerivative_w_wo_Ali(phi, cDerivLookup, arBuffer, dKvectorZ, .true., 1)
                 arBuffer1square = real(arBuffer(wrap_error_padZ + 1:iDimZ_Wrap - wrap_error_padZ), dp)
                 arBuffer2square = dimag(arBuffer(wrap_error_padZ + 1:iDimZ_Wrap - wrap_error_padZ))
 
@@ -11286,10 +11288,9 @@ CONTAINS
         ! end do
         ! pcGrid%parD0 = pcGrid%parD0 + phi%cGrid%parD0
         !============================================================================================================================================
-        ! call NonlinContrastOperator_Ali(cSpaceTemp);
-        ! pcGrid%parD0 = pcGrid%parD0 + cSpaceTemp%cGrid%parD0
-        ! call DestructSpace(cSpaceTemp)
-
+        call NonlinContrastOperator_Ali(cSpaceTemp);
+        pcGrid%parD0 = pcGrid%parD0 + cSpaceTemp%cGrid%parD0
+        call DestructSpace(cSpaceTemp)
         DEALLOCATE (dTaperZ)
         DEALLOCATE (dTaperMaxFreqWindow)
     END SUBROUTINE LagrangianDensity_Ali
@@ -11674,7 +11675,7 @@ CONTAINS
             end if
 
             ! Compute the 2nd spatial derivative either using FFT or with FD
-            call SpatialDerivative_w_wo_Ali(phiSliceMirror, cDerivLookup, arBuffer, dKVectorRealXYZ, .true., 2)
+            call SpatialDerivative_w_wo_Ali(phiSliceMirror, cDerivLookup, arBuffer, dKVectorRealXYZ, .false., 2)
 
             call PrintToLog("Put Field slice", 4)
             ! Return the part of the array that is of interest to the initial phi space.
@@ -11764,7 +11765,7 @@ CONTAINS
             end if
 
             ! Compute the 2nd spatial derivative either using FFT or with FD
-            call SpatialDerivative_w_wo_Ali(phiSliceMirror, cDerivLookup, arBuffer, dKVectorRealXYZ, .true., 2)
+            call SpatialDerivative_w_wo_Ali(phiSliceMirror, cDerivLookup, arBuffer, dKVectorRealXYZ, .false., 2)
 
             call PrintToLog("Put Field slice", 4)
             ! Return the part of the array that is of interest to the initial phi space.
@@ -11835,7 +11836,7 @@ CONTAINS
 
         dRightBand = 0.0D0; !(cSourceParams.Twidth + cSourceParams.Tdelay)/cSpace%dDt;
         dLeftBand = CEILING(ABS(cModelParams.Sz)/cSpace%dDx) + (cSourceParams.Twidth + cSourceParams.Tdelay)/cSpace%dDt; 
-        dTaperZ = dTaperingWindow(cSpace%iDimZ, cSpace%dDx, dRightBand, dLeftBand * cSpace%dDx)
+        dTaperZ = dTaperingWindow(cSpace%iDimZ, cSpace%dDx, dLeftBand * cSpace%dDx, dLeftBand * cSpace%dDx)
         dTaperY = dTaperingWindow(cSpace%iDimY, cSpace%dDx, dRightBand, dLeftBand * cSpace%dDx)
         dTaperX = dTaperingWindow(cSpace%iDimX, cSpace%dDx,  dLeftBand * cSpace%dDx, dLeftBand * cSpace%dDx)
         do iLt = 0, phi%cGrid%iD2LocN - 1! This is the loop for time instants stored locally

@@ -974,7 +974,7 @@ CONTAINS
 !   b0,b1,b2,b3    dp    constants for the blackman pulse
 !   acTemp         char  temporary char array for output log messages
 !
-        integer(i8b) :: i, Ksource, Ktsource
+        integer(i8b) :: i, Ksource, Ktsource, IS,IE
         real(dp), allocatable :: taxis(:), Signaturetemp(:), A_const(:)
         character(LEN=2048) ::                acTemp; 
         !blackman pulse, constants
@@ -1030,9 +1030,13 @@ CONTAINS
                         *(dsign(1.0_dp, taxis(1:Ksource) - cSourceParams%Tdelay) - dsign(1.0_dp, taxis(1:Ksource) - cSourceParams%Tdelay - cSourceParams%Tpulse))/2.0_dp
         
 		else if (cSourceParams%srcsigntype == iGI_INTEGRABLE) then
-            Signature = cSourceParams%Pstart*sin(two_pi*(taxis - cSourceParams%Tdelay))*exp(-A_const**cSourceParams%power)
-            Signature((cSourceParams%Twidth + cSourceParams%Tdelay)/dDt:Ksource) = 0; 
-            Signature(1:(cSourceParams%Tdelay)/dDt) = 0; 
+            Signature = 0.0D0;
+            IS = cSourceParams%Tdelay/dDt; 
+            IE = (cSourceParams%Tdelay+cSourceParams%Twidth)/dDt
+            Signature(IS:IE) = cSourceParams%Pstart*sin(two_pi*(taxis(IS:IE)))!*exp(-A_const**cSourceParams%power)
+            ! Signature = cSourceParams%Pstart*sin(two_pi*(taxis - cSourceParams%Tdelay))!*exp(-A_const**cSourceParams%power)
+            ! Signature((cSourceParams%Twidth + cSourceParams%Tdelay)/dDt:Ksource) = 0; 
+            ! Signature(1:(cSourceParams%Tdelay)/dDt) = 0; 
 
             ! Signature((cSourceParams%Tdelay)/dDt+1 : (cSourceParams%Twidth + cSourceParams%Tdelay)/dDt) = &
             ! Signature((cSourceParams%Tdelay)/dDt+1 : (cSourceParams%Twidth + cSourceParams%Tdelay)/dDt) * dTaperingWindow( int(cSourceParams%Twidth/dDt - 1,i8b), dDt, 2.0D0, 2.0D0)

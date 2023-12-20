@@ -16,10 +16,10 @@
 ***   domain and discretization parameters    ***
 *************************************************
 6.380010E+000		*** Lx in [mm]
-1.001000E+000		*** Ly in [mm]
-0.800000E+002		*** Lt in [cycles]
+1.601000E+000		*** Ly in [mm]
+1.250000E+002		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
-1.000000E+001		*** Lz in [mm]	(length of the field in z)
+0.820000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E+000		*** Thetat [rad]
@@ -42,7 +42,7 @@ scatterer
 0		*** Switch: Use Symmetry in the Y axis
 0		*** Switch: Use Perfectly Matched Layer
 1		*** Number of beams in which the total field is split
-7		*** Number of iterations of the first beam
+6		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 5		*** Number of slices to be stored
@@ -74,17 +74,17 @@ phasedarray
 *** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), TimeDelayFilename, PhaseApodFilename
 64			*** Number of elements
 0.0800000	*** Element width
-1.0000000  	*** Element height
+1.6000000  	*** Element height
 0.0200000	*** Kerf
 0.0000000	*** Focus x
 1.00000E+30	*** Focus z
 8.00000E+00	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-td_0deg_x.dat *** td_210deg_left.dat
+td_200deg_x.dat *** td_210deg_left.dat
 ***   apodization in azimuthal X inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_0deg_x.dat *** apod_210deg_left.dat
+apod_200deg_x.dat *** apod_210deg_left.dat
 ***   apodization in elevation Y inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_0deg_x.dat *** apod_210deg_left.dat
+apod_200deg_x.dat *** apod_210deg_left.dat
 ***************************
 ***  Switches  		***
 ***************************
@@ -130,7 +130,7 @@ apod_0deg_x.dat *** apod_210deg_left.dat
 **********************************
 *** Parameters-Bubble Cluster  ***
 **********************************
-1		        ***	Number of cloud of scatterers 
+2		        ***	Number of cloud of scatterers 
 ***************************
 microbubble		***	type of scatterer
 5.800000E-009   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
@@ -141,14 +141,33 @@ microbubble		***	type of scatterer
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius	*** Normalize , 'none', 'time', 'radius', 'time_and_radius'
 ****
-4.000000E+003	*** No. of Bubbles consisting the cluster
+2.500000E+004	*** No. of Bubbles consisting the cluster
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse	
 6E-7			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
 -1 1     	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
--0.4 0.4 	    *** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
-5.5 7 		    *** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+-0.7 0.7 	    *** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
+4 6 		    *** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+.2     		    *** Shift in Z
+20e-7			*** MinDist 	= Minimum Distance between the bubbles [m]
+0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
+*** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"
+close 
+***************************
+linear		***	type of scatterer
+1.000000E+001   *** rho1	 = Surface dilatational viscosity of shell [kg/sec]
+3.600000E+002   *** c1	 	 = Surface tension of water  [N/m]
+****
+1.400000E+005	*** No. of Bubbles consisting the cluster
+*** monodisperse , Give one value of Bubble Radius
+*** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
+monodisperse	
+6E-7			*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
+-2 2     	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
+-0.7 0.7 	    *** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
+3 7.8 		    *** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+.2    		    *** Shift in X
 20e-7			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"

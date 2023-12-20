@@ -65,6 +65,8 @@ MODULE ParnacConvolution
         TransformT, TransformTInv, &
         TransformXY, TransformXYInv, &
         TransformXYZ, TransformXYZInv
+    USE ParnacPointSourceCloud, ONLY: &
+        TaperContrastXYZ
 
     ! *****************************************************************************
     !
@@ -286,7 +288,8 @@ CONTAINS
         end if
         if (pcGridS%iDistr == 1) then
             call PrintToLog("Convert the source from distribution 1 to 2", 3)
-            call ReorderDistr1ToDistr2(pcGridS); 
+            call ReorderDistr1ToDistr2(pcGridS);  
+            ! call TaperContrastXYZ(pcSpaceS) ! Added by AgisM 01/05/23
         end if
 
         ! 1b) If the source is a primary source or a field slice, test whether we have only 1 layer in z.

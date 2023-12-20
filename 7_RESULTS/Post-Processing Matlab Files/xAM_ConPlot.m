@@ -45,22 +45,22 @@ for i = 1:i_end
     plin.fund   = nan(dims);
     pnl.fund   = nan(dims);
     for k=1:harmonics
-        eval(['pnl.harm_' name{i}  num2str(k) '= nan(dims);']);
+        pnl.harm{k}= nan(dims);
     end
         order = 4;
-    %     for iz=1:dims(2)
-    %         plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
-    %         plin.nd((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,1.7*medium.freq0,2.3*medium.freq0,order);
-    %         pnl.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert( squeeze(pnl.xwave_data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
-    %         for k = 1: harmonics
-    %             eval(['pnl.harm_' name{i}  num2str(k) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(k-0.3) '*medium.freq0,' num2str(k+0.3) '*medium.freq0,order));']);
-    %         end
-    %     end
+        for iz=1:dims(2)
+            plin.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+            plin.nd((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert(squeeze(plin.data(:,:,iz)),domain.dtpar,1.7*medium.freq0,2.3*medium.freq0,order);
+            pnl.fund((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=maxhilbert( squeeze(pnl.xwave_data(:,:,iz)),domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
+            for k = 1: harmonics
+                eval(['pnl.harm_' name{i}  num2str(k) '((1:dims(1))+domain.TXYoff(iz,2)-min(domain.TXYoff(:,2)),iz)=(maxhilbert(squeeze(pharm(:,:,iz)),domain.dtpar,' num2str(k-0.3) '*medium.freq0,' num2str(k+0.3) '*medium.freq0,order));']);
+            end
+        end
     plin.fund = maxhilbert_vec(plin.data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
     pnl.fund  = maxhilbert_vec(pnl.xwave_data,domain.dtpar,.7*medium.freq0,1.3*medium.freq0,order);
     for k = 1: harmonics
-        eval(['pnl.harm_' name{i}  num2str(k) '=maxhilbert_vec(pharm,domain.dtpar,' num2str(k-0.3) '*medium.freq0,' num2str(k+0.3) '*medium.freq0,order);']);
-        eval(['pnl.diff_' name{i}  num2str(k) '=maxhilbert_vec(20*log10(abs(pnl.xwave_data-plin.data)),domain.dtpar,' num2str(k-0.5) '*medium.freq0,' num2str(k+0.5) '*medium.freq0,order);']);
+        pnl.harm{k} =maxhilbert_vec(pharm,domain.dtpar,(k-0.3)*medium.freq0,(k+0.3)*medium.freq0,order);
+        pnl.diff{k} =maxhilbert_vec(pnl.xwave_data-plin.data,domain.dtpar,(k-0.3)*medium.freq0,(k+0.3)*medium.freq0,order);
     end
     %% PLOT THE WAVEFORM SHAPE OF THE 3 DIFFERENT CASES (X,R,L) @ SPECIFIC DEPTH
 %     p_interest = pnl.contrastdata;
@@ -246,51 +246,49 @@ for i = 1:i_end
     splot_div = 1;
     harmonics=1;
     Add = 0;
-    dBVALUES=10;
+    dBVALUES=50;
     
     FontSize = 20;
-    
-    %     f2=figure('WindowState','maximized');
-    %     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin.fund)
-    %     hold on;
-    %     caxis([max(max(plin.fund))-dBVALUES max(max(plin.fund))]+Add)
-    %     title('Linear Pressure Field')
-    %     xlabel(dslice.xlabel )
-    %     ylabel(dslice.ylabel )
-    %     BubbleCluster_Colormaps(file)
-    %     c = colorbar;
-    %     c.Label.String = 'Pressure [MPa]'; c.Label.FontSize = FontSize;
-    %     set(c,'Ticklabels',get(c,'Ticklabels'))
-    %     set(gca,'YDir','normal')
-    %     if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
-    %     set(gcf, 'Color', 'white');
-    %     set(gca,'FontSize',FontSize);
-    %     hold off;
     
     for k = 1: harmonics
         if (Nsubplot~=1 && k-4*floor((k-1)/4)==1); f3=figure('WindowState','maximized'); subplot(Nsubplot/splot_div,Nsubplot/(Nsubplot/splot_div),k-4*floor((k-1)/4)); ...
                 sgtitle(subplot_txt,'FontSize',FontSize+3);  spl = lower(split(subplot_txt1,' ')); ...
         else; figure('WindowState','maximized');end
+    OSFactor = 3;
+    %150 400 600 750
+%     pnl_harmi = squeeze(q_interp(600,:,:))   ;%squeeze(q_hilb(400,:,:).*sign(plin.data(400,:,:)));%20*log10(abs(pnl.AM));
+%     pnl.diff = pnl.data_pw-pnl.data_pw_odd - pnl.data_pw_even;
+    pnl_harmi = 20*log10(rot90(squeeze(max(abs(hilbert(pnl.xwave_data)))),3));%20*log10(squeeze((max(abs(hilbert(interpft(pnl.p100,size(pnl.xwave_data,1)*2)))))));%squeeze((max(abs(hilbert(pnl.xwave_data - plin.data)*1E-3))));% 
     
-%     pnl_harmi = eval(['pnl.harm_' name{i}  num2str(k)])*1E-3;
-%     pnl_harmi= eval(['pnl.diff_' name{i}  num2str(k)]);
-%     pnl_harmi = 20*log10(squeeze(max(abs(pnl.xwave_data))));
-    pnl_harmi = (squeeze(max(abs(pf *1E-3))));
-%     pnl_harmi = squeeze(rot90(q4,3))*1E-3;
-    imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},pnl_harmi)
+    domain.zpar_OS = linspace(domain.par{3}(1),domain.par{3}(end),1*(length(domain.par{3}))+1);
+    domain.xpar_OS = linspace(domain.par{1}(1),domain.par{1}(end),1*(length(domain.par{1}))+1);
+    domain.tpar_OS = linspace(domain.tpar(1),domain.tpar(end),OSFactor*(length(domain.tpar))+1);
     
+    imagesc(domain.xpar_OS, domain.zpar_OS,pnl_harmi)
+%     hold on;plot(xunit,yunit,'--w','LineWidth',3)
     hold on;
+%     for i=1:4
+%         
+%         rect_w =  (0.01*(domain.max_dim(domain.dimval(1))+domain.dypar - (domain.min_dim(domain.dimval(1))-domain.dypar)));
+%         %     r = rectangle('Position',[ScPop{i}.LocRange(1,1)  ScPop{i}.LocRange(3,1) diff(ScPop{i}.LocRange(1,:)) diff(ScPop{i}.LocRange(3,:))],...
+%         %     'EdgeColor',[0.64,0.08,0.18], 'FaceColor' , 'none','LineWidth',4,'LineStyle','--');%'#8BE5D3'); %% Visualization of slice
+%         r = rectangle('Position',[ScPop{i}.LocRange(3,1)  ScPop{i}.LocRange(1,1) diff(ScPop{i}.LocRange(3,:))-rect_w diff(ScPop{i}.LocRange(1,:))-rect_w],...
+%             'EdgeColor',[128,128,128]./255*mod(i,2)+abs(mod(i,2)-1)*[0 128 255]./255, 'FaceColor' , 'none','LineWidth',4,'LineStyle','--');%'#8BE5D3'); %% Visualization of slice
+%     end
     caxis([max(max(pnl_harmi))-dBVALUES max(max(pnl_harmi))]+Add)
-%     title(['Beam Profile - Pressure, ' num2str(domain.angle) ' deg, ' name{i} ', ' num2str(k) 'H, 60% Butterworth Filter'])
-    xlabel(dslice.xlabel )
-    ylabel(dslice.ylabel )
-    xAM_Colormaps(file)
+    c=colorbar;
+%     c.Location='northoutside';
+    t=title('Contrast Pressure Field, 60\%','Interpreter','latex');
+    xlabel(dslice.ylabel )
+    ylabel(dslice.xlabel )
+    xAM_Colormaps(file.plot_colour)
     c = colorbar;
-    c.Label.String = 'Pressure [kPa]'; c.Label.FontSize = FontSize;
     c.Label.Interpreter ='latex';
-    set(gca,'YDir','normal')
-    if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
-    
+    c.Label.String='Normalized pressure [dB re 1 Pa]';
+    c.Label.FontSize = FontSize;
+    set(gca,'YDir','reverse')
+%     if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
+    axis image
     ax = gca;
     ax.FontSize = FontSize;
     set(gcf, 'Color', 'white');

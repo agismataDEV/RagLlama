@@ -1,0 +1,13 @@
+cd ../7_RESULTS/GG_3Media_Shift
+
+
+for press in {25..150..25} ; 
+do
+
+val_shift=$(echo " ${press}/25 -1" |bc)
+export INPUT_FOLDER="1E4MBs_Positive_1_5MHz_${press}Pa_p${val_shift}_long"
+export OUTPUT_FOLDER="1E4MBs_Positive_1_5MHz_${press}kPa_p${val_shift}"
+
+mv $INPUT_FOLDER $OUTPUT_FOLDER
+
+done

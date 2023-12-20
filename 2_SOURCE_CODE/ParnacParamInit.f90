@@ -774,13 +774,16 @@ CONTAINS
                     !CALL RANDOM_NUMBER(ScattererParams(i)%R0)
                     !ScattererParams(i)%R0 = ScattererParams(i)%R0*ScattererParams(i)%PDRange(2) + (1-ScattererParams(i)%R0)*ScattererParams(i)%PDRange(1)
                     errstatus = vslnewstream(STREAM2, VSL_BRNG_MCG31, 1)
-                    errstatus = vdrnggamma(VSL_RNG_METHOD_GAMMA_GNORM_ACCURATE, STREAM2, INT(ScattererParams(i)%N), ScattererParams(i)%R0, 1.2D0, 0.0D0, 1.0D0)
-                    ScattererParams(i)%R0 = (ScattererParams(i)%R0 - MINVAL(ScattererParams(i)%R0))
-                    ScattererParams(i)%R0 = ScattererParams(i)%R0/MAXVAL(ScattererParams(i)%R0)*(ScattererParams(i)%PDRange(2) - ScattererParams(i)%PDRange(1)) + ScattererParams(i)%PDRange(1)
+                    ! errstatus = vdrnggamma(VSL_RNG_METHOD_GAMMA_GNORM_ACCURATE, STREAM2, INT(ScattererParams(i)%N), ScattererParams(i)%R0, 1.2D0, 0.0D0, 1.0D0)
+                    ! ScattererParams(i)%R0 = (ScattererParams(i)%R0 - MINVAL(ScattererParams(i)%R0))
+                    ! ScattererParams(i)%R0 = ScattererParams(i)%R0/MAXVAL(ScattererParams(i)%R0)*(ScattererParams(i)%PDRange(2) - ScattererParams(i)%PDRange(1)) + ScattererParams(i)%PDRange(1)
+                    errstatus = vdrnggaussian( VSL_RNG_METHOD_GAUSSIAN_BOXMULLER, STREAM2, INT(ScattererParams(i)%N), ScattererParams(i)%R0, SUM(ScattererParams(i)%PDRange)*1E6/2.0D0, 0.125D0 )
+                    ScattererParams(i)%R0 = ScattererParams(i)%R0*1E-6;
                 end if
                 read (iImportUNIT, *, IOSTAT=readstatus) ScattererParams(i)%ClusterDimsRatio(:, 1)
                 read (iImportUNIT, *, IOSTAT=readstatus) ScattererParams(i)%ClusterDimsRatio(:, 2) 
                 read (iImportUNIT, *, IOSTAT=readstatus) ScattererParams(i)%ClusterDimsRatio(:, 3)
+                read (iImportUNIT, *, IOSTAT=readstatus) ScattererParams(i)%ShiftinX
                 read (iImportUNIT, *, IOSTAT=readstatus) ScattererParams(i)%MinInBetweenDist
                 read (iImportUNIT, *, IOSTAT=readstatus) ScattererParams(i)%ClusterSlicesN
                 ALLOCATE (ScattererParams(i)%ClusterSliceDim(ScattererParams(i)%ClusterSlicesN))
@@ -1043,6 +1046,7 @@ CONTAINS
                 write (*, '(" [X_Bmin X_Bmax]/ Lx:  ",E10.3,E10.3)') ScattererParams(i)%ClusterDimsRatio(:, 1)
                 write (*, '(" [Y_Bmin Y_Bmax]/ Ly:  ",E10.3,E10.3)') ScattererParams(i)%ClusterDimsRatio(:, 2)
                 write (*, '(" [Z_Bmin Z_Bmax]/ Lz:  ",E10.3,E10.3)') ScattererParams(i)%ClusterDimsRatio(:, 3)
+                write (*, '(" Shift in X dimension:  ",E10.3,E10.3)') ScattererParams(i)%ShiftinX
                 write (*, '(" Minimum Bubble Dist:  ",E10.3)') ScattererParams(i)%MinInBetweenDist
                 write (*, '(" Calculate Pressure to ",A," gridpoints")') trim(ScattererParams(i)%GridPointsPressure)
             enddo

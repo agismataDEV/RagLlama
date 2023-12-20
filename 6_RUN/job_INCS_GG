@@ -1,0 +1,38 @@
+#!/bin/bash  						 															
+   											 															
+#SBATCH --job-name=1E4MBs_Positive_1MHz_poly_75kPa_stronger 	 																
+#SBATCH --partition=imphys,general  					 													
+#SBATCH --qos=medium           				 															
+#SBATCH --nodes=1-2           					 															
+##SBATCH --constraint=ib  				 																
+##SBATCH --network=IB  				 																	
+#SBATCH --ntasks=100  		 																			
+#SBATCH --cpus-per-task=1     				 															
+#SBATCH --mem-per-cpu=5000M  				 															
+###SBATCH  --exclusive    						 														
+#SBATCH --time=04:00:00       				 															
+#SBATCH --output=//tudelft.net/staff-groups/tnw/ist/ak/Promovendi/agismatalliota/INCS_XWAVE/7_RESULTS/GG_3Media_Proof_Concept/1E4MBs_Positive_1MHz_poly_75kPa_stronger/INCS_1E4MBs_Positive_1E4MBs_Positive_1MHz_poly_75kPa_stronger.out  					 															
+#SBATCH --error=//tudelft.net/staff-groups/tnw/ist/ak/Promovendi/agismatalliota/INCS_XWAVE/7_RESULTS/GG_3Media_Proof_Concept/1E4MBs_Positive_1MHz_poly_75kPa_stronger/INCS_1E4MBs_Positive_1E4MBs_Positive_1MHz_poly_75kPa_stronger.err      				 															
+   											 															
+module use /opt/insy/modulefiles  			 															
+module load intel  							 															
+   											 															
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64  		
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh  				
+source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mkl/bin/mklvars.sh intel64  		
+   																										
+##ulimit -s unlimited  																						
+##ulimit -l unlimited  																					
+   							
+export MPIR_CVAR_CH4_OFI_TAG_BITS=31
+export MPIR_CVAR_CH4_OFI_RANK_BITS=8 		
+
+# export I_MPI_PMI_LIBRARY=/home/opt/slurm/slurm-17.11.5/src/api/.libs/libpmi.so  						
+export I_MPI_PMI_LIBRARY=/usr/lib64/libpmi.so  															
+export OMP_NUM_THREADS=1  																				
+export MKL_NUM_THREADS=1  																				
+#export MKL_THREADING_LAYER=intel  																		
+#export MKL_DYNAMIC= 'FALSE'  																				
+#export MKL_VERBOSE=1  			
+			 																							
+srun //tudelft.net/staff-groups/tnw/ist/ak/Promovendi/agismatalliota/INCS_XWAVE/7_RESULTS/GG_3Media_Proof_Concept/1E4MBs_Positive_1MHz_poly_75kPa_stronger/INCS_Agis_1E4MBs_Positive TESTNeumann_GG_planewave_stage1.in TESTNeumann ../7_RESULTS/GG_3Media_Proof_Concept/1E4MBs_Positive_1MHz_poly_75kPa_stronger ../7_RESULTS/GG_3Media_Proof_Concept/1E4MBs_Positive_1MHz_poly_75kPa_stronger

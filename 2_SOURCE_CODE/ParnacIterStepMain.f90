@@ -639,7 +639,7 @@ CONTAINS
             stop
         end if
 
-        ! Compute the contrast
+        ! Compute the contrast 
         call PrintToLog("Compute the contrast operator", 2); 
         if (cModelParams.UseAntiAliasing) then
             select case (iContrastID)
@@ -868,7 +868,7 @@ CONTAINS
         !   SwStartAndCount
         !   PrintToLog
         !   ConvolutionGreen
-        !   SWStop
+        !   SWStop  
         !
         ! =============================================================================
 
@@ -3070,6 +3070,75 @@ CONTAINS
         end do
 
     END SUBROUTINE CopyDataD1
+
+    SUBROUTINE CopyDataD0(cGridSource, cGridDest)
+
+        ! =============================================================================
+        !
+        !   Programmer: Koos Huijssen
+        !
+        !   Language: Fortran 90
+        !
+        !   Version Date    Comment
+        !   ------- -----   -------
+        !   1.0     090505  Original code (KH)
+        !
+        ! *****************************************************************************
+        !
+        !   DESCRIPTION
+        !
+        !   The subroutine CopyDataD1 copies the data from one grid to a grid with
+        !   a smaller time dimension. This subroutine is used for stripping the margin
+        !   in T that was necessary for the d/dz finite difference evaluation. It only
+        !   works for grids in distribution 0. The margin which has to be removed at
+        !   the end of each time trace needs to be given as input.
+        !
+        ! *****************************************************************************
+        !
+        !   INPUT/OUTPUT PARAMETERS
+        !
+        !   cGridSource   io   type(Grid)   Source grid
+        !   cGridDest     io   type(Grid)   Destination grid
+        !   iTMargin      i    i8b          Margin at the beginning of the T dimension
+        !
+        type(Grid), intent(inout)::                cGridSource, cGridDest; 
+        ! *****************************************************************************
+        !
+        !   LOCAL PARAMETERS
+        !
+        !   iT           i8b   loop counter over all time instants in an xyz-position
+        !   iXYZ         i8b   loop counter over all xyz-positions in the beam
+        !   iIndSource   i8b   index of the source data array
+        !   iIndDest     i8b   index of the destination data array
+        !
+        integer(i8b)::                                iT, iXYZ, iIndSource, iIndDest
+
+        ! *****************************************************************************
+        !
+        !   I/O
+        !
+        !   log file entries
+        !
+        ! *****************************************************************************
+        !
+        !   SUBROUTINES/FUNCTIONS CALLED
+        !
+        !   PrintToLog
+        !
+        ! =============================================================================
+
+        call PrintToLog("CopyDataD1", 4)
+
+        ! Copy the contents of the trace without the T margin
+        do iXYZ = 0, cGridSource.iD0LocN - 1
+            do iT = 0, cGridSource.iD0TL - 1
+                iIndSource = 1 + iXYZ*cGridSource.iD0IS + iT*cGridSource.iD0TS; 
+                iIndDest = 1 + iXYZ*cGridDest.iD0IS + iT*cGridDest.iD0TS; 
+                cGridDest.parD0(iIndDest) = cGridSource.parD0(iIndSource); 
+            end do
+        end do
+
+    END SUBROUTINE CopyDataD0
 
     SUBROUTINE CopyDataD2(cGridSource, cGridDest, iXYZMargin)
 

@@ -16,15 +16,15 @@
 ***   domain and discretization parameters    ***
 *************************************************
 6.380010E+000		*** Lx in [mm]
-12.80100E+000		*** Ly in [mm]
-1.200000E+002		*** Lt in [cycles]
+1.601000E+000		*** Ly in [mm]
+1.600000E+002		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
-1.000000E+001		*** Lz in [mm]	(length of the field in z)
+1.500000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E+000		*** Thetat [rad]
 15.00000E+006		*** freq0  = Fundamental frequency [Hz]
-3.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+3.500000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 2					*** Points Per Wavelength
 ************************************
 ***    other model parameters    ***
@@ -58,7 +58,7 @@ z 4.0000
 none
 *** Source signature, choices: "gaussian", "blackman" or filename
 gaussian
-4.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
+1.000000E+005		*** Pstart = Pressure at source surface [Pa] - including 2*pi*f0 for source type 2
 0.600000E+001		*** Tpulse = Length of pulse (in 1/(fundamental freq)) to take into account in calculations
 *** Gaussian specific : Twidth (in 1/freq0), Tdelay (in 1/freq0), Power (integer)
 *** Blackman specific : Tdelay (in 1/freq0)
@@ -74,17 +74,17 @@ phasedarray
 *** phasedarray specific: Number of Elements NEl, El. Width(x, in mm), El. Height(y, in mm), kerf(x, in mm), Focus X (mm), Focus Z (mm), Elevation Focus Z (mm), TimeDelayFilename, PhaseApodFilename
 64			*** Number of elements
 0.0800000	*** Element width
-12.800000  	*** Element height
+1.6000000  	*** Element height
 0.0200000	*** Kerf
 0.0000000	*** Focus x
 1.00000E+30	*** Focus z
-1.00000E+30	*** Elevation focus
+8.00000E+00	*** Elevation focus
 ***   time delay inputfilename    *** Use "standard" for [inputfilename]_td.mat
-td_207deg_x.dat *** td_210deg_left.dat
+td_50deg_left.dat *** td_210deg_left.dat
 ***   apodization in azimuthal X inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_207deg_x.dat *** apod_210deg_left.dat
+apod_50deg_left.dat *** apod_210deg_left.dat
 ***   apodization in elevation Y inputfilename    *** Use "standard" for [inputfilename]_apo.mat
-apod_207deg_x.dat *** apod_210deg_left.dat
+none *** apod_210deg_left.dat
 ***************************
 ***  Switches  		***
 ***************************
