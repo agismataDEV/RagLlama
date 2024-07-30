@@ -11,13 +11,13 @@ objects = 	 $(addprefix $(OBJDIR)/, fftw3.o Types.o Constants.o Cisi.o FDWeight.
 								  ParnacDataSourceInit.o ParnacConvolution.o ParnacIterStepMain.o ParnacMain.o\
 								)  
  
-LIB_PATH_HDF5 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/hdf5_ifort_v1.8.7/lib #-L ~/hdf5_ifort_v1.8.21/lib
-INC_PATH_HDF5 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/hdf5_ifort_v1.8.7/include #-I ~/hdf5_ifort_v1.8.21/include
+LIB_PATH_HDF5 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/LIB_DIR/hdf5_ifort_v1.8.7/lib #-L ~/hdf5_ifort_v1.8.21/lib
+INC_PATH_HDF5 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/LIB_DIR/hdf5_ifort_v1.8.7/include #-I ~/hdf5_ifort_v1.8.21/include
 LIB_PATH_MKL 	= -L ${MKLROOT}/lib/intel64/
 INC_PATH_MKL 	= -I ${MKLROOT}/include
-BIN_PATH_FFTW 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3.3.9/bin
-LIB_PATH_FFTW 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3.3.9/lib
-INC_PATH_FFTW 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/FFTW_3.3.9/include
+BIN_PATH_FFTW 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/LIB_DIR/FFTW_3.3.9/bin
+LIB_PATH_FFTW 	= -L /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/LIB_DIR/FFTW_3.3.9/lib
+INC_PATH_FFTW 	= -I /tudelft.net/staff-bulk/tnw/IST/AK/hpc/agismatalliota/LIB_DIR/FFTW_3.3.9/include
 MTHREAD_OMP     = -lfftw3_omp 
 MTHREAD_FFTW    = -lfftw3_mpi -lfftw3_threads
 

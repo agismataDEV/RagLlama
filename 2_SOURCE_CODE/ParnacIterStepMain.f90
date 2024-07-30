@@ -51,13 +51,7 @@ MODULE ParnacIterStepMain
         iBeamOffsetT, iBeamOffsetX, iBeamOffsetY
     USE ParnacDataMap, ONLY: &
         MapVt, MapVtInv
-    USE ParnacContrastFunctions, ONLY: &
-        NonlinearKappaOperatorDXAli, NonlinearKappaOperatorDYAli, NonlinearKappaOperatorDZAli, &
-        NonlinContrastOperator, NonlinearKappaOperatorDirectionDXAli, &
-        NonlinearKappaOperatorDirectionDYAli, NonlinearKappaOperatorDirectionDZAli, &
-        NonlinearKappaOperatorLinDXAli, NonlinearKappaOperatorLinDYAli, NonlinearKappaOperatorLinDZAli, &
-        NonlinContrastOperator_Ali, Theta2CG_Ali, ConversionCG_Ali, NonlinContrastOperatorlin_Ali, &
-        NonlinContrastOperatorCG_Ali, InhomContrastOperator, InhomContrastOperator_Ali
+    USE ParnacContrastFunctions
     USE ParnacConvolution, ONLY: &
         ConvolutionGreen, ConvolutionGreenConj
     USE ParnacTransformFilter, ONLY: &
@@ -167,12 +161,12 @@ CONTAINS
         integer(i8b)::              iMarginStartZ, iMarginStartT, i
         integer(i8b) ::                                iSourceDimT, iSourceDimX, iSourceDimY
         type(Space)::               cSpaceMargin, cSpaceXYZMargin
-        integer(i8b) ::             aiMargin(4)
+        integer(i8b) ::             aiMargin(4), iLen
         real(dp) ::                                        dTempPhaseDelay
         character(len=1024)::       acTemp
 
         !Filtering and windowing parameters
-        integer(i8b)                ::        iDimW, iStart, iIndex
+        integer(i8b)                ::        iDimW, iStart, iIndex, iOmega
         real(dp)                         ::        dDOmega, dFFTFactor
         real(dp), allocatable         ::        dTaperSupportWindow(:), dTaperMaxFreqWindow(:), dMultFactor(:)
         real(dp)                         ::        dLeftBand, dRightBand, dCorrection
@@ -271,8 +265,6 @@ CONTAINS
         ! the array size resetting only gives extra points at the end, start margin is unaffected
         aiMargin(2) = cSpace%iStartX - (cSpaceMargin%iStartX + iBeamOffsetX(cSpaceMargin, aiMargin(4))); 
         aiMargin(3) = cSpace%iStartY - (cSpaceMargin%iStartY + iBeamOffsetY(cSpaceMargin, aiMargin(4))); 
-!     call PrintToLog("Variables in cSpaceMargin",-1)
-!     call SpaceInfo(cSpaceMargin)
 
         write (acTemp, '("aiMargin in T, X, Y, Z: ", 4I2)') aiMargin
         call PrintToLog(acTemp, 2)
@@ -332,16 +324,19 @@ CONTAINS
         !   - Reorder to distribution 2
         call ReorderDistr0ToDistr1(cSpaceXYZMargin%cGrid); 
         call ReorderDistr1ToDistr2(cSpaceXYZMargin%cGrid); 
+        
         call GridDistr2CreateEmpty(cSpace%cGrid); 
         !   - Strip
         call CopyDataD2(cSpaceXYZMargin%cGrid, cSpace%cGrid, aiMargin(2:4)); 
-!     call PrintToLog("Variables in cSpace",-1)
+!     call PrintToLog("Variables in cSpace",-1) 
 !     call SpaceInfo(cSpace)
 
         !   - Revert to distribution 0
         call DestructSpace(cSpaceXYZMargin); 
+
         call ReorderDistr2ToDistr1(cSpace%cGrid); 
         call ReorderDistr1ToDistr0(cSpace%cGrid); 
+
         cSpace%iSpaceIdentifier = iSI_FIELD; 
         ! Deinitialize
         call SWStop(cswLinStep); 
@@ -441,7 +436,7 @@ CONTAINS
         ! =============================================================================
 
         call SwStartAndCount(cswLinStep); 
-        call PrintToLog("PlanewaveField", 1)
+        call PrintToLog("PrimarySourcetoField", 1)
 
         ! 1) Obtain the source pulse
         ! We need one source trace on each processor.
@@ -455,25 +450,21 @@ CONTAINS
         call InitSource_Planewave(cSource); ! Initialize the source signature as defined in the config file
         ! Configuration is treated as though it is a point source
 
-        if (cSpace%iStartZ == nint(cModelParams.Sz/cSpace%dDx)) then
-            call ExportSlice(trim(sOutputDir)//trim(sOutputRoot)//"src", &
-                             "Source", &
-                             cSource, &
-                             (/0_i8b, 0_i8b, 0_i8b, 0_i8b/), &
-                             (/cSource%iDimT, cSource%iDimX, cSource%iDimY, 1_i8b/), &
-                             cModelParams.xyzsliceindex, cSource%iDimZ, .true.); 
+        if(cSpace%iStartZ==nint(cModelParams.Sz/cSpace%dDx)) then
+            call ExportSlice(        trim(sOutputDir) // trim(sOutputRoot) // "src",&
+                "Source", &
+                cSource, &
+                (/ 0_i8b, 0_i8b, 0_i8b, 0_i8b /), &
+                (/ cSource%iDimT, cSource%iDimX, cSource%iDimY, 1_i8b /), &
+                cModelParams.xyzsliceindex, cSource%iDimZ, .true.);
         end if
-
+        
         ! 2) Transform source pulse in time
         call PrintToLog("Convert the source from distribution 0 to 1", 3)
         call ReorderDistr0ToDistr1(cSource%cGrid); 
         call MapVt(cSource)
         call PrintToLog("Compute the Fourier Transform with respect to the T-axis", 3)
-        !print *, size( cSource%cGrid%pacD1(:))
-        !print *, "Punto di Interesse 1"
         call TransformT(cSource%cGrid)
-        !print *, size( cSource%cGrid%pacD1(:))
-        !print *, "Punto di Interesse 2"
 
         ! 3) Create cSpace grid and fill it with source pulse delayed in z
         ! for each location on this processor:
@@ -481,7 +472,6 @@ CONTAINS
         !        - multiply the source signature with it and put this in the time trace
         call GridDistr1CreateEmpty(cSpace%cGrid); 
         dDiffT = (cSpace%iStartT - cSource%iStartT)*cSpace%dDt
-
         do iLi = 0, cSpace%cGrid%iD0LocN - 1
 
             !Z Position
@@ -528,9 +518,7 @@ CONTAINS
         !   DESCRIPTION
         !
         !   The subroutine PointSourceCloudField computes the primary field solution
-        !   generated from a cloud of point sources. It is assumed as a contrast source
-        !   and then the convolution with the green's function takes place. 
-        !   This is similary to what happens to a point scatterers' cloud.
+        !   generated from a cloud of point sources, having the same amplitude.
         !
         ! *****************************************************************************
         !
@@ -565,8 +553,7 @@ CONTAINS
         end if
 
         call SwStartAndCount(cswLinStep); 
-        cSpace%iSpaceIdentifier = iSI_PRIMARYSOURCE; 
-        call PointSourceCloudOperator(cSpace)  ! This is where the source term is computed
+        call PointSourceCloudOperator(cSpace)
         cSpace%iSpaceIdentifier = iSI_CONTRASTSOURCE; 
         call test_isnan(cSpace)
         call ContrastSourcetoField(cSpace, cSpace, .false.)
@@ -652,7 +639,7 @@ CONTAINS
             stop
         end if
 
-        ! Compute the contrast
+        ! Compute the contrast 
         call PrintToLog("Compute the contrast operator", 2); 
         if (cModelParams.UseAntiAliasing) then
             select case (iContrastID)
@@ -663,7 +650,9 @@ CONTAINS
             case (iCI_NONLINKAPPADZ)
                 call NonlinearKappaOperatorDZAli(cSpace); 
             case (iCI_NONLIN)
-                call NonlinContrastOperator_Ali(cSpace); 
+                call NonlinContrastOperator_Ali(cSpace);
+                ! call LagrangianDensity_Ali(cSpace)
+                ! call LagrangianDensity_Simpl_Ali(cSpace)
             case (iCI_SCATTERER)                                                                    ! A.M Added 29/01/2020
                 call BubbleContrastOperator(cSpace)
             case (iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
@@ -671,8 +660,10 @@ CONTAINS
             end select
         else
             select case (iContrastID)
-            case (iCI_NONLIN)
-                call NonlinContrastOperator(cSpace); 
+            case (iCI_NONLIN) 
+                call NonlinContrastOperator(cSpace);
+                ! call LagrangianDensity_Ali(cSpace)
+                ! call LagrangianDensity_Simpl_Ali(cSpace)
             case (iCI_COMPLEXCONTRAST, iCI_SPHERE, iCI_BLOB, iCI_LUNEBERG)
                 call InhomContrastOperator(cSpace, cInhomContrast); 
             case (iCI_SCATTERER)                                                      ! A.M Added 29/01/2020
@@ -724,7 +715,6 @@ CONTAINS
         !   acTemp       char   Temporary char array for output log messages
         !
         character(LEN=1024)::                        acTemp; 
-        real(dp) :: RandomNumber
         ! *****************************************************************************
         !
         !   I/O
@@ -768,8 +758,7 @@ CONTAINS
                 call BubbleContrastOperator(cSpace)
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             case (iCI_LINCONTRA)                                        !! LCSM L.D. 12-07-2010 6
-                call NonlinContrastOperatorlin_Ali(cSpace, IncSpace);        !! LCSM L.D. 12-07-2010                                     
-                ! call BubbleContrastOperator(cSpace)
+                call NonlinContrastOperatorlin_Ali(cSpace, IncSpace);        !! LCSM L.D. 12-07-2010
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             case (iCI_CGCONTRA)                                         !! CG L.D. 12-07-2010   7
@@ -879,14 +868,14 @@ CONTAINS
         !   SwStartAndCount
         !   PrintToLog
         !   ConvolutionGreen
-        !   SWStop
+        !   SWStop  
         !
         ! =============================================================================
 
         call PrintToLog("ContrastSourcetoField", 1); 
         call SwStartAndCount(cswCorrStep); 
         ! Apply the convolution over it
-        call ConvolutionGreen(cSrcSpace, cDestSpace, inplacemode); 
+        call ConvolutionGreen(cSrcSpace, cDestSpace, inplacemode);  
         ! cDestSpace is now the field
         cDestSpace%iSpaceIdentifier = iSI_FIELD
 
@@ -1384,6 +1373,7 @@ CONTAINS
             call PrintToLog(acTemp, -1)
             stop
         end if
+
         iLast = int(cSpace%cGrid%iD0LocSize/iBlockL); 
         do iLi = 0, iLast - 1
             read (unit=iExportUNIT, iostat=iErr) parBuffer; 
@@ -1401,116 +1391,6 @@ CONTAINS
         call PrintToLog("Free buffer", 3)
 
     END SUBROUTINE LoadField
-
-    SUBROUTINE LoadField_FF(cSpace, acStoredFieldName)
-
-        ! =============================================================================
-        !
-        !   Programmer: Koos Huijssen
-        !
-        !   Language: Fortran 90
-        !
-        !   Version Date    Comment
-        !   ------- -----   -------
-        !   1.0     090505  Original code (KH)
-        !
-        ! *****************************************************************************
-        !
-        !   DESCRIPTION
-        !
-        !   The subroutine LoadField loads the field from a temporary file in the temp
-        !   dir to a given space. The data array is in Distr. 0, it is assumed
-        !   that all other information in the space is correct. The storing was done in
-        !   a blockwise fashion.
-        !
-        ! *****************************************************************************
-        !
-        !   INPUT/OUTPUT PARAMETERS
-        !
-        !   cSpace             io   type(space)  Space to which the data array needs
-        !                                        to be loaded.
-        !   acStoredFieldName  io   char         Filename of the temp storage file.
-        !
-        type(Space), intent(inout)::            cSpace
-        character(*), intent(in):: acStoredFieldName
-
-        ! *****************************************************************************
-        !
-        !   LOCAL PARAMETERS
-        !
-        !   iErr            i8b    Error number
-        !   iLi             i8b    Loop counter over the blocks to load
-        !   iLast           i8b    Index of the last full block
-        !   iBlockL         i8b    Size of the blocks
-        !   parBuffer       dp     Temporary buffer for a block load
-        !   acFilename      char   Total filename including path and suffix
-        !   acTemp          char   Temporary char array for output log messages
-        !
-        integer(i8b)::                          iErr
-        integer(i8b)::                          iLi, iLast; 
-        integer(i8b), parameter::               iBlockL = real(2**20, dp); 
-        real(dp), allocatable::                  parBuffer(:); 
-        character(len=1024)::                   acFileName
-        character(len=1024)::                   acTemp; 
-        ! *****************************************************************************
-        !
-        !   I/O
-        !
-        !   log file entries and loading of the data array from temporary file
-        !
-        ! *****************************************************************************
-        !
-        !   SUBROUTINES/FUNCTIONS CALLED
-        !
-        !   SwStartAndCount
-        !   PrintToLog
-        !   int2str
-        !   SWStop
-        !
-        ! =============================================================================
-
-        call PrintToLog("LoadField", 1)
-
-        if (cSpace%cGrid%iDistr /= 0) then
-            write (acTemp, '("Error occurred during the execution of LoadField, aborting program")'); 
-            call PrintToLog(acTemp, -1); 
-            write (acTemp, '("the grid provided as input is not in distribution 0, but in distribution ", I3, "")') cSpace%cGrid%iDistr; 
-            call PrintToLog(acTemp, -1); 
-            stop
-        end if
-
-        ! We read the original values and put them in cSpace
-
-        allocate (parBuffer(iBlockL)); 
-        iMemAllocated = iMemAllocated + PRODUCT(SHAPE(parBuffer))*dpS
-
-        call PrintToLog("Buffer allocated", 3)
-        call PrintToLog('Read Stored field from disk', 2); 
-        call SwStartAndCount(cswDiskAcces)
-        acFileName = trim(sOutputDir)//acStoredFieldName//int2str(cSpace%cGrid%iProcID); 
-        open (unit=iExportUNIT, file=trim(acFileName), status="OLD", form="UNFORMATTED", iostat=iErr)
-        if (iErr /= 0) then
-            write (acTemp, "('Error in LoadField, file ',A,' does not exist')") trim(acStoredFieldName)
-            call PrintToLog(acTemp, -1)
-            stop
-        end if
-        iLast = int(cSpace%cGrid%iD0LocSize/iBlockL); 
-        do iLi = 0, iLast - 1
-            read (unit=iExportUNIT, iostat=iErr) parBuffer; 
-            cSpace%cGrid%parD0(1 + iLi*iBlockL:(iLi + 1)*iBlockL) = parBuffer
-        end do
-        read (unit=iExportUNIT, iostat=iErr) parBuffer(1:cSpace%cGrid%iD0LocSize - iLast*iBlockL); 
-        cSpace%cGrid%parD0(1 + iLast*iBlockL:cSpace%cGrid%iD0LocSize) = parBuffer(1:cSpace%cGrid%iD0LocSize - iLast*iBlockL)
-        close (unit=iExportUNIT); 
-        call SWStop(cswDiskAcces)
-
-        call SWStop(cswDisk)
-        iMemAllocated = iMemAllocated - PRODUCT(SHAPE(parBuffer))*dpS
-
-        deallocate (parBuffer); 
-        call PrintToLog("Free buffer", 3)
-
-    END SUBROUTINE LoadField_FF
 
     SUBROUTINE AddStoredtoField(cSpace, acStoredFieldName)
 
@@ -2849,8 +2729,7 @@ CONTAINS
         !        end do
 
     !!L.D.
-       
-        do i = 1, cModelParams%numslices 
+        do i = 1, cModelParams%numslices
             if ((cModelParams%xyzslicebeam(i) == iBeam) .or. (cModelParams%xyzslicebeam(i) == -1)) then
                 mmpos = int((i))
                 filename = trim(pszFileName)//'_'//cModelParams%xyzslicedim(i)// &
@@ -2881,6 +2760,7 @@ CONTAINS
             end if
         end do
     !! L.D.
+
     END SUBROUTINE StoreSlices
 
     SUBROUTINE UpdateRRMSerror(cRRMSNorm, cSpace, iBeam, iIteration)
@@ -3192,6 +3072,74 @@ CONTAINS
 
     END SUBROUTINE CopyDataD1
 
+    SUBROUTINE CopyDataD0(cGridSource, cGridDest)
+
+        ! =============================================================================
+        !
+        !   Programmer: Koos Huijssen
+        !
+        !   Language: Fortran 90
+        !
+        !   Version Date    Comment
+        !   ------- -----   -------
+        !   1.0     090505  Original code (KH)
+        !
+        ! *****************************************************************************
+        !
+        !   DESCRIPTION
+        !
+        !   The subroutine CopyDataD1 copies the data from one grid to a grid with
+        !   a smaller time dimension. This subroutine is used for stripping the margin
+        !   in T that was necessary for the d/dz finite difference evaluation. It only
+        !   works for grids in distribution 0. The margin which has to be removed at
+        !   the end of each time trace needs to be given as input.
+        !
+        ! *****************************************************************************
+        !
+        !   INPUT/OUTPUT PARAMETERS
+        !
+        !   cGridSource   io   type(Grid)   Source grid
+        !   cGridDest     io   type(Grid)   Destination grid
+        !   iTMargin      i    i8b          Margin at the beginning of the T dimension
+        !
+        type(Grid), intent(inout)::                cGridSource, cGridDest; 
+        ! *****************************************************************************
+        !
+        !   LOCAL PARAMETERS
+        !
+        !   iT           i8b   loop counter over all time instants in an xyz-position
+        !   iXYZ         i8b   loop counter over all xyz-positions in the beam
+        !   iIndSource   i8b   index of the source data array
+        !   iIndDest     i8b   index of the destination data array
+        !
+        integer(i8b)::                                iT, iXYZ, iIndSource, iIndDest
+
+        ! *****************************************************************************
+        !
+        !   I/O
+        !
+        !   log file entries
+        !
+        ! *****************************************************************************
+        !
+        !   SUBROUTINES/FUNCTIONS CALLED
+        !
+        !   PrintToLog
+        !
+        ! =============================================================================
+
+        call PrintToLog("CopyDataD1", 4)
+
+        ! Copy the contents of the trace without the T margin
+        do iXYZ = 0, cGridSource.iD0LocN - 1
+            do iT = 0, cGridSource.iD0TL - 1
+                iIndSource = 1 + iXYZ*cGridSource.iD0IS + iT*cGridSource.iD0TS; 
+                iIndDest = 1 + iXYZ*cGridDest.iD0IS + iT*cGridDest.iD0TS; 
+                cGridDest.parD0(iIndDest) = cGridSource.parD0(iIndSource); 
+            end do
+        end do
+    END SUBROUTINE CopyDataD0
+
     SUBROUTINE CopyDataD2(cGridSource, cGridDest, iXYZMargin)
 
         ! =============================================================================
@@ -3272,6 +3220,87 @@ CONTAINS
         end do
 
     END SUBROUTINE CopyDataD2
+
+    SUBROUTINE CopyToLargeDataD2(cGridSource, cGridDest, iXYZMargin) 
+
+        ! =============================================================================
+        !
+        !   Programmer: Koos Huijssen
+        !
+        !   Language: Fortran 90
+        !
+        !   Version Date    Comment
+        !   ------- -----   -------
+        !   1.0     090505  Original code (KH)
+        !
+        ! *****************************************************************************
+        !
+        !   DESCRIPTION
+        !
+        !   The subroutine CopyDataD2 copies the data from one grid to a grid with
+        !   smaller dimensions in X,Y and Z. This subroutine is used for stripping the
+        !   margins in X, Y and Z that were necessary for the d/dz finite difference
+        !   evaluation. It only works for grids in distribution 2. The margin which has
+        !   to be removed at the beginning the XYZ dimensions need to be given as
+        !   input.
+        !
+        ! *****************************************************************************
+        !
+        !   INPUT/OUTPUT PARAMETERS
+        !
+        !   cGridSource   io   type(Grid)   Source grid
+        !   cGridDest     io   type(Grid)   Destination grid
+        !   iXYZMargin    i    i8b          Margin at the beginning of the XYZ
+        !                                   dimensions
+        !
+        type(Grid), intent(inout)::                cGridSource, cGridDest; 
+        integer(i8b), intent(in)::                iXYZMargin(:); 
+        ! *****************************************************************************
+        !
+        !   LOCAL PARAMETERS
+        !
+        !   iT           i8b   loop counter over the t-axis in the beam
+        !   iX           i8b   loop counter over the x-axis in the beam
+        !   iY           i8b   loop counter over the y-axis in the beam
+        !   iZ           i8b   loop counter over the z-axis in the beam
+        !   iIndSource   i8b   index of the source data array
+        !   iIndDest     i8b   index of the destination data array
+        !
+        integer(i8b)::                                iT, iX, iY, iZ, iIndSource, iIndDest
+
+        ! *****************************************************************************
+        !
+        !   I/O
+        !
+        !   log file entries
+        !
+        ! *****************************************************************************
+        !
+        !   SUBROUTINES/FUNCTIONS CALLED
+        !
+        !   PrintToLog
+        !
+        ! =============================================================================
+
+        call PrintToLog("CopyDataD2", 4)
+
+        ! Copy the contents of the slices without the XYZ margin
+        do iT = 0, cGridSource.iD2LocN - 1
+            do iY = 0, cGridSource.iD2YL - 1
+                do iX = 0, cGridSource.iD2XL - 1
+                    iIndDest= 1 + iT*cGridDest.iD2IS + (iX + iXYZMargin(1))*cGridDest.iD2XS + (iY + iXYZMargin(2))*cGridDest.iD2YS + iXYZMargin(3)*cGridDest.iD2ZS; 
+                    iIndSource = 1 + iT*cGridSource.iD2IS + iX*cGridSource.iD2XS + iY*cGridSource.iD2YS; 
+                    do iZ = 0, cGridSource.iD2ZL - 1
+
+                        cGridDest.pacD2(iIndDest) = cGridSource.pacD2(iIndSource); 
+                        iIndSource = iIndSource + cGridSource.iD2ZS; 
+                        iIndDest = iIndDest + cGridDest.iD2ZS; 
+                    end do
+                end do
+            end do
+        end do
+
+    END SUBROUTINE CopyToLargeDataD2 
 
     SUBROUTINE test_isnan(cSpace)
 

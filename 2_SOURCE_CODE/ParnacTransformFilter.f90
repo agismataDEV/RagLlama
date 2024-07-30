@@ -1959,7 +1959,6 @@ MODULE ParnacTransformFilter
                         call cisi4((dKcutoff - dOmega)*dRad, dCi1, dSi1)
                         call cisi4((dKcutoff + dOmega)*dRad, dCi2, dSi2)
                         Green(iOmega + 1) = 1.0_dp/(dRad*4.0_dp*pi**2)*(cos(dOmega*dRad)*(dSi1 + dSi2) + sin(dOmega*dRad)*(dCi1 - dCi2 - im*pi))
-                        ! Green(iOmega+1) = 1.0_dp/(dRad*4.0_dp*pi**2)*(cos(dOmega*dRad)*(dSi1 + dSi2 - pi) + sin(dOmega*dRad)*(dCi1 - dCi2)); 
                     end do
             else
                     do iOmega = 0, iDimT

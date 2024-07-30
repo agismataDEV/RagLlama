@@ -60,29 +60,33 @@
     USE ParnacParamDef
     USE ParnacIdentifierDef
 
-    USE ParnacDataSpaceInit, ONLY : &
+
+    USE ParnacDataSpaceInit, ONLY: &
         InitSpaceFromPhysicalDims, InitSpace, InitGrid, DestructSpace, SpaceInfo, &
         GridDistr0CreateEmpty, GridDistr0Deallocate, &
         iBeamOffsetT, iBeamOffsetX, iBeamOffsetY, &
         InitRRMSNorm, DestroyRRMSNorm, &
         InitRRMSPreviousCorrection, DestroyRRMSPreviousCorrection, &
-        InitSaveSlices
-    USE ParnacParamInit, ONLY : &
+        InitSaveSlices, GridDistr2CreateEmpty
+    USE ParnacParamInit, ONLY: &
         ReadCommandLineAndEnvironment, ReadConfigFile, &
         ConfigFileInfo, NormalizeConfigParameters, &
         SpecialChecksConfigParameters
-    USE ParnacIterStepMain, ONLY : &
+    USE ParnacIterStepMain, ONLY: &
         PrimarySourceToField, PlaneWaveField, &
         ContrastSourceToField, ContrastSourcetoFieldConj, FieldToContrastSource, FieldtoContrastSourceLin, & !! LSCM L.D. 12-07-2010
-    CFPlaneSourceToField, &
-        LoadField, StoreField, AddStoredToField, AddStoredtoFieldDFM, SubtractData, SumData, Copydata, SubtractStoredToFieldBis, SubtractStoredToFieldTris, sumsquare, sumandmultiply, sumandmultiplyCG, sumandmultiplyCGbis, sumandmultiplyCGtris, TwoRealValueCalculation, AbsoluteValueCalculation,  &
+        CFPlaneSourceToField, &
+        LoadField, StoreField, AddStoredToField, AddStoredtoFieldDFM, SubtractData, SumData, Copydata, SubtractStoredToFieldBis, SubtractStoredToFieldTris, sumsquare, sumandmultiply, sumandmultiplyCG, sumandmultiplyCGbis, sumandmultiplyCGtris, TwoRealValueCalculation, AbsoluteValueCalculation, &
         LoadPlane, StorePlane, ZeroFirstPlane, &
         StoreSlices, UpdateRRMSError, ExportRRMSError, &
-        test_isnan,PointSourceCloudField
-    USE ParnacContrastFunctions, ONLY : &
+        test_isnan, PointSourceCloudField, CopyDataD2, CopyToLargeDataD2, CopyDataD0
+    USE ParnacContrastFunctions, ONLY: &
         InitContrastSpace
-    USE ParnacOutput, ONLY : &
-        ExportSlice,Print_Error
+    USE ParnacOutput, ONLY: &
+        ExportSlice, Print_Error
+    USE ParnacDataRedist, ONLY: &
+        ReorderDistr0ToDistr1, ReorderDistr1ToDistr2, ReorderDistr2ToDistr1, ReorderDistr1ToDistr0
+
 
 
     !! *****************************************************************************
@@ -2264,13 +2268,40 @@
         ! start Neumann case
         !-----------------------------------------------------------     
         else      
-        	do iIter=1, cModelParams%Numiterations(1+iBeam)-1
-			
-				call PrintToLog("***************************************************************",0)
-				write(acTemp,'("****** Neumann Scheme Calculate Iterative Beam estimate ",I3," for Beam ",I3," *****")') iIter,iBeam
-				call PrintToLog(acTemp,0)
-				call PrintToLog("***************************************************************",0)
+			i = 0
+
+			do iIter = 1, cModelParams%Numiterations(1 + iBeam) - 1
+
+				call PrintToLog("***************************************************************", 0)
+				write (acTemp, '("****** Neumann Scheme Calculate Iterative Beam estimate ",I3," for Beam ",I3," *****")') iIter, iBeam
+				call PrintToLog(acTemp, 0)
+				call PrintToLog("***************************************************************", 0)
 				cModelParams%iIter = iIter
+
+				if(iIter == cModelParams%Numiterations(1 + iBeam) - 1) then
+				   
+					call InitSpace(cBeamCS, iSI_FIELD, cBeam%bYSymm, &
+					cRefBeam%iDimT+i, cRefBeam%iDimX, cRefBeam%iDimY, cRefBeam%iDimZ, &
+					iStartT, iStartX, iStartY, iStartZ, &
+					0_i8b, 0_i8b, 0_i8b, &
+					cRefBeam%dFnyq, cRefBeam%dTanX, cRefBeam%dTanY, cRefBeam%dTanT)
+					call InitGrid(cBeamCS, iProcN, iProcID, (/.false., .false., .false., .false./));
+					call GridDistr0CreateEmpty(cBeamCS%cGrid)
+					call CopyDataD0(cBeam%cGrid, cBeamCS%cGrid)
+					call DestructSpace(cBeam)
+
+					call InitSpace(cBeam, iSI_FIELD, cBeamCS%bYSymm, &
+					cRefBeam%iDimT+i, cRefBeam%iDimX, cRefBeam%iDimY, cRefBeam%iDimZ, &
+					iStartT, iStartX, iStartY, iStartZ, &
+					0_i8b, 0_i8b, 0_i8b, &
+					cRefBeam%dFnyq, cRefBeam%dTanX, cRefBeam%dTanY, cRefBeam%dTanT)
+					call InitGrid(cBeam, iProcN, iProcID, (/.false., .false., .false., .false./));
+					call GridDistr0CreateEmpty(cBeam%cGrid)
+					call CopyDataD0(cBeamCS%cGrid, cBeam%cGrid)
+					call DestructSpace(cBeamCS) 
+
+				endif
+
 				!-----------------------------------------------------------
 				!LCSM - Linearized Neumann
 				!-----------------------------------------------------------
@@ -2348,7 +2379,7 @@
  
 				!--------------------------------------------------------------------------------------------------------
 
-				call UpdateRRMSerror(cRRMSNorm, cBeam, iBeam, iIter)
+				if(iIter < cModelParams%Numiterations(1 + iBeam) - 1) call UpdateRRMSerror(cRRMSNorm, cBeam, iBeam, iIter)
 				! If necessary, add the Previous beam contributions to the current solution
 
 				!!----------------------------------------------------------------- In case beam splitting is implemented
@@ -2380,8 +2411,8 @@
 				    end if
 				else
 					if((    ((cModelParams%Slicesavespecifier==iAI_FIRSTANDLAST) &
-				        .or.(cModelParams%Slicesavespecifier==iAI_LAST))&
-				        .and.iIter==cModelParams%Numiterations(1+iBeam)-1)&
+				        .or.(cModelParams%Slicesavespecifier==iAI_LAST)) &
+				        .and. iIter==cModelParams%Numiterations(1+iBeam)-1) &
 				        .or.(cModelParams%Slicesavespecifier==iAI_ALL)) then
 						call Storeslices(trim(sOutputDir) // trim('ContrastSrc') // int2str(iIter), &
 				                    "p", cBeam, iBeam, .true.)
@@ -2395,6 +2426,7 @@
 					else
 						call AddStoredtoField(cBeam, "BeamSol0"); 
 					end if
+
 				    ! Output slices if required
 				    if((    ((cModelParams%Slicesavespecifier==iAI_FIRSTANDLAST) &
 				        .or.(cModelParams%Slicesavespecifier==iAI_LAST))&
@@ -2409,7 +2441,6 @@
 				! Test whether there is a NaN in cBeam - indication of an error,
 				! no use to continue the program
 				call test_isnan(cBeam)
-				! if (iIter == cModelParams%Numiterations(1+iBeam)-1) call StoreField(cBeam,"BeamSol0")
 				
 	    	end do
     	 end if
@@ -2489,7 +2520,9 @@
     deallocate(cModelParams%numiterations)
     deallocate(cModelParams%xyzslicedim,cModelParams%xyzslicepos,cModelParams%xyzslicebeam,cModelParams%xyzsliceindex)
     if (cModelParams.ContrastSourceType==iCI_SCATTERER ) then
-    	deallocate(ScattererParams%ClusterSliceDim)
+		do i = 1, cSourceParams%ScCloudNo
+			deallocate(ScattererParams(i)%ClusterSliceDim)
+        end do
     endif
     
     ! Deinitialization
