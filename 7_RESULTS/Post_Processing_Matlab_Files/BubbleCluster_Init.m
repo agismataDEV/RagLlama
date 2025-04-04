@@ -43,7 +43,7 @@ for i = 1:length(index_interpreter)
 end
 
 %% Medium Parameters
-medium.freq0               = 1E6;                    %fundamental frequency
+medium.freq0               = 1.5E6;                    %fundamental frequency
 medium.c0                  = 1480;                     % Speed of Sound [m/sec]
 medium.rho0                = 1060;
 medium.dLambdaNN           = medium.c0*1e+3/medium.freq0;
@@ -54,7 +54,7 @@ Bubble.mindist              = 10e-6;
 
 %% Domain Parameters
 
-domain.beamiterations       = 10;
+domain.beamiterations       = 8;
 domain.ibeam                = 0;
 domain.PPW_t                = 2;
 domain.a_t                  = 1; % Co-moving Time window(1), Non-comoving TIme Window(0)
@@ -69,19 +69,13 @@ file.dirname             = '../Paper/PW_2E5MBs_2E5Pa_1ml_9Fnyq_Final';
 file.dirname             = '../GG_3Media_Proof_Concept/1E4MBs_Negative_1MHz_poly_25kPa_stronger';
 file.dirname             = '../ProtonBubble_TestCases/1E6PS_17MHz_SRC10_MB1_6um_1E4_Tapper5';
 file.dirname             = '../test/1PS_1MB_Stronger_offloc_2';
-file.dirname             = '../test/PW_1MHz_2E5Pa_5Fnyq_1E6LS_PD_0_25_0_6_c0_100_rho0_10';
-file.dirname             = '../test/PW_1MHz_2E5Pa_9Fnyq_1E6MBs_MD_1um_Fast';
-% file.dirname             = '../test/PW_1MB_2';
+file.dirname             = '../test/Phased_2_5MHz_2E5Pa_9Fnyq_3E4MBs_7E4LS_PD_long_nl';
+file.dirname             = '../test/PW_1MHz_2E5Pa_9Fnyq_5E4MBs_MD_3_2um_40iter_1E14_v2';
+file.dirname             = '../4th_Paper/Data/Phased_2_5MHz_1E5Pa_9Fnyq_3E4MBs_7E4LS_MD1_4um_long';
+file.dirname             = '../4th_Paper/Data/PW_1MHz_2E5Pa_9Fnyq_5E4MBs_MD_2_8um_40iter_1E14';
+file.dirname             = '../test/60PS_15MHz_SRC8_MB8_6um';
 % file.dirname             = '../test/PW_1MHz_2E5Pa_9Fnyq_5E4MBs_MD_2_8um';
 % file.dirname             = '../test/PW_1MHz_1E3Pa_5Fnyq_1E4MB_PD_0_20_c0_100_rho0_10';
-% file.dirname             = '../test/PW_1LS_4';
-% file.dirname             = '../test/PW_1MHz_2E5Pa_3Fnyq_1E5LS_PD_0_10_c0_100_rho0_10_Neumann';
-% file.dirname             = '../test/1PS_20MHz_SRC_MB2_6um_2E3_15mm_elastic';
-% file.dirname             = '../test/1PS_1MB_al';
-% file.dirname             = '../test/PW_NL_BiCG';
-% file.dirname             = '../test/1E6PS_17MHz_SRC10_MB4_1E4_Tapper5';
-% file.dirname             = 'W:\tnw\IST\AK\hpc\agismatalliota\INCS_3D_PS_CLOUD\7_RESULTS\Paper\Phased_2E5Pa_2micron_1MHz_1E5MBs_90T';
-% file.dirname             = '../test/PW_1E4LS_all_14mm';
 % file.dirname             = '../ProtonBubble/8E2PS_HalfLambda_4E2MB_Random_1_7MHz';
 % file.dirname             = '../ProtonBubbleSync/1E2PS_1E2MB_1_7MHz_1E2Pa_2cycles_regular';
 % file.dirname             = '../ProtonBubble/1E5PS_r1E2Pa_5E1MBs_1_7MHz_cocentric/';
@@ -95,7 +89,7 @@ file.plot_converr        = 'no';
 file.plot_colour         = 'viridis';          % 'gray', 'fake_parula' , 'viridis', 'inferno', 'magma', 'plasma'
 file.saveplot            = 'no';            % 'yes' or 'no'
 file.play_movies         = 'yes';            if (strcmp(file.play_movies,'yes')) ; file.save_movies = 'no'; end
-file.load_contrast_from_file ='no';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
+file.load_contrast_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 file.load_radius_from_file ='yes';         % This is to include the Bubble.Contrast inside the BubbleCluster_LocCon source file
 
 %% Slice Parameters

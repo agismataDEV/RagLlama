@@ -129,6 +129,7 @@ monodisperse
 0.55 0.593	  	*** Bubble Range in X, [ X_Start X_End ] = [ value1 value2] * X_Len
 0.55 0.593 	 	*** Bubble Range in Y, [ Y_Start Y_End ] = [ value1 value2] * Y_Len
 0.55 0.593  	*** Bubble Range in Z, [ Z_Start Z_End ] = [ value1 value2] * Z_Len
+0                   *** Shift of the cloud of scatterers in X direction [mm]
 15e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"

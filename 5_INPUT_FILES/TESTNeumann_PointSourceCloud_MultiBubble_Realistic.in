@@ -17,27 +17,27 @@
 *************************************************
 2.000000E+001		*** Lx in [mm]
 2.000000E+001		*** Ly in [mm]
-6.000000E+001		*** Lt in [cycles]
+5.000000E+001		*** Lt in [cycles]
 0.000000E+000		*** Sz in [mm]	(Start of the field)
-4.000000E+001		*** Lz in [mm]	(length of the field in z)
+2.000000E+001		*** Lz in [mm]	(length of the field in z)
 1.570796E+000		*** Thetax [rad]
 1.570796E+000		*** Thetay [rad]
 1.570796E+000		*** Thetat [rad]
-2000000
-3.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
+1.500000E+006		*** freq0  = Fundamental frequency [Hz]
+5.000000E+000		*** Fnyq   = Maximum frequency of interest (in fundamental freq)
 ************************************
 ***    other model parameters    ***
 ************************************
 *** PrimarySourceType, choices: "qsource", "fsource", "dtqsource", "planewave","pointsourcecloud"
 pointsourcecloud
 *** Parameters for point source cloud
-1
-1.000000E+003	*** Amplitude of One Point Source [Pa] (MonoEnergetic)
-100E-6			***	Distance from point source, where Pressure equal to above value [m] 
+1E6
+1.000000E-002	*** Amplitude of One Point Source [Pa] (MonoEnergetic)
+50E-6			***	Distance from point source, where Pressure equal to above value [m] 
 1E-6			*** R0		= Point Source Radius [m] 
--.0037 .0037
--.0037 .0037
-7.9963 8.0037
+-7.5 7.5
+-7.5 7.5
+8.75 11.25
 4.53E-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 *** Contrast source type, choices: "nonlin", "complexcontrast", "sphere", "luneberg", "blob"
 scatterer
@@ -48,8 +48,9 @@ scatterer
 1		*** Switch: Use Support Tapering in contrast source evaluation	
 1		*** Switch: Use MaxFreq Tapering in contrast source evaluation
 0		***	Switch: Use Symmetry in the Y axis 
+0		*** Switch: Use Perfectly Matched Layer
 1		*** Number of beams in which the total field is split
-10		*** Number of iterations of the first beam
+5		*** Number of iterations of the first beam
 *** Save slices, choices: "firstandlast", "last", "all"
 all
 9		*** Number of slices to be stored
@@ -121,6 +122,9 @@ gaussian
 **********************************
 *** Parameters-Bubble Cluster  ***
 **********************************
+1   	            ***	Number of cloud of scatterers 
+**********************************
+cube		***	domain geometry
 microbubble		***	type of scatterer
 1.000000E-008   *** Kappa_s	 = Surface dilatational viscosity of shell [kg/sec]
 0.072000E+000   *** sigma_w	 = Surface tension of water  [N/m]
@@ -130,14 +134,15 @@ microbubble		***	type of scatterer
 OP				*** Marmottant Solver Method , Runge Kutta (RK) , ODEPACK(OP)
 Minnaert_and_radius *** Normalize , 'none', 'time', 'radius', 'freq0_and_radius','Minnaert_and_radius'
 ****
-2636.7150
+80000
 *** monodisperse , Give one value of Bubble Radius
 *** polydisperse, Give a range of values of Bubble Radius, e.g Rmin Rmax
 monodisperse
 6E-6		*** R0		= Bubble Radius [m] (monodisperse), Rmin Rmax  = Bubble Radius Range (polydisperse)
--4.6250 4.6250
--4.6250 4.6250
-3.3750 12.6250
+-5 5
+-5 5
+5 15
+0                   *** Shift of the cloud of scatterers in X direction [mm]
 10e-6			*** MinDist 	= Minimum Distance between the bubbles [m]
 0				*** Number of Slices inside the Cluster Domain (Equally Located), First is in the middle
 *** calculate pressure in every gridpoint "all" or to Ν gridpoints close to scatterers "close"

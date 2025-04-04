@@ -24,22 +24,23 @@
 % ***********************************************************************************************************
 
 
-function [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,name)
+function [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,name,i)
 %%
+% i=[];
 disp(' ')
 Bubble.N = 1;
 disp('Loading the microbubble cluster location and contrast ...')
 Bubble.LocFile  = zeros(Bubble.N,3);
 
-% Load the bubbles' location from file
-[Bubble.LocNorm,Bubble.N]  = LoadContrastParams(Bubble,file,[name,'_Location',int2string_ICS(domain.beamiterations)], Bubble.LocFile , 'yes', 'r',1);
+[Bubble.LocNorm,Bubble.N]  = LoadContrastParams(Bubble,file,[name,'_Location',int2string_ICS(i),int2string_ICS(domain.beamiterations)], Bubble.LocFile , 'yes', 'r',1);
+
 if Bubble.N>0
     % Load the bubbles' contrast source term value
     Bubble.ConFile  = zeros(Bubble.N,1);
-    Bubble.Contrast = LoadContrastParams(Bubble,file,[name,'_Contrast',int2string_ICS(domain.beamiterations)], Bubble.ConFile , file.load_contrast_from_file, 'rb');
+    Bubble.Contrast = LoadContrastParams(Bubble,file,[name,'_Contrast',int2string_ICS(i),int2string_ICS(domain.beamiterations)], Bubble.ConFile , file.load_contrast_from_file, 'rb');
     % Load the bubbles' radius value
     Bubble.RadFile  = zeros(Bubble.N,1);
-    Bubble.Radius   = LoadContrastParams(Bubble,file,[name,'_Radius',int2string_ICS(domain.beamiterations)], Bubble.RadFile , file.load_radius_from_file,'r');
+    Bubble.Radius   = LoadContrastParams(Bubble,file,[name,'_Radius',int2string_ICS(i),int2string_ICS(domain.beamiterations)], Bubble.RadFile , file.load_radius_from_file);
     
     % Find Location of each microbubble
     Bubble.Loc = Bubble.LocNorm*medium.dLambdaNN;
@@ -48,6 +49,7 @@ if Bubble.N>0
     Bubble.LocGlob(:,1) = Bubble.Loc(:,1) + (domain.TXYstart(2)+domain.TXYoff(1,2)) * domain.dxpar;
     Bubble.LocGlob(:,2) = Bubble.Loc(:,2) + (domain.TXYstart(3)+domain.TXYoff(1,3)) * domain.dypar;
     Bubble.LocGlob(:,3) = Bubble.Loc(:,3) + domain.start(3)*domain.dzpar;
+
     % Find the range of the microbubble cluster , calculated with the
     % dimensions specified in the INCS code
     Bubble.LocRange = [ min(Bubble.LocGlob); max(Bubble.LocGlob)]';
@@ -152,13 +154,15 @@ if (strcmp(load_operator,'yes'))
             if (returnN) ; Bubble.N = length(ReadBubbleParameter)/3; input = zeros(Bubble.N,3);end
             if (iProcID ==0); input = zeros(Bubble.N,length(ReadBubbleParameter)/Bubble.N); end
                 
+
             input(1:Bubble.N,:) = reshape(ReadBubbleParameter,size(input,2),Bubble.N)';
-            if (returnN); input(1:Bubble.N,:) = reshape(ReadBubbleParameter,Bubble.N,size(input,2));end
+%             if (returnN); input(1:Bubble.N,:) = reshape(ReadBubbleParameter,Bubble.N,size(input,2));end
             %         Check if all the values of all the processors are the same
             if iProcID >0
                 if sum(sum(abs(input-input_prev)>1E-26))~=0 ;error(['ERROR in ',filename]); return; end
             end
             input_prev = input ;
+
         else
             Bubble.N = 0;
         end
@@ -167,3 +171,4 @@ end
 BubbleN = Bubble.N;
 output = input;
 end
+           

@@ -50,12 +50,12 @@ if (strcmp(file.play_movies,'yes'))
     i_end = sizeP(1);
     plot_value = 20*log10(abs(pnl.contrastdata));
     AddedDb = 0;
-    dBVALUES = 70;(max(plot_value,[],'all')+AddedDb)*2;
+    dBVALUES = 60;(max(plot_value,[],'all')+AddedDb)*2;
 %     if (domain.a_t) ;plot_value = Scatter_Field;end
     
     %% ========================= Initialize first frame=========================
     % This is done to speedup the process of making images , the most time is lost in making the plots
-    mov = VideoWriter('SRC10_MB4_Incident_elastic_dB.avi','Motion JPEG AVI');
+    mov = VideoWriter('test.avi','Motion JPEG AVI');
     mov.FrameRate = 20; mov.Quality = 75;
     open(mov);
     
@@ -68,20 +68,20 @@ if (strcmp(file.play_movies,'yes'))
     hold on;
     caxis(ax,max(plot_value,[],'all')+AddedDb+[-dBVALUES 0] )
 % caxis([36 106])
-    if Bubble.N >10
-         rectangle(ax,'Position',[Bubble.LocRange(3,1) Bubble.LocRange(1,1) Bubble.LocRange(3,2)-Bubble.LocRange(3,1) Bubble.LocRange(1,2)-Bubble.LocRange(1,1)],'LineStyle','--','EdgeColor','white','LineWidth',4)
-       elseif (Bubble.N <=10 && Bubble.N > 0)
-        plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
-    end
-    if (isfield(PS,'LocRange')) 
-        if PS.N >10
-             rectangle(ax,'Position',[PS.LocRange(3,1) PS.LocRange(1,1) PS.LocRange(3,2)-PS.LocRange(3,1) PS.LocRange(1,2)-PS.LocRange(1,1)],'LineStyle','--','EdgeColor','red','LineWidth',2)
-        elseif (PS.N <=10 && PS.N > 0)
-            plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
-    %         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
-    %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
-        end
-    end
+%     if Bubble.N >10
+%          rectangle(ax,'Position',[Bubble.LocRange(3,1) Bubble.LocRange(1,1) Bubble.LocRange(3,2)-Bubble.LocRange(3,1) Bubble.LocRange(1,2)-Bubble.LocRange(1,1)],'LineStyle','--','EdgeColor','white','LineWidth',4)
+%        elseif (Bubble.N <=10 && Bubble.N > 0)
+%         plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
+%     end
+%     if (isfield(PS,'LocRange')) 
+%         if PS.N >10
+%              rectangle(ax,'Position',[PS.LocRange(3,1) PS.LocRange(1,1) PS.LocRange(3,2)-PS.LocRange(3,1) PS.LocRange(1,2)-PS.LocRange(1,1)],'LineStyle','--','EdgeColor','red','LineWidth',2)
+%         elseif (PS.N <=10 && PS.N > 0)
+%             plot(ax,Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color',[0.8 0.8 0.8],'MarkerSize',10,'LineWidth',3)
+%     %         plot(ax,domain.par{3}(30),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
+%     %         plot(ax,domain.par{3}(130),domain.par{1}(80),'x','Color','green','MarkerSize',10,'LineWidth',3)
+%         end
+%     end
     title_txt = 'Incident Pressure Field , $t_i = $';
 %     title_txt = 'Linear Pressure Field , $t_i = $';
 %     if (sum(sum(sum(plot_value==Linear_Field)))==numel(plot_value)) ;title_txt = 'Linear Pressure Field, t_i = ';end

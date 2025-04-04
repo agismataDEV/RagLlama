@@ -112,24 +112,34 @@ for i = 1:i_end
     Add = 0;
     i=10;
     j=4;
+	Bubble=ScPop{1};
+    PS=ScPop{2};
 %     plin_plot = squeeze(20*log10(max(abs(pnl.data_40{i,j}-plin.data_40{i}))));
-    plin_plot = squeeze(20*log10(max(abs(pPD.data))))-20*log10(2E5);
-    FontSize = 25;
+    plin_plot = squeeze(20*log10(max(abs(hilbert(plin.data)))));
+        FontSize = 25;
     
     f4=figure('WindowState','maximized');
     imagesc(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)},plin_plot)
     hold on;
     caxis([max(max(plin_plot))-dBVALUES max(max(plin_plot ))]+Add)
-    if Bubble.N >6
-        rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
-    elseif Bubble.N>=1
-        plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color','white','MarkerSize',10,'LineWidth',3)
-    end
-   if PS.N >6
-        rectangle('Position',[PS.min_dim(domain.dimval(3)) PS.min_dim(domain.dimval(2)) PS.max_dim(domain.dimval(3))-PS.min_dim(domain.dimval(3)) PS.max_dim(domain.dimval(2))-PS.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','red','LineWidth',2)
-    elseif PS.N>=1
-        plot(PS.LocGlob(:,domain.dimval(3)),PS.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
-    end
+%     if Bubble.N >6
+%         rectangle('Position',[Bubble.min_dim(domain.dimval(3)) Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(3))-Bubble.min_dim(domain.dimval(3)) Bubble.max_dim(domain.dimval(2))-Bubble.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','white','LineWidth',4)
+%     elseif Bubble.N>=1
+%         plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),'x','Color','white','MarkerSize',10,'LineWidth',3)
+%     end
+%    if PS.N >6
+%         rectangle('Position',[PS.min_dim(domain.dimval(3)) PS.min_dim(domain.dimval(2)) PS.max_dim(domain.dimval(3))-PS.min_dim(domain.dimval(3)) PS.max_dim(domain.dimval(2))-PS.min_dim(domain.dimval(2))],'LineStyle','--','EdgeColor','red','LineWidth',2)
+%     elseif PS.N>=1
+%         plot(PS.LocGlob(:,domain.dimval(3)),PS.LocGlob(:,domain.dimval(2)),'xk','MarkerSize',10,'LineWidth',3)
+%     end
+    % First MB Cloud
+%     r = rectangle('Position',[ScPop{2}.LocRange(3,1) ScPop{2}.LocRange(1,1) diff(ScPop{2}.LocRange(3,:))  diff(ScPop{2}.LocRange(1,:))],...
+%         'EdgeColor',[0.64,0.08,0.18], 'FaceColor' , 'none','LineWidth',4,'LineStyle','--');%'#8BE5D3'); %% Visualization of slice
+    
+    % Second MB Cloud
+%     [xunit2,yunit2] = circle([sum(ScPop{1}.LocRange(3,:))/2, sum(ScPop{1}.LocRange(1,:))/2], diff(ScPop{1}.LocRange(3,:))/2);
+%     plot(xunit2,yunit2, '--','Color',"#0072BD",'LineWidth',3);
+    
     title('Linear Pressure Field')
         title(['F0, [0.7 - 1.3] MHz'] )
         title(['2H, [1.7 - 2.3] MHz'] )
@@ -143,15 +153,15 @@ for i = 1:i_end
     c = colorbar;
     c.Label.Interpreter = 'latex';
     c.Label.String = 'Pressure [dB]'; c.Label.FontSize = FontSize;
-%     set(gca,'LooseInset', max(get(gca,'TightInset'), 0.03))
+    set(gca,'LooseInset', max(get(gca,'TightInset'), 0.03))
     set(gca,'YDir','normal')
     if dslice.savedim(dslice.num) =='z'; set(gca,'XDir','reverse');set(gca,'YDir','reverse') ;  camorbit(90,180);    camroll(180) ; end
     set(gcf, 'Color', 'white');
     set(gca,'FontSize',FontSize);
     hold off;
     imgrotate(gca,gcf);    set(gca,'YDir','reverse')
-    caxis([-19 1])
-%     axis image
+%     caxis([-19 1])
+    axis image
     %%
 %     caxislim = [57  87 ; 45.0489   70.0489; 40.1915   65.1915; 36.0642   61.0642];
  harmonics=3;

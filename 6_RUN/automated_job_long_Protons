@@ -16,54 +16,54 @@ A2="$(cut -d'_' -f2 <<<$OUTPUT_FILE_NAME)"
 A3="$(cut -d '_' -f3 <<<$OUTPUT_FILE_NAME)"
 A="${A2}_${A3}"
 
-Freq=2
+Freq=1.5
 # MBside=2
 # side=5
 # for Freq in {1.7,4} ; 
 # do
-# MBside=2;
-for MBside in {1.25,2.5,3.75}
-do
-side=0.01;
-# for side in {0.5,1,2,5}
+MBside=4;
+# for MBside in {0.5,1,2,4}
+# do
+side=2;
+# for side in {2}
 # do
 
 val=$(echo "scale=4; ${side}*2" |bc)
 val=${val%.*}
-
+ 
 val_MB=$(echo "scale=4; ${MBside}*2" |bc)
 val_MB=${val_MB%.*}
 
 Freq_Val=$(echo "scale=4; ${Freq}*10" |bc)
 Freq_Val=${Freq_Val%.*}
 
-export OUTPUT_FOLDER_COMPOUND=SRC${val}_MB${val_MB}_6um_3E3_15mm_elastic
-export OUTPUT_SUBFOLDER=1PS_${Freq_Val}MHz_${OUTPUT_FOLDER_COMPOUND}
+export OUTPUT_FOLDER_COMPOUND=SRC${val}_25MB${val_MB}_6um
+export OUTPUT_SUBFOLDER=600PS_${Freq_Val}MHz_$OUTPUT_FOLDER_COMPOUND
 export OUTPUT_FOLDER_DAVID=$OUTPUT_FOLDER_NAME/${OUTPUT_SUBFOLDER}
-export OUT_FILE=$INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_${OUTPUT_SUBFOLDER}.out
-export ERR_FILE=$INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_${OUTPUT_SUBFOLDER}.err
+RNM_FOLDER=$INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID
+export OUT_FILE=$RNM_FOLDER/INCS_${OUTPUT_SUBFOLDER}.out
+export ERR_FILE=$RNM_FOLDER/INCS_${OUTPUT_SUBFOLDER}.err
 
 echo $OUT_FILE
 cd ../2_SOURCE_CODE/
-make 
+make
 cp ../3_COMPILED_FILES/INCS_Agis ../3_COMPILED_FILES/INCS_${OUTPUT_SUBFOLDER}
 
 mkdir $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_NAME
-mkdir $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID
-mkdir $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/2_SOURCE_CODE/
-mkdir $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/Bubbles/
+mkdir $RNM_FOLDER
+mkdir $RNM_FOLDER/2_SOURCE_CODE/
+mkdir $RNM_FOLDER/Bubbles/
 
-rm $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/*
-rm $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/Bubbles/*
+rm $RNM_FOLDER/*
+rm $RNM_FOLDER/Bubbles/*
 
-val_zmid=8;
+val_zmid=5;
 val_m=$(echo "scale=4; -${side}*1480/(${Freq}*1000)/2" |bc)
 val_p=$(echo "scale=4;  ${side}*1480/(${Freq}*1000)/2" |bc)
 val_zs=$(echo "scale=4; ${val_zmid}-${side}*1480/(${Freq}*1000)/2" |bc)
 val_ze=$(echo "scale=4; ${val_zmid}+${side}*1480/(${Freq}*1000)/2" |bc)
-num_source_lambda=125
+num_source_lambda=600
 val_num_source=$(echo "scale=4; ${num_source_lambda}*(${side})^3" |bc)
-val_num_source=1
 
 export xlim="${val_m} ${val_p}"
 export ylim="${val_m} ${val_p}"
@@ -71,34 +71,33 @@ export zlim="${val_zs} ${val_ze}"
 
 freq_val=$(echo "scale=4; ${Freq}*1000000" |bc)
 
-Freq_MB=0.6
-# Freq_MB=3.3
+Freq_MB=1.5
 val_MB_m=$(echo "scale=4; -${MBside}*1480/(${Freq_MB}*1000)/2" |bc)
 val_MB_p=$(echo "scale=4;  ${MBside}*1480/(${Freq_MB}*1000)/2" |bc)
 val_MB_zs=$(echo "scale=4; ${val_zmid}-${MBside}*1480/(${Freq_MB}*1000)/2" |bc)
 val_MB_ze=$(echo "scale=4; ${val_zmid}+${MBside}*1480/(${Freq_MB}*1000)/2" |bc)
-num_source_lambda_MBs=50
+num_source_lambda_MBs=25
 val_num_source_MBs=$(echo "scale=4; ${num_source_lambda_MBs}*(${MBside})^3" |bc)
-
 
 export xlim_MB="${val_MB_m} ${val_MB_p}"
 export ylim_MB="${val_MB_m} ${val_MB_p}"
 export zlim_MB="${val_MB_zs} ${val_MB_ze}"
 
-sed "38s/.*/${xlim}/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
-sed "39s/.*/${ylim}/" ../5_INPUT_FILES/INCS_TEMP.in > ../5_INPUT_FILES/$INPUT_FILE_DAVID
-sed "40s/.*/${zlim}/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
-sed "26s/.*/${freq_val}/" ../5_INPUT_FILES/INCS_TEMP.in > ../5_INPUT_FILES/$INPUT_FILE_DAVID
-sed "138s/.*/${xlim_MB}/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
-sed "139s/.*/${ylim_MB}/" ../5_INPUT_FILES/INCS_TEMP.in > ../5_INPUT_FILES/$INPUT_FILE_DAVID
-sed "140s/.*/${zlim_MB}/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
-sed "34s/.*/${val_num_source}/" ../5_INPUT_FILES/INCS_TEMP.in > ../5_INPUT_FILES/$INPUT_FILE_DAVID
-sed "133s/.*/${val_num_source_MBs}/" ../5_INPUT_FILES/$INPUT_FILE_DAVID > ../5_INPUT_FILES/INCS_TEMP.in
-cp ../5_INPUT_FILES/INCS_TEMP.in ../5_INPUT_FILES/$INPUT_FILE_DAVID
+cp ../5_INPUT_FILES/$INPUT_FILE_DAVID $RNM_FOLDER/
 
-cp ../2_SOURCE_CODE/*.f90 $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/2_SOURCE_CODE/
-cp ../5_INPUT_FILES/$INPUT_FILE_DAVID $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
-cp ../3_COMPILED_FILES/INCS_${OUTPUT_SUBFOLDER} $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+sed "38s/.*/$xlim/" ${RNM_FOLDER}/$INPUT_FILE_DAVID > ${RNM_FOLDER}/INCS_TEMP.in
+sed "39s/.*/$ylim/" ${RNM_FOLDER}/INCS_TEMP.in > ${RNM_FOLDER}/$INPUT_FILE_DAVID
+sed "40s/.*/$zlim/" ${RNM_FOLDER}/$INPUT_FILE_DAVID > ${RNM_FOLDER}/INCS_TEMP.in
+sed "26s/.*/$freq_val/" ${RNM_FOLDER}/INCS_TEMP.in > ${RNM_FOLDER}/$INPUT_FILE_DAVID
+sed "142s/.*/$xlim_MB/" ${RNM_FOLDER}/$INPUT_FILE_DAVID > ${RNM_FOLDER}/INCS_TEMP.in
+sed "143s/.*/$ylim_MB/" ${RNM_FOLDER}/INCS_TEMP.in > ${RNM_FOLDER}/$INPUT_FILE_DAVID
+sed "144s/.*/$zlim_MB/" ${RNM_FOLDER}/$INPUT_FILE_DAVID > ${RNM_FOLDER}/INCS_TEMP.in
+sed "34s/.*/$val_num_source/" ${RNM_FOLDER}/INCS_TEMP.in > ${RNM_FOLDER}/$INPUT_FILE_DAVID
+sed "137s/.*/$val_num_source_MBs/" ${RNM_FOLDER}/$INPUT_FILE_DAVID > ${RNM_FOLDER}/INCS_TEMP.in
+cp ${RNM_FOLDER}/INCS_TEMP.in ${RNM_FOLDER}/$INPUT_FILE_DAVID
+
+cp ../2_SOURCE_CODE/*.f90 ${RNM_FOLDER}/2_SOURCE_CODE/
+cp ../3_COMPILED_FILES/INCS_${OUTPUT_SUBFOLDER} ${RNM_FOLDER}/
 cd $INPUT_FOLDER/6_RUN/
 
 ### HERE WE CREATE THE BASH FILE
@@ -107,17 +106,17 @@ echo "#!/bin/bash
 #SBATCH --job-name=${OUTPUT_SUBFOLDER}  	 																		
 #SBATCH --partition=general  					 															
 #SBATCH --qos=short           				 															
-#SBATCH --nodes=1-3           					 															
-#SBATCH --ntasks=100  				 															
+#SBATCH --nodes=1-2           					 															
+#SBATCH --ntasks=50  				 															
 #SBATCH --cpus-per-task=1      				 															
 #SBATCH --mem-per-cpu=9G             				 															
 #SBATCH --time=04:00:00       				 															
 #SBATCH --output=$OUT_FILE  					 															
 #SBATCH --error=$ERR_FILE      				 															
 ##SBATCH --exclusive           				 															
-   											 															
+   										 															
 module use /opt/insy/modulefiles  			 															
-module load intel  							 															
+module load intel/2017u4				 															
    											 															
 source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64  		
 source /opt/insy/intel/2017u4/compilers_and_libraries_2017.4.196/linux/mpi/bin64/mpivars.sh  				
@@ -138,13 +137,13 @@ export MKL_NUM_THREADS=1
 #export MKL_THREADING_LAYER=intel  																		
 #export MKL_DYNAMIC= FALSE   																				
 #export MKL_VERBOSE=1  																					
-srun $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/INCS_${OUTPUT_SUBFOLDER} $INPUT_FILE_DAVID TESTNeumann ../7_RESULTS/$OUTPUT_FOLDER_DAVID ../7_RESULTS/$OUTPUT_FOLDER_DAVID" > job_INCS_David
+srun ${RNM_FOLDER}/INCS_${OUTPUT_SUBFOLDER} ${INPUT_FILE_DAVID} TESTNeumann ${RNM_FOLDER}/ ${RNM_FOLDER}/" > job_INCS_David
 
-cp $INPUT_FOLDER/6_RUN/job_INCS_David $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/
+cp $INPUT_FOLDER/6_RUN/job_INCS_David ${RNM_FOLDER}/
 
-sbatch $INPUT_FOLDER/7_RESULTS/$OUTPUT_FOLDER_DAVID/job_INCS_David &
+sbatch $INPUT_FOLDER/6_RUN/job_INCS_David &
 # sleep 5
 # squeue --format="%.18i %.9P %.80j %.8u %.8T %.10M %.9l %.6D %R" --me
-done
+# done
 # done
 # done

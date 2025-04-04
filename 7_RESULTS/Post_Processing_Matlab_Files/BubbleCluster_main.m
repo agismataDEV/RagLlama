@@ -4,17 +4,22 @@
 % close all;
 for slicenum1 = [2]%[12,3,4,5,6]
     
-    clearvars -except slicenum1 atten atten_fund Loc pnl_all p4 p1 pPD p2_8 q1 q2
+%     clearvars -except slicenum1 atten atten_fund data
     %     close all
     clc
     %% Initialize parameters for all the significant variables
     BubbleCluster_Init(slicenum1);
     %% Scatterers' cloud positions
-%     %% Bubble Location and Pressure
-    [Bubble] = BubbleCluster_LocCon(medium,domain,file,Bubble,'Bubble');
-    [Bubble] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,'Microbubble','ko',8);
+    for ipop = 1:4
+        name_pop={'Microbubble','Linear Scatterer','Microbubble','Linear Scatterer'};
+        ScPop{ipop}.N=0;
+        [ScPop{ipop}] = BubbleCluster_LocCon(medium,domain,file,ScPop{ipop},'Bubble',ipop);
+        %  Bubble Cluster Positions
+        [ScPop{ipop}] = BubbleCluster_LocPlot(domain,dslice,file,ScPop{ipop},name_pop{ipop},'.',8);
+        clear name_pop
+    end
     %%  Point Source Cloud Positions
-    PS=Bubble ; domainPS = domain; domainPS.beamiterations=0;[PS] = BubbleCluster_LocCon(medium,domainPS,file,PS,'PS');
+    PS=Bubble ; domainPS = domain; domainPS.beamiterations=0;[PS] = BubbleCluster_LocCon(medium,domainPS,file,PS,'PS',1);
     [PS] = BubbleCluster_LocPlot(domain,dslice,file,PS, 'Point Source','kx',8);
     
     %% PlayMovies
@@ -28,7 +33,7 @@ for slicenum1 = [2]%[12,3,4,5,6]
     %% Plot residuals
     Bubble_ResidualsPlot(medium,domain,dslice,file,plin,pnl,Bubble,[1E5],'../Paper/Phased_2E5Pa_2micron_1MHz_')
     
-    fclose('all');
+%     fclose('all');
     %%
     
     disp(' ')

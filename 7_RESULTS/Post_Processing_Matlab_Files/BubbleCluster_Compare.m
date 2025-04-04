@@ -174,7 +174,7 @@ if (Bubble.N <=10 && Bubble.N>0)
         close all
 %         BubblePresPad = resampleSINC(plin.data(:,72,80)',n_pad);
         BubbleTimeAn = BubbleTimePad;
-        [par, T_m, V_dd_norm] = Bubble_SimAnalytic(BubblePres,BubbleTime,medium.c0,medium.rho0,medium.freq0,domain);         % Solution of RP Solver with ode45 MATLAB solver
+        [par, T_m, V_dd_norm] = Bubble_SimAnalytic(BubblePres,BubbleTime,medium,domain);         % Solution of RP Solver with ode45 MATLAB solver
         BubbleCon_an = V_dd_norm*medium.rho0;                                                             % Contrast Source Term
         %========================== Save plot ===================================
         if (strcmp(file.saveplot,'yes'))

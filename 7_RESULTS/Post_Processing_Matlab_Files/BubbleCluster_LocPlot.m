@@ -2,7 +2,7 @@
 % PLOTING THE LOCATION OF EACH SCATTERER INDIVIDUALLY AND OF THE CLUSTER AS A WHOLE
 %
 % **********************************************************
-% [domain] = BubbleCluster_LocPlot(domain,Bubble,slice,file)
+% [domain] = BubbleCluster_LocPlot(domain,Scatterer,slice,file)
 % **********************************************************
 % Plot the domain with the existence of the scatterers
 % Plot all the sideviews of the domain to understand exactly where the scatterers
@@ -12,7 +12,7 @@
 % domain        struct      Contains all the computational domain properties, e.g space and time step
 % slice         struct      Contains all the information about the slice ,e.g Dimension, Position, Index etc
 % file          struct      Contains all the loaded file properties ,e.g directory and root name etc
-% Bubble        struct      Contains all properties of the Scatterers' Cluster
+% Scatterer        struct      Contains all properties of the Scatterers' Cluster
 %
 % Outputs:
 % domain        struct      Contains all the computational domain properties, e.g space and time step
@@ -23,11 +23,11 @@
 %
 % ***********************************************************************************************************
 
-function [Bubble] = BubbleCluster_LocPlot(domain,dslice,file,Bubble,name,MarkerStyle,MarkerSize)
+function [Scatterer] = BubbleCluster_LocPlot(domain,dslice,file,Scatterer,name,MarkerStyle,MarkerSize)
 
 %%
 disp('Ploting the microbubble cluster...')
-if (Bubble.N >0 )
+if (Scatterer.N >0 )
     %=============================== 3D Domain View ==============================
     f4 = figure('WindowState','maximized');
     LocPlot_FontSize = 15;
@@ -46,7 +46,7 @@ if (Bubble.N >0 )
         rotate(s,[0 1 0], -90)
     end
     %     [ y x z]
-    p=plot3(Bubble.LocGlob(:,3),Bubble.LocGlob(:,1),Bubble.LocGlob(:,2),MarkerStyle,'MarkerSize',MarkerSize);
+    p=plot3(Scatterer.LocGlob(:,3),Scatterer.LocGlob(:,1),Scatterer.LocGlob(:,2),MarkerStyle,'MarkerSize',MarkerSize);
     if (strcmp(file.plot_colour,'gray')); s.FaceColor =[ 192 192 192]/255; p.MarkerEdgeColor = sscanf('404040','%2x%2x%2x',[1 3])/255 ;  end
     
     % Simplified visualization of transducer with 8 elements
@@ -83,13 +83,13 @@ if (Bubble.N >0 )
     [Z,X] = meshgrid(domain.par{domain.dimval(3)},domain.par{domain.dimval(2)});
     s=surf([Z(1,1) Z(1,end) Z(1,1) Z(end,1)] , [X(1,1) X(1,end) X(1,1) X(end,1)],dslice.pos(dslice.num)*ones(4,4),...
         'EdgeColor','black', 'FaceAlpha' ,0.6);
-    p = plot3(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',MarkerSize );
+    p = plot3(Scatterer.LocGlob(:,domain.dimval(3)),Scatterer.LocGlob(:,domain.dimval(2)),Scatterer.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',MarkerSize );
     if (strcmp(file.plot_colour,'gray')); s.FaceColor =[ 192 192 192]/255; p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
     view(-37.5,30)
     
-    xlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(3))) max(Bubble.LocGlob(:,domain.dimval(3)))] + [-domain.dzpar domain.dzpar]))/10)
-    ylim(round(10*([min(Bubble.LocGlob(:,domain.dimval(2))) max(Bubble.LocGlob(:,domain.dimval(2)))] + [-domain.dxpar domain.dxpar]))/10)
-    zlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(1))) max(Bubble.LocGlob(:,domain.dimval(1)))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
+    xlim(round(10*([min(Scatterer.LocGlob(:,domain.dimval(3))) max(Scatterer.LocGlob(:,domain.dimval(3)))] + [-domain.dzpar domain.dzpar]))/10)
+    ylim(round(10*([min(Scatterer.LocGlob(:,domain.dimval(2))) max(Scatterer.LocGlob(:,domain.dimval(2)))] + [-domain.dxpar domain.dxpar]))/10)
+    zlim(round(10*([min(Scatterer.LocGlob(:,domain.dimval(1))) max(Scatterer.LocGlob(:,domain.dimval(1)))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     % xlim([ 40 45])
     % ylim([ -4 -3])
     % zlim([ 1 2])
@@ -109,22 +109,22 @@ if (Bubble.N >0 )
     subplot(2,3,3)
     
     hold on;
-    p=plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',MarkerSize);
+    p=plot(Scatterer.LocGlob(:,domain.dimval(3)),Scatterer.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',MarkerSize);
     
     % Create dimensions that encloses the microbubble cluster but includes the
     % slice of the domain stored in the output file
-    Bubble.min_dim = min([Bubble.LocGlob ; domain.par{1}(end) domain.par{2}(end) domain.par{3}(end)]);
-    Bubble.max_dim = max([Bubble.LocGlob ; domain.par{1}(1) domain.par{2}(1) domain.par{3}(1)]);
-    Bubble.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = min(Bubble.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
-    Bubble.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = max(Bubble.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
+    Scatterer.min_dim = min([Scatterer.LocGlob ; domain.par{1}(end) domain.par{2}(end) domain.par{3}(end)]);
+    Scatterer.max_dim = max([Scatterer.LocGlob ; domain.par{1}(1) domain.par{2}(1) domain.par{3}(1)]);
+    Scatterer.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = min(Scatterer.min_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
+    Scatterer.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)) = max(Scatterer.max_dim(['x' 'y' 'z']==dslice.savedim(dslice.num)), dslice.pos(dslice.num));
     
-    rect_w =  0.01*(Bubble.max_dim(domain.dimval(1))+domain.dypar - (Bubble.min_dim(domain.dimval(1))-domain.dypar));
-    r = rectangle('Position',[floor(10*(Bubble.min_dim(domain.dimval(3))-domain.dzpar))/10 dslice.pos(dslice.num)-rect_w  ceil(10*(Bubble.max_dim(domain.dimval(3))+domain.dzpar-(Bubble.min_dim(domain.dimval(3))-domain.dzpar)))/10 rect_w],...
+    rect_w =  0.01*(Scatterer.max_dim(domain.dimval(1))+domain.dypar - (Scatterer.min_dim(domain.dimval(1))-domain.dypar));
+    r = rectangle('Position',[floor(10*(Scatterer.min_dim(domain.dimval(3))-domain.dzpar))/10 dslice.pos(dslice.num)-rect_w  ceil(10*(Scatterer.max_dim(domain.dimval(3))+domain.dzpar-(Scatterer.min_dim(domain.dimval(3))-domain.dzpar)))/10 rect_w],...
         'EdgeColor','k', 'FaceColor' , [55 90 83]/255);%'#8BE5D3'); %% Visualization of slice
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ; r.FaceColor = [ 192 192 192]/255;end
     
-    xlim(floor(10*(Bubble.min_dim(domain.dimval(3))-domain.dzpar))/10 + ceil(10*(Bubble.max_dim(domain.dimval(3))+domain.dzpar-(Bubble.min_dim(domain.dimval(3))-domain.dzpar)))/10*[0 1])
-    ylim(round(10*([ Bubble.min_dim(domain.dimval(1)) Bubble.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
+    xlim(floor(10*(Scatterer.min_dim(domain.dimval(3))-domain.dzpar))/10 + ceil(10*(Scatterer.max_dim(domain.dimval(3))+domain.dzpar-(Scatterer.min_dim(domain.dimval(3))-domain.dzpar)))/10*[0 1])
+    ylim(round(10*([ Scatterer.min_dim(domain.dimval(1)) Scatterer.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     
     xlabel(dslice.xlabel)
     ylabel(dslice.zlabel)
@@ -138,7 +138,7 @@ if (Bubble.N >0 )
     %====================== 2D Side View of Focused Region ==========================
     subplot(2,3,[4 5])
     hold on;
-    p = plot(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),MarkerStyle,'MarkerSize',MarkerSize );
+    p = plot(Scatterer.LocGlob(:,domain.dimval(3)),Scatterer.LocGlob(:,domain.dimval(2)),MarkerStyle,'MarkerSize',MarkerSize );
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
     
     xlim(round(10*[min(domain.par{domain.dimval(3)}) max(domain.par{domain.dimval(3)})])/10)
@@ -156,15 +156,15 @@ if (Bubble.N >0 )
     %====================== Z-Y Side View of Focused Region ==========================
     subplot(2,3,6)
     hold on;
-    p = plot(Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',MarkerSize );
+    p = plot(Scatterer.LocGlob(:,domain.dimval(2)),Scatterer.LocGlob(:,domain.dimval(1)),MarkerStyle,'MarkerSize',MarkerSize );
     
-    r = rectangle('Position',[floor(10*(Bubble.min_dim(domain.dimval(2))-domain.dxpar))/10 dslice.pos(dslice.num)-rect_w  ...
-        ceil(10*(Bubble.max_dim(domain.dimval(2))+domain.dxpar-(Bubble.min_dim(domain.dimval(2))-domain.dxpar)+domain.dxpar))/10 rect_w],...
+    r = rectangle('Position',[floor(10*(Scatterer.min_dim(domain.dimval(2))-domain.dxpar))/10 dslice.pos(dslice.num)-rect_w  ...
+        ceil(10*(Scatterer.max_dim(domain.dimval(2))+domain.dxpar-(Scatterer.min_dim(domain.dimval(2))-domain.dxpar)+domain.dxpar))/10 rect_w],...
         'EdgeColor','k', 'FaceColor'  , [55 90 83]/255);%'#8BE5D3') ;%% Visualization of slice
     if (strcmp(file.plot_colour,'gray')); p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ; r.FaceColor = [ 192 192 192]/255;end
     
-    xlim(round(10*([ Bubble.min_dim(domain.dimval(2)) Bubble.max_dim(domain.dimval(2))] + [-domain.dxpar domain.dxpar]))/10)
-    ylim(round(10*([ Bubble.min_dim(domain.dimval(1)) Bubble.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
+    xlim(round(10*([ Scatterer.min_dim(domain.dimval(2)) Scatterer.max_dim(domain.dimval(2))] + [-domain.dxpar domain.dxpar]))/10)
+    ylim(round(10*([ Scatterer.min_dim(domain.dimval(1)) Scatterer.max_dim(domain.dimval(1))] + [-domain.dypar domain.dypar]))/10 + [-domain.dypar domain.dypar])
     % xlim([-0.1 0.1])
     % ylim([-0.1 0.1])
     
@@ -176,7 +176,7 @@ if (Bubble.N >0 )
     hold off;
     
     %============================= Create subplot title =======================
-    integerPart = num2str(Bubble.N);
+    integerPart = num2str(Scatterer.N);
     % Reverse the integer-part string.
     integerPart=integerPart(end:-1:1);
     % Insert commas every third entry.
@@ -186,7 +186,7 @@ if (Bubble.N >0 )
     integerPart=deblank(integerPart(1:(end-1)));
     integerPart = integerPart(end:-1:1);
     
-    sgtitle([name,' Cluster of ',integerPart,' ',name,'(s) per ',num2str(round(Bubble.Volume,ceil(-log10(Bubble.Volume)))),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
+    sgtitle([name,' Cluster of ',integerPart,' ',name,'(s) per ',num2str(round(Scatterer.Volume,ceil(-log10(Scatterer.Volume)))),' [mL] at ',num2str(dslice.savedim(dslice.num)), ' = ', num2str(dslice.pos(dslice.num)) , ' [mm]'],'FontSize',LocPlot_FontSize+5);
     
     % set(gcf, 'Color', 'w');
     set(gca, 'Color', 'none'); % Sets axes background
@@ -200,20 +200,20 @@ if (Bubble.N >0 )
     
     %% Microbubble Radius distribution
     %%
-    if (sum(Bubble.Radius<0)==0 && length(Bubble.Radius)>1E2 && Bubble.N<5E3)
+    if (sum(Scatterer.Radius<0)~=0 && length(Scatterer.Radius)>1E2)
         f5 = figure('WindowState','maximized');
-        gpdf = fitdist(Bubble.Radius,'gamma');
-        y=gampdf(Bubble.Radius,gpdf.a,gpdf.b);
+        gpdf = fitdist(Scatterer.Radius,'gamma');
+        y=gampdf(Scatterer.Radius,gpdf.a,gpdf.b);
         
         BinNum  = 500;
         
-        histfit(Bubble.Radius,BinNum,'Gamma');
+        histfit(Scatterer.Radius,BinNum,'Gamma');
         h = get(gca,'Children');
         set(h(2),'FaceColor',[.8 .8 .8]) % Bar Properties
         set(h(1),'Color','blue')         % Line Properties
         %     set(h,'FaceColor','#404040')
         ax = gca;
-        xlim([min(Bubble.Radius)-1E-10 max(Bubble.Radius)])
+        xlim([min(Scatterer.Radius)-1E-10 max(Scatterer.Radius)])
         set(gca,'XTickLabel',ax.XTick*1e+6) ; ax.XLabel.String = 'Radius [$\mu$m]';
         ax.YLabel.String = 'No. of Microbubbles';
         title('Microbubble Radius Distribution')
@@ -222,7 +222,7 @@ if (Bubble.N >0 )
         set(gca,'FontSize',30)
         
         
-        if (Bubble.N<5E3)
+        if (Scatterer.N<5E3)
             figure('WindowState','maximized')
             hold on;
             box on;
@@ -231,17 +231,17 @@ if (Bubble.N >0 )
                 'EdgeColor','black', 'FaceAlpha' ,0.6);
             color =  sscanf('404040','%2x%2x%2x',[1 3])/255
             if (strcmp(file.plot_colour,'gray')); color =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
-            for iBubble=1:Bubble.N
-%                 scatter3(Bubble.LocGlob(iBubble,domain.dimval(3)),Bubble.LocGlob(iBubble,domain.dimval(2)),Bubble.LocGlob(iBubble,domain.dimval(1)),'Marker','o', 'MarkerFaceColor',color,'SizeData',Bubble.Radius(iBubble)/min(Bubble.Radius)*10,'MarkerEdgeColor','black')
-                scatter3(Bubble.LocGlob(iBubble,domain.dimval(3)),Bubble.LocGlob(iBubble,domain.dimval(2)),Bubble.LocGlob(iBubble,domain.dimval(1)),'Marker','o','SizeData',Bubble.Radius(iBubble)/min(Bubble.Radius)*10,'MarkerEdgeColor','black')
+            for iBubble=1:Scatterer.N
+%                 scatter3(Scatterer.LocGlob(iBubble,domain.dimval(3)),Scatterer.LocGlob(iBubble,domain.dimval(2)),Scatterer.LocGlob(iBubble,domain.dimval(1)),'Marker','o', 'MarkerFaceColor',color,'SizeData',Scatterer.Radius(iBubble)/min(Scatterer.Radius)*10,'MarkerEdgeColor','black')
+                scatter3(Scatterer.LocGlob(iBubble,domain.dimval(3)),Scatterer.LocGlob(iBubble,domain.dimval(2)),Scatterer.LocGlob(iBubble,domain.dimval(1)),'Marker','o','SizeData',Scatterer.Radius(iBubble)/min(Scatterer.Radius)*10,'MarkerEdgeColor','black')
             end
-%             sc=scatter3(Bubble.LocGlob(:,domain.dimval(3)),Bubble.LocGlob(:,domain.dimval(2)),Bubble.LocGlob(:,domain.dimval(1)),'Marker','o', 'MarkerFaceColor',color,'MarkerEdgeColor','black');
+%             sc=scatter3(Scatterer.LocGlob(:,domain.dimval(3)),Scatterer.LocGlob(:,domain.dimval(2)),Scatterer.LocGlob(:,domain.dimval(1)),'Marker','o', 'MarkerFaceColor',color,'MarkerEdgeColor','black');
             if (strcmp(file.plot_colour,'gray')); s.FaceColor =[ 192 192 192]/255; p.MarkerEdgeColor =  sscanf('404040','%2x%2x%2x',[1 3])/255 ;end
             view(-37.5,30)
             
-            xlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(3))) max(Bubble.LocGlob(:,domain.dimval(3)))] + [-domain.dzpar domain.dzpar]))/10)
-            ylim(round(10*([min(Bubble.LocGlob(:,domain.dimval(2))) max(Bubble.LocGlob(:,domain.dimval(2)))] + [-domain.dxpar domain.dxpar]))/10)
-            zlim(round(10*([min(Bubble.LocGlob(:,domain.dimval(1))) max(Bubble.LocGlob(:,domain.dimval(1)))] + [-domain.dypar domain.dypar]))/10)
+            xlim(round(10*([min(Scatterer.LocGlob(:,domain.dimval(3))) max(Scatterer.LocGlob(:,domain.dimval(3)))] + [-domain.dzpar domain.dzpar]))/10)
+            ylim(round(10*([min(Scatterer.LocGlob(:,domain.dimval(2))) max(Scatterer.LocGlob(:,domain.dimval(2)))] + [-domain.dxpar domain.dxpar]))/10)
+            zlim(round(10*([min(Scatterer.LocGlob(:,domain.dimval(1))) max(Scatterer.LocGlob(:,domain.dimval(1)))] + [-domain.dypar domain.dypar]))/10)
             % xlim([ 40 45])
             % ylim([ -4 -3])
             % zlim([ 1 2])

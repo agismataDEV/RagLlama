@@ -23,11 +23,11 @@
 %
 % *********************************************************************************
 
-function [par, tsim , V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,c,rho,f,domain)
+function [par, tsim , V_dd_norm] = Single_bubble_sim(p_driv,t_p_driv,medium,domain)
 %% ========================Initialization==============================================================
 
 % -------------Bubble parameters
-par.R0 = 2.4e-6 ;                         % [μm],  initial bubble radius R0
+par.R0 = 3.2e-6 ;                         % [μm],  initial bubble radius R0
 % par.S_vis = 1e-8       ;            % [Pa*sec] , Shell viscosity
 par.S_vis = 1.5E-9*exp(8E5*par.R0);
 
@@ -38,10 +38,10 @@ par.sigma_R0 = 0.036;                      % [N/m], surface tension at initial r
 par.P_g0 = par.P0+2*par.sigma_R0/par.R0 ;   % [Pa] Initial gas pressure , (Sometimes = P0)
 par.gamma = 1.07 ;                           %  (or κ), dimensionless, polytropic exponent of the gas inside the bubble
 par.mu = 2e-3 ;                             % [Pa*sec], dynamic viscocity of medium
-par.c = c;
-par.rho = rho;
-par.f = f;
-par.Fnyq=9;
+par.c = medium.c0;
+par.rho = medium.rho0;
+par.f = 1E6;medium.freq0;
+par.Fnyq=9;domain.Fnyq;
 %---------------Marmottant model parameters
 par.chi = 0.4   ;                                     % [N/m] shell elasticity
 par.R_b = par.R0/sqrt(par.sigma_R0/par.chi+1);     % buckling radius
@@ -51,16 +51,16 @@ par.f0 = 1/(2*pi*par.R0*sqrt(par.rho))*sqrt(3*par.gamma*par.P0+ (3*par.gamma-1)*
 par.omega = 3*par.P0*par.gamma/par.R0^2/par.rho+4*par.chi/par.R0^3/par.rho;
 par.delta = par.R0/par.c + 4*par.mu/(par.rho*par.R0^2*par.omega) + 4*par.S_vis/(par.rho*par.R0^3*par.omega);
 par.fresonance = par.f0*sqrt(1-par.delta^2/2)/1E6  %MHz
-par.fresonance_free= 1/(2*pi*par.R0)*sqrt(3*par.gamma*par.P0/par.rho)*1E-6
+par.fresonance_free= 1/(2*pi*par.R0)*sqrt(3*par.gamma*par.P0/par.rho + (3*par.gamma-1)*2*par.sigma_w/par.R0/par.rho)*1E-6
 
 %% Create p_driv manually
 w_driving   = 2*pi*par.f;
-gauss_dl    = 3/par.f;
+gauss_dl    = 6/par.f;
 gauss_win   = 3/par.f;
 dt = 1/(2*par.Fnyq*par.f);
-% t_p_driv = [1:1000]*dt;
+t_p_driv = [1:1000]*dt;
 
-% p_driv   = 2E5*exp( - ((t_p_driv-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t_p_driv-gauss_dl));
+p_driv   = 2E5*exp( - ((t_p_driv-gauss_dl)/(gauss_win/2)).^2).* sin(w_driving*(t_p_driv-gauss_dl));
 %% ========================= Solve ODE with Marmottant ==================================================
 T_start = t_p_driv(1) ;
 T_end   = t_p_driv(end)   ;
@@ -88,11 +88,12 @@ R_ = R(:,1);
 
 V_dd_norm = (4*pi*R_.*(R_.*R_dd+2.*R_d.^2))';     % Should be divided by the total volume
 
-r = R_;
+r = 1E-2;
 psc1 = par.rho*R_./r.*((2*R_d.^2 + R_.*R_dd) - R_.^3.*R_d.^2./(2.*r.^3));
 psc2 = par.rho*V_dd_norm/4/pi./r';
 % psc2 = par.rho*V_dd_norm/4/pi./r' - par.rho*R_d.^2.*(R_/r).^4;
 disp(['Pressure @ ' num2str(max(r)) ' [um] is ', num2str(max(psc1*1E-3)) ' [kPa].', num2str(max(psc2*1E-3)), '[kPa].'])
+disp(['The scattering cross_section is ', num2str(1E12*max(psc2.^2*4*pi.*r.^2,[],'all')/max(p_driv.^2,[],'all')) ' [um^2] for R=' num2str(par.R0*1E6) ' [um].'])
 %% ======================= Spectral Response ====================================================
 F_s = length(t_p_driv)/(abs(T_end) + abs(T_start));                    % [Hz] , 1/dt
 t_interval = [0 T_end]; % time interval to analyse
